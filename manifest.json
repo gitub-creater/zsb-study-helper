@@ -1,0 +1,18 @@
+{
+  "name": "专升本学习助手 · 知识校园",
+  "short_name": "专升本助手",
+  "description": "山东专升本备考工具,可爱校园冒险风",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2F6FB",
+  "theme_color": "#3E9BFF",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

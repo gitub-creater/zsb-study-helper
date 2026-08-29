@@ -1,0 +1,1286 @@
+{
+  "meta": {
+    "name": "山东专升本考试类别内容包",
+    "version": 8,
+    "updatedAt": "2026-08-29",
+    "note": "题目依据山东专升本考试要求命制(自编,非真题);类别对应关系依据山东省教育厅官方文件;细目以省教育招生考试院当年发布为准",
+    "legacySubjectIds": [
+      "s1",
+      "s2",
+      "s3"
+    ],
+    "removeSubjectIds": [
+      "s2"
+    ],
+    "removeQuestionIds": [
+      "q001",
+      "q002",
+      "q003",
+      "q004",
+      "q005",
+      "q006",
+      "q007",
+      "q008",
+      "q009",
+      "q010",
+      "q011",
+      "q012",
+      "q013",
+      "q014",
+      "q015",
+      "q016",
+      "q017",
+      "q018",
+      "q019",
+      "q020",
+      "q021",
+      "q022",
+      "q023",
+      "q024",
+      "q025",
+      "q026",
+      "q027",
+      "q028",
+      "q602"
+    ]
+  },
+  "subjects": [
+    {
+      "id": "s-yw",
+      "name": "大学语文",
+      "color": "#F2698C",
+      "targetScore": 70,
+      "order": 3,
+      "syllabus": {
+        "version": "2026",
+        "year": 2026,
+        "source": "山东省教育招生考试院《公共基础课考试要求》",
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "verified": "章节结构已核验 · 细目待核实",
+        "updatedAt": "2026-08-29"
+      }
+    },
+    {
+      "id": "s-m1",
+      "name": "高等数学Ⅰ",
+      "color": "#8B72E8",
+      "targetScore": 60,
+      "order": 4,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "syllabus": {
+        "version": "2026",
+        "year": 2026,
+        "source": "山东省教育招生考试院《公共基础课考试要求》",
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "verified": "章节结构已核验 · 细目待核实",
+        "updatedAt": "2026-08-29"
+      }
+    },
+    {
+      "id": "s-m2",
+      "name": "高等数学Ⅱ",
+      "color": "#8B72E8",
+      "targetScore": 60,
+      "order": 5,
+      "applicableCategories": [
+        "gj2"
+      ],
+      "syllabus": {
+        "version": "2026",
+        "year": 2026,
+        "source": "山东省教育招生考试院《公共基础课考试要求》",
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "verified": "章节结构已核验 · 细目待核实",
+        "updatedAt": "2026-08-29"
+      }
+    },
+    {
+      "id": "s-m3",
+      "name": "高等数学Ⅲ",
+      "color": "#8B72E8",
+      "targetScore": 60,
+      "order": 6,
+      "applicableCategories": [
+        "gj3"
+      ],
+      "syllabus": {
+        "version": "2026",
+        "year": 2026,
+        "source": "山东省教育招生考试院《公共基础课考试要求》",
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "verified": "章节结构已核验 · 细目待核实",
+        "updatedAt": "2026-08-29"
+      }
+    },
+    {
+      "id": "s-zz",
+      "name": "政治",
+      "color": "#E89B1C",
+      "targetScore": 70,
+      "order": 7,
+      "elective": "politics",
+      "syllabus": {
+        "version": "2026",
+        "year": 2026,
+        "source": "山东省教育招生考试院《公共基础课考试要求》",
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "verified": "章节结构已核验 · 细目待核实",
+        "updatedAt": "2026-08-29"
+      }
+    }
+  ],
+  "chapters": [
+    {
+      "id": "c-yw-1",
+      "subjectId": "s-yw",
+      "name": "语言文字运用",
+      "order": 0,
+      "requirement": "掌握字音字形、词语运用、病句辨析与修改、修辞与标点",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-yw-2",
+      "subjectId": "s-yw",
+      "name": "文学常识",
+      "order": 1,
+      "requirement": "掌握古今中外重要作家作品、文学流派与文体常识",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-yw-3",
+      "subjectId": "s-yw",
+      "name": "文言文阅读",
+      "order": 2,
+      "requirement": "理解常见文言实词虚词,掌握特殊句式与翻译方法",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-yw-4",
+      "subjectId": "s-yw",
+      "name": "现代文阅读与写作",
+      "order": 3,
+      "requirement": "掌握现代文阅读答题方法;按要求完成作文",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-1",
+      "subjectId": "s-m1",
+      "name": "函数、极限与连续",
+      "order": 0,
+      "requirement": "理解函数概念,掌握极限计算、两个重要极限与连续性判断",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-2",
+      "subjectId": "s-m1",
+      "name": "一元函数微分学",
+      "order": 1,
+      "requirement": "掌握导数计算、导数应用(单调性、极值、切线)及中值定理",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-3",
+      "subjectId": "s-m1",
+      "name": "一元函数积分学",
+      "order": 2,
+      "requirement": "掌握不定积分与定积分的计算及简单应用",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-4",
+      "subjectId": "s-m1",
+      "name": "微分方程",
+      "order": 3,
+      "requirement": "掌握一阶微分方程(可分离变量、一阶线性)的解法",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-5",
+      "subjectId": "s-m1",
+      "name": "向量代数与空间解析几何",
+      "order": 4,
+      "requirement": "掌握向量运算与平面、直线方程",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-6",
+      "subjectId": "s-m1",
+      "name": "多元函数微分学",
+      "order": 5,
+      "requirement": "掌握偏导数、全微分及二元函数极值的计算",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-7",
+      "subjectId": "s-m1",
+      "name": "多元函数积分学",
+      "order": 6,
+      "requirement": "掌握二重积分的计算(直角坐标、极坐标)",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m1-8",
+      "subjectId": "s-m1",
+      "name": "无穷级数",
+      "order": 7,
+      "requirement": "掌握数项级数敛散性判别与幂级数展开",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m2-1",
+      "subjectId": "s-m2",
+      "name": "函数、极限与连续",
+      "order": 0,
+      "requirement": "理解函数概念,掌握极限计算、两个重要极限与连续性判断",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m2-2",
+      "subjectId": "s-m2",
+      "name": "一元函数微分学",
+      "order": 1,
+      "requirement": "掌握导数计算、导数应用(单调性、极值、切线)及中值定理",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m2-3",
+      "subjectId": "s-m2",
+      "name": "一元函数积分学",
+      "order": 2,
+      "requirement": "掌握不定积分与定积分的计算及简单应用",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m2-4",
+      "subjectId": "s-m2",
+      "name": "多元函数微积分",
+      "order": 3,
+      "requirement": "掌握偏导数计算与简单二重积分",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m2-5",
+      "subjectId": "s-m2",
+      "name": "常微分方程",
+      "order": 4,
+      "requirement": "掌握一阶常微分方程的解法",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m3-1",
+      "subjectId": "s-m3",
+      "name": "函数、极限与连续",
+      "order": 0,
+      "requirement": "理解函数概念,掌握极限计算、两个重要极限与连续性判断",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m3-2",
+      "subjectId": "s-m3",
+      "name": "一元函数微分学",
+      "order": 1,
+      "requirement": "掌握导数计算、导数应用(单调性、极值、切线)及中值定理",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m3-3",
+      "subjectId": "s-m3",
+      "name": "一元函数积分学",
+      "order": 2,
+      "requirement": "掌握不定积分与定积分的计算及简单应用",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-m3-4",
+      "subjectId": "s-m3",
+      "name": "常微分方程(简单要求)",
+      "order": 3,
+      "requirement": "掌握一阶常微分方程的解法",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-zz-1",
+      "subjectId": "s-zz",
+      "name": "马克思主义基本原理",
+      "order": 0,
+      "requirement": "掌握唯物辩证法与认识论的基本原理",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-zz-2",
+      "subjectId": "s-zz",
+      "name": "毛泽东思想和中国特色社会主义理论体系",
+      "order": 1,
+      "requirement": "掌握各理论体系的形成条件、核心观点与历史地位",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-zz-3",
+      "subjectId": "s-zz",
+      "name": "习近平新时代中国特色社会主义思想",
+      "order": 2,
+      "requirement": "掌握核心要义、主要矛盾与总体布局(按最新文献更新)",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-zz-4",
+      "subjectId": "s-zz",
+      "name": "思想道德与法治 · 时事政治",
+      "order": 3,
+      "requirement": "掌握人生观、价值观、道德规范、法治思维与年度时政",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-eng-3",
+      "subjectId": "s1",
+      "name": "完形填空与翻译",
+      "order": 2,
+      "requirement": "掌握完形填空语篇分析法;完成常见句子的英汉互译",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-eng-4",
+      "subjectId": "s1",
+      "name": "写作",
+      "order": 3,
+      "requirement": "按要求撰写应用文与短文,格式规范、表达准确",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-cs-4",
+      "subjectId": "s3",
+      "name": "数据库与信息安全",
+      "order": 3,
+      "requirement": "掌握数据库基本概念与信息安全常识",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    },
+    {
+      "id": "c-cs-5",
+      "subjectId": "s3",
+      "name": "算法与程序设计基础",
+      "order": 4,
+      "requirement": "掌握算法概念、流程图与程序设计语言基础",
+      "source": "山东省教育招生考试院《公共基础课考试要求》;官方发布页 https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081(待核实细目)"
+    }
+  ],
+  "kps": [
+    {
+      "id": "k-yw-101",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "name": "字音字形与词语运用",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 25,
+      "concepts": "现代汉语常用字的规范读音与写法,近义词、成语的语境运用。",
+      "methods": "以读带记:易错字归类整理;成语结合语境判断褒贬与对象。",
+      "commonTypes": "选择题:加点字注音、错别字辨析、成语使用正误判断。",
+      "mistakes": "形近字混淆(如“稗/碑”);成语望文生义(如“文不加点”)。",
+      "sourceRef": "官方考试要求;具体字表待核实"
+    },
+    {
+      "id": "k-yw-102",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "name": "病句辨析与修改",
+      "order": 1,
+      "prerequisites": [
+        "字音字形与词语运用"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 35,
+      "concepts": "常见病句类型:语序不当、搭配不当、成分残缺或赘余、结构混乱、表意不明、不合逻辑。",
+      "methods": "紧缩法提取主干查搭配;标志词排查(并列短语、两面词、否定词、数量词)。",
+      "commonTypes": "选择题:选出没有语病的一项;修改病句。",
+      "mistakes": "并列成分顾此失彼;一面对两面;多重否定看错。",
+      "sourceRef": "官方考试要求;六类病句划分为通用归纳,待核实官方表述"
+    },
+    {
+      "id": "k-yw-103",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "name": "修辞与标点",
+      "order": 2,
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 2,
+      "estMinutes": 20,
+      "concepts": "比喻、比拟、夸张、排比、对偶、借代、设问、反问等常见修辞;常用标点的规范用法。",
+      "methods": "区分易混修辞(借代vs借喻、设问vs反问);标点抓句内层次。",
+      "commonTypes": "选择题:修辞手法判断、标点使用正误。",
+      "mistakes": "把借代当比喻;引号与句末点号的位置关系。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-yw-201",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "name": "中国古代文学常识",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "先秦散文、《诗经》与楚辞、汉赋与乐府、唐诗宋词、唐宋八大家、元曲、明清小说的代表作与文学流派。",
+      "methods": "按朝代时间轴整理“作家—作品—称号—名句”四联表;高频作家重点记忆。",
+      "commonTypes": "选择题:作家作品对应、名句出处、文学流派归类。",
+      "mistakes": "称号张冠李戴(诗仙/诗圣/诗鬼);作品与朝代错配。",
+      "sourceRef": "官方考试要求;高频作家清单待核实"
+    },
+    {
+      "id": "k-yw-202",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "name": "中国现当代文学常识",
+      "order": 1,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 25,
+      "concepts": "鲁迅、郭沫若、茅盾、巴金、老舍、曹禺等现代作家代表作;当代重要作品与文学现象。",
+      "methods": "记“作家—代表作—人物形象”三元组;重点作品记体裁与主题。",
+      "commonTypes": "选择题:作品与人物、作品与体裁对应。",
+      "mistakes": "《骆驼祥子》与《茶馆》作者混淆;体裁判断错误。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-yw-203",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "name": "外国文学常识",
+      "order": 2,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 25,
+      "concepts": "古希腊神话与史诗、文艺复兴、启蒙文学、批判现实主义及俄苏文学的代表作家作品。",
+      "methods": "按国别与流派分组记忆;四大名著级作品(如《荷马史诗》《哈姆雷特》)重点掌握。",
+      "commonTypes": "选择题:作家国别、作品主人公。",
+      "mistakes": "莫泊桑与欧·亨利短篇小说地位混淆;国别记错。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-yw-301",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-3",
+      "name": "文言实词与虚词",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 3,
+      "importance": 3,
+      "estMinutes": 45,
+      "concepts": "120 个常见实词的核心义项;“之、其、而、以、于、乃、则、焉”等虚词的主要用法。",
+      "methods": "代入法检验虚词用法;实词结合语境推断,积累课本经典例句。",
+      "commonTypes": "选择题:加点词意义判断、虚词用法比较。",
+      "mistakes": "古今异义按今义理解(如“妻子”“走”);虚词死记不辨语境。",
+      "sourceRef": "官方考试要求;指定篇目清单待核实"
+    },
+    {
+      "id": "k-yw-302",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-3",
+      "name": "文言句式与翻译",
+      "order": 1,
+      "prerequisites": [
+        "文言实词与虚词"
+      ],
+      "difficulty": 3,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "判断句、被动句、省略句、倒装句(宾语前置、状语后置、定语后置);直译为主、字字落实的翻译原则。",
+      "methods": "抓标志词识别句式;翻译按“留、删、补、换、调”五字法。",
+      "commonTypes": "翻译题;句式判断选择题。",
+      "mistakes": "漏译得分点实词;倒装句按现代语序硬译。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-yw-401",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-4",
+      "name": "现代文阅读答题方法",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 35,
+      "concepts": "整体感知、筛选整合、赏析表达技巧、概括主旨;作用题从内容与结构两方面作答。",
+      "methods": "按“观点+文本依据+效果”三步作答;作用题看位置(开头/中间/结尾)定结构作用。",
+      "commonTypes": "简答题:词句理解、段落在文中的作用、主旨概括。",
+      "mistakes": "脱离文本空谈术语;遗漏结构作用。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-yw-402",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-4",
+      "name": "议论文与记叙文写作",
+      "order": 1,
+      "prerequisites": [
+        "现代文阅读答题方法"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 45,
+      "concepts": "审题立意、结构布局(引论—本论—结论)、论据选择与论证方法;记叙文的细节与情感线。",
+      "methods": "立意求准求深:材料关键词法;积累时事与名言两类论据;议论文用“是什么—为什么—怎么办”骨架。",
+      "commonTypes": "材料作文(约 50 分量级,分值以当年试卷为准)。",
+      "mistakes": "偏离材料关键词;论据陈旧堆砌;结构松散无分论点。",
+      "sourceRef": "官方考试要求;分值待核实当年试卷"
+    },
+    {
+      "id": "k-m1-101",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-1",
+      "name": "函数与定义域",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 25,
+      "concepts": "函数三要素(定义域、对应法则、值域);复合函数与反函数;基本初等函数的性质与图像。",
+      "formulas": "$y=\\ln x$ 定义域 $x>0$;$y=\\sqrt{x}$ 定义域 $x\\ge 0$;$y=a^x$($a>0,a\\ne1$)。",
+      "methods": "求定义域列不等式组:分母非零、真数大于零、偶次根号下非负。",
+      "commonTypes": "求定义域;判断奇偶性、单调性;求函数表达式。",
+      "mistakes": "忽略复合函数内层限制;反函数与倒数混淆。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-102",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-1",
+      "name": "极限计算与两个重要极限",
+      "order": 1,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "函数与定义域"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "极限四则运算、无穷小等价替换、两个重要极限、洛必达法则;单侧极限与间断点分类。",
+      "formulas": "$\\lim_{x\\to0}\\frac{\\sin x}{x}=1$;$\\lim_{x\\to\\infty}(1+\\frac1x)^x=e$;$\\sin x\\sim x,\\ 1-\\cos x\\sim \\tfrac12 x^2\\ (x\\to0)$。",
+      "methods": "先化简(因式分解、有理化)再代入;“零比零”型用洛必达或等价替换;$1^\\infty$ 型凑第二重要极限。",
+      "commonTypes": "计算极限;由极限求参数;间断点判别。",
+      "mistakes": "等价替换用于加减项随意展开;忘记验证左右极限。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-103",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-1",
+      "name": "连续与间断点",
+      "order": 2,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "极限计算与两个重要极限"
+      ],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 25,
+      "concepts": "连续的定义 $\\lim_{x\\to x_0}f(x)=f(x_0)$;间断点分类(第一类可去/跳跃,第二类无穷/振荡)。",
+      "formulas": "可去间断点:极限存在但不等于函数值;跳跃间断点:左右极限存在但不相等。",
+      "methods": "求左右极限对照分类;分段函数端点用连续性求参数。",
+      "commonTypes": "判断间断点类型;由连续性确定参数。",
+      "mistakes": "混淆跳跃与可去;振荡间断点误判为无穷。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-201",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "name": "导数计算与求导法则",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "函数与定义域"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "导数定义、四则与复合求导法则、隐函数与参数方程求导、高阶导数。",
+      "formulas": "$(x^n)'=nx^{n-1}$;$(e^x)'=e^x$;$(\\ln x)'=1/x$;$(uv)'=u'v+uv'$;链式法则 $y'=f'(u)\\cdot u'$。",
+      "methods": "复合函数由外向内逐层求导;隐函数两边对 $x$ 求导后解出 $y'$。",
+      "commonTypes": "求指定点导数;隐函数/参数方程求导;求切线方程。",
+      "mistakes": "复合函数漏乘内层导数;积商法则次序颠倒。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-202",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "name": "导数应用:单调性、极值与凹凸",
+      "order": 1,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "导数计算与求导法则"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "用 $f'$ 判单调与极值,用 $f''$ 判凹凸与拐点;最值问题;函数图像描绘。",
+      "formulas": "极值必要条件 $f'(x_0)=0$;拐点候选 $f''(x_0)=0$。",
+      "methods": "列表讨论:解 $f'=0$ 分区间看符号;应用题先建目标函数再求最值。",
+      "commonTypes": "求单调区间与极值;求凹凸区间与拐点;实际最值应用题。",
+      "mistakes": "驻点不一定是极值点;最值忘记比较端点。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-203",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "name": "微分中值定理",
+      "order": 2,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "导数计算与求导法则"
+      ],
+      "difficulty": 3,
+      "importance": 2,
+      "estMinutes": 35,
+      "concepts": "罗尔定理、拉格朗日中值定理、柯西中值定理的条件、结论与联系。",
+      "formulas": "拉格朗日:$f(b)-f(a)=f'(\\xi)(b-a)$,$\\xi\\in(a,b)$。",
+      "methods": "证明题构造辅助函数:从目标式逆推(常设 $F=e^{-\\lambda x}g(x)$ 型)。",
+      "commonTypes": "用中值定理证明等式/不等式;证明方程根的存在性。",
+      "mistakes": "忽略闭区间连续、开区间可导的条件验证。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-301",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-3",
+      "name": "不定积分计算",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "导数计算与求导法则"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "原函数与不定积分概念;第一类换元(凑微分)、第二类换元、分部积分。",
+      "formulas": "$\\int x^a dx=\\frac{x^{a+1}}{a+1}+C$;$\\int e^x dx=e^x+C$;$\\int \\frac1x dx=\\ln|x|+C$;分部 $\\int u\\,dv=uv-\\int v\\,du$。",
+      "methods": "凑微分优先;幂指函数与反三角用分部(u 取对数、反三角);三角有理式化简。",
+      "commonTypes": "计算不定积分;积分等式证明。",
+      "mistakes": "忘记常数 $C$;分部 $u,v$ 选取不当越积越繁。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-302",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-3",
+      "name": "定积分及其应用",
+      "order": 1,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "不定积分计算"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "牛顿—莱布尼茨公式、换元与分部在定积分中的用法;平面图形面积、旋转体体积。",
+      "formulas": "$\\int_a^b f(x)dx=F(b)-F(a)$;面积 $S=\\int_a^b|f-g|dx$;绕 $x$ 轴旋转体 $V=\\pi\\int_a^b f^2 dx$。",
+      "methods": "画图定交点选积分变量;对称性简化计算。",
+      "commonTypes": "计算定积分;求面积与旋转体体积;变限积分求导。",
+      "mistakes": "上下限随换元忘记变换;面积忘记取绝对值。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-401",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-4",
+      "name": "一阶微分方程",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "不定积分计算"
+      ],
+      "difficulty": 3,
+      "importance": 2,
+      "estMinutes": 35,
+      "concepts": "可分离变量方程、齐次方程、一阶线性方程及其通解结构。",
+      "formulas": "一阶线性 $y'+P(x)y=Q(x)$ 通解 $y=e^{-\\int P dx}\\left(\\int Q e^{\\int P dx}dx+C\\right)$。",
+      "methods": "先判型再求解:能分离就分离;线性方程套公式或用常数变易法。",
+      "commonTypes": "解一阶方程;由通解反求方程。",
+      "mistakes": "$P(x)$ 符号弄反;忘记加任意常数。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-501",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-5",
+      "name": "向量运算与平面方程",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 30,
+      "concepts": "向量加减、数量积、向量积;平面与直线的方程形式及位置关系。",
+      "formulas": "$\\vec a\\cdot\\vec b=|\\vec a||\\vec b|\\cos\\theta$;平面点法式 $A(x-x_0)+B(y-y_0)+C(z-z_0)=0$。",
+      "methods": "求平面找法向量(常取两向量叉积);判断位置关系看方向向量与法向量关系。",
+      "commonTypes": "求平面/直线方程;求夹角与距离。",
+      "mistakes": "数量积与向量积结果类型混淆;法向量求错方向。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-601",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-6",
+      "name": "偏导数与全微分",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "导数计算与求导法则"
+      ],
+      "difficulty": 3,
+      "importance": 3,
+      "estMinutes": 35,
+      "concepts": "偏导数定义与计算、复合函数链式法则、隐函数求导、全微分;二元函数极值(必要条件)。",
+      "formulas": "$dz=\\frac{\\partial z}{\\partial x}dx+\\frac{\\partial z}{\\partial y}dy$;极值必要条件 $f_x=f_y=0$。",
+      "methods": "对某一变量求偏导时把其余变量当常数;复合函数画链式图逐支相乘。",
+      "commonTypes": "求一阶/二阶偏导;求全微分;隐函数偏导。",
+      "mistakes": "二阶混合偏导次序处理不当;链式法则漏支路。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-701",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-7",
+      "name": "二重积分计算",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "偏导数与全微分",
+        "定积分及其应用"
+      ],
+      "difficulty": 3,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "直角坐标与极坐标下的二重积分;累次积分交换次序;对称性化简。",
+      "formulas": "$\\iint_D f\\,d\\sigma=\\int_a^b dx\\int_{y_1(x)}^{y_2(x)} f\\,dy$;极坐标 $d\\sigma=r\\,dr\\,d\\theta$。",
+      "methods": "先画区域定上下限;圆域或含 $x^2+y^2$ 用极坐标;被积函数有奇偶性先看对称。",
+      "commonTypes": "化累次积分并计算;交换积分次序;求区域面积/体积。",
+      "mistakes": "极坐标忘记乘 $r$;内外层积分限写反。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-801",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-8",
+      "name": "数项级数敛散性",
+      "order": 0,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "极限计算与两个重要极限"
+      ],
+      "difficulty": 3,
+      "importance": 2,
+      "estMinutes": 35,
+      "concepts": "级数收敛定义与必要条件;正项级数比较/比值/根值判别法;交错级数莱布尼茨判别法;绝对收敛与条件收敛。",
+      "formulas": "收敛必要条件 $\\lim_{n\\to\\infty}u_n=0$;比值法 $\\lim\\frac{u_{n+1}}{u_n}=\\rho<1$ 收敛。",
+      "methods": "先看必要条件;正项级数按通项形式选判别法;$p$-级数 $\\sum 1/n^p$ 当参照。",
+      "commonTypes": "判断敛散性;判断绝对/条件收敛。",
+      "mistakes": "把必要条件当充分条件;条件收敛与绝对收敛判定顺序错。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m1-802",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-8",
+      "name": "幂级数与函数展开",
+      "order": 1,
+      "applicableCategories": [
+        "gj1"
+      ],
+      "prerequisites": [
+        "数项级数敛散性"
+      ],
+      "difficulty": 3,
+      "importance": 2,
+      "estMinutes": 35,
+      "concepts": "收敛半径与收敛域;幂级数逐项求导/积分性质;常用函数的麦克劳林展开。",
+      "formulas": "$e^x=\\sum_{n=0}^{\\infty}\\frac{x^n}{n!}$;$\\frac1{1-x}=\\sum x^n,|x|<1$;收敛半径 $R=\\lim|\\frac{a_n}{a_{n+1}}|$。",
+      "methods": "先求收敛半径再单独验证端点;借已知展开式逐项求导/积分得新展开。",
+      "commonTypes": "求收敛域;求和函数;展开为幂级数。",
+      "mistakes": "端点收敛性漏验;逐项积分忘加常数。",
+      "sourceRef": "高数Ⅰ官方考试要求"
+    },
+    {
+      "id": "k-m2-101",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-1",
+      "name": "函数与极限(基础要求)",
+      "order": 0,
+      "applicableCategories": [
+        "gj2"
+      ],
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 30,
+      "concepts": "函数概念与性质、定义域;极限四则运算与两个重要极限(以基础计算为主)。",
+      "formulas": "$\\lim_{x\\to0}\\frac{\\sin x}{x}=1$;$\\lim_{x\\to\\infty}(1+\\frac1x)^x=e$。",
+      "methods": "直接代入为主,不能代入时因式分解或有理化消零因子。",
+      "commonTypes": "求定义域;计算基础极限。",
+      "mistakes": "与高数Ⅰ相比:不深究严格定义与复杂技巧,但基础计算必须零失误。",
+      "sourceRef": "高数Ⅱ官方考试要求;章节范围经机构大纲转载印证,细目待核实"
+    },
+    {
+      "id": "k-m2-201",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-2",
+      "name": "导数计算与几何应用",
+      "order": 0,
+      "applicableCategories": [
+        "gj2"
+      ],
+      "prerequisites": [
+        "函数与极限(基础要求)"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "求导法则与基本公式、复合函数求导、单调性与极值、切线方程。",
+      "formulas": "$(uv)'=u'v+uv'$;切线 $y-y_0=f'(x_0)(x-x_0)$。",
+      "methods": "求导列公式表熟记;应用题列表看 $f'$ 符号定极值。",
+      "commonTypes": "求导数;求切线;求单调区间与极值。",
+      "mistakes": "复合函数漏层;极值忘检验。",
+      "sourceRef": "高数Ⅱ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m2-301",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-3",
+      "name": "积分计算与简单应用",
+      "order": 0,
+      "applicableCategories": [
+        "gj2"
+      ],
+      "prerequisites": [
+        "导数计算与几何应用"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "基本积分公式、换元积分法、分部积分法;定积分计算与平面图形面积。",
+      "formulas": "$\\int_a^b f=F(b)-F(a)$;$S=\\int_a^b|f-g|dx$。",
+      "methods": "先套基本公式;含乘积凑微分;面积题先画图定限。",
+      "commonTypes": "计算不定积分与定积分;求简单图形面积。",
+      "mistakes": "定积分换元忘换限;结果漏 $C$。",
+      "sourceRef": "高数Ⅱ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m2-401",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-4",
+      "name": "偏导数与简单二重积分",
+      "order": 0,
+      "applicableCategories": [
+        "gj2"
+      ],
+      "prerequisites": [
+        "积分计算与简单应用"
+      ],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 35,
+      "concepts": "二元函数偏导数与全微分的计算;直角坐标下的简单二重积分。",
+      "formulas": "$dz=z_x dx+z_y dy$。",
+      "methods": "偏导“求谁导谁,其余当常数”;二重积分先内后外逐层算。",
+      "commonTypes": "求偏导与全微分;计算矩形/简单区域上的二重积分。",
+      "mistakes": "与高数Ⅰ相比范围更浅:极坐标与交换次序要求低,以基础型为主。",
+      "sourceRef": "高数Ⅱ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m2-501",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-5",
+      "name": "一阶常微分方程",
+      "order": 0,
+      "applicableCategories": [
+        "gj2"
+      ],
+      "prerequisites": [
+        "积分计算与简单应用"
+      ],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 30,
+      "concepts": "可分离变量方程与一阶线性方程的解法。",
+      "formulas": "$y'+P(x)y=Q(x)$ 通解公式。",
+      "methods": "判型→分离或套公式→写通解。",
+      "commonTypes": "解可分离变量方程;解一阶线性方程。",
+      "mistakes": "积分因子计算出错;漏常数 $C$。",
+      "sourceRef": "高数Ⅱ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m3-101",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-1",
+      "name": "函数与极限(最基础)",
+      "order": 0,
+      "applicableCategories": [
+        "gj3"
+      ],
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 25,
+      "concepts": "函数值计算、定义域、直接代入型与可消因子型极限。",
+      "formulas": "$\\lim_{x\\to0}\\frac{\\sin x}{x}=1$。",
+      "methods": "以直接计算为主;消零因子后代入。",
+      "commonTypes": "求定义域;算简单极限。",
+      "mistakes": "与高数Ⅰ/Ⅱ相比不考中值类技巧;把复习重心放在计算准确率上。",
+      "sourceRef": "高数Ⅲ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m3-201",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-2",
+      "name": "导数与基础应用",
+      "order": 0,
+      "applicableCategories": [
+        "gj3"
+      ],
+      "prerequisites": [
+        "函数与极限(最基础)"
+      ],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 30,
+      "concepts": "基本求导公式、四则与简单复合求导;切线斜率与单调性初步。",
+      "formulas": "$(x^n)'=nx^{n-1}$。",
+      "methods": "背熟公式表;按步骤求导代入。",
+      "commonTypes": "求导数;求切线斜率。",
+      "mistakes": "公式记忆混串(幂/指数);计算马虎。",
+      "sourceRef": "高数Ⅲ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m3-301",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-3",
+      "name": "积分基础计算",
+      "order": 0,
+      "applicableCategories": [
+        "gj3"
+      ],
+      "prerequisites": [
+        "导数与基础应用"
+      ],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 30,
+      "concepts": "基本积分公式与直接积分法;简单定积分计算。",
+      "formulas": "$\\int x^a dx=\\frac{x^{a+1}}{a+1}+C$。",
+      "methods": "套公式为主;会一次凑微分即可。",
+      "commonTypes": "算不定积分;算简单定积分。",
+      "mistakes": "漏 $C$;上下限代入颠倒。",
+      "sourceRef": "高数Ⅲ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-m3-401",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-4",
+      "name": "可分离变量方程",
+      "order": 0,
+      "applicableCategories": [
+        "gj3"
+      ],
+      "prerequisites": [
+        "积分基础计算"
+      ],
+      "difficulty": 2,
+      "importance": 1,
+      "estMinutes": 25,
+      "concepts": "可分离变量方程的最基本解法(仅作简单要求)。",
+      "methods": "移项分离变量,两边积分。",
+      "commonTypes": "解一个可分离变量方程。",
+      "mistakes": "分离时符号错;忘记通解常数。",
+      "sourceRef": "高数Ⅲ官方考试要求;细目待核实"
+    },
+    {
+      "id": "k-zz-101",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-1",
+      "name": "唯物辩证法核心(对立统一规律)",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 35,
+      "concepts": "矛盾的同一性与斗争性、普遍性与特殊性;主要矛盾与次要矛盾;两点论与重点论。",
+      "methods": "原理+方法论成对记忆;材料分析题按“原理—材料对应—意义”三段作答。",
+      "commonTypes": "选择题;材料分析题。",
+      "mistakes": "只答原理不结合材料;混淆矛盾的普遍性与特殊性。",
+      "sourceRef": "官方考试要求;表述以最新版教材为准,待核实"
+    },
+    {
+      "id": "k-zz-102",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-1",
+      "name": "认识论与真理观",
+      "order": 1,
+      "prerequisites": [
+        "唯物辩证法核心(对立统一规律)"
+      ],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 30,
+      "concepts": "实践与认识的辩证关系;认识的两次飞跃;真理的绝对性与相对性;实践是检验真理的唯一标准。",
+      "methods": "记“实践→认识→再实践”循环图;结合科学发现类材料理解。",
+      "commonTypes": "选择题;简答题。",
+      "mistakes": "两次飞跃的起点终点记反。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-zz-201",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-2",
+      "name": "新民主主义革命理论",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 30,
+      "concepts": "新民主主义革命的总路线、三大法宝(统一战线、武装斗争、党的建设)、革命道路。",
+      "methods": "时间轴+事件意义对照记忆。",
+      "commonTypes": "选择题;简述题。",
+      "mistakes": "三大法宝内容记漏;革命阶段划分混乱。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-zz-202",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-2",
+      "name": "中国特色社会主义理论体系",
+      "order": 1,
+      "prerequisites": [
+        "新民主主义革命理论"
+      ],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 30,
+      "concepts": "邓小平理论、“三个代表”重要思想、科学发展观的形成条件、核心观点与历史地位。",
+      "methods": "按“回答了什么问题—核心内容—意义”三要素列表记忆。",
+      "commonTypes": "选择题。",
+      "mistakes": "各理论回答的核心问题张冠李戴。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-zz-301",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "name": "习近平新时代中国特色社会主义思想(核心要义)",
+      "order": 0,
+      "prerequisites": [
+        "中国特色社会主义理论体系"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "“十个明确”“十四个坚持”基本方略;新时代我国社会主要矛盾;“五位一体”总体布局与“四个全面”战略布局。",
+      "methods": "框架记忆:一个主题(中国特色社会主义)+主要矛盾+总体布局;结合最新大会表述更新。",
+      "commonTypes": "选择题;材料分析题(常与时政结合)。",
+      "mistakes": "主要矛盾表述背旧版;“十个明确”与“十四个坚持”混淆。",
+      "sourceRef": "官方考试要求;表述须随党的最新文献更新,待核实当年版本"
+    },
+    {
+      "id": "k-zz-401",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-4",
+      "name": "思想道德与法治基础",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 30,
+      "concepts": "人生观与理想信念;社会主义核心价值观;道德规范;法治思维与基本法律常识。",
+      "methods": "按“思想—道德—法治”三块整理高频考点;结合榜样案例。",
+      "commonTypes": "选择题;材料分析题。",
+      "mistakes": "法治与法制表述混用;核心价值观三个层面层次错位。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-zz-402",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-4",
+      "name": "时事政治(年度更新)",
+      "order": 1,
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 20,
+      "concepts": "考试年度内国内外重大时事:重要会议、重大成就、科技与民生热点。",
+      "methods": "考前 2 个月集中梳理年度时政清单;关注官方媒体年度总结。",
+      "commonTypes": "选择题。",
+      "mistakes": "背过时旧闻;时间范围把握错(一般考查考前一年内)。",
+      "sourceRef": "官方考试要求;年度范围待核实,考前按当年时政更新"
+    },
+    {
+      "id": "k-eng-301",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "name": "完形填空解题方法",
+      "order": 0,
+      "prerequisites": [
+        "核心词汇"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 35,
+      "concepts": "通读全文把握主旨;利用上下文复现、同现关系与逻辑词定位答案。",
+      "methods": "三步法:跳读明主旨→逐空结合前后句→代入复读检查逻辑与搭配。",
+      "commonTypes": "完形填空(四选一)。",
+      "mistakes": "只看空格所在句,不看篇章逻辑;先入为主不改初选。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-eng-302",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "name": "常见固定搭配",
+      "order": 1,
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 3,
+      "estMinutes": 30,
+      "concepts": "动词短语(take in / make up / put off)、介词搭配(be interested in)、常考词组。",
+      "methods": "按动词/介词归类卡片记忆;在句子中记搭配而非孤立背词表。",
+      "commonTypes": "选择题:短语辨析。",
+      "mistakes": "形近短语混淆(turn up / turn down / turn out)。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-eng-303",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "name": "词根词缀记忆法",
+      "order": 2,
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 2,
+      "estMinutes": 25,
+      "concepts": "常见词根(spect 看、dict 说、port 搬运)与前缀(un-/re-/dis-)后缀(-tion/-able/-ify)。",
+      "methods": "一个词根串一串词;猜词义时先拆前后缀再看词根。",
+      "commonTypes": "词汇题:根据词根猜词义。",
+      "mistakes": "过度依赖猜词不查证;前缀否定意义忽略。",
+      "sourceRef": "通用学习方法,供参考"
+    },
+    {
+      "id": "k-eng-401",
+      "subjectId": "s1",
+      "chapterId": "c-eng-4",
+      "name": "应用文与议论文写作模板",
+      "order": 0,
+      "prerequisites": [
+        "常见固定搭配"
+      ],
+      "difficulty": 2,
+      "importance": 3,
+      "estMinutes": 40,
+      "concepts": "书信(邀请/建议/感谢)格式;议论文三段式(观点—论证—总结);衔接词使用。",
+      "methods": "背三类功能句(开头、过渡、结尾);每周限时仿写一篇并对照范文修改。",
+      "commonTypes": "写作题(应用文或短文)。",
+      "mistakes": "格式缺项(称呼/落款);中式英语直译;跑题。",
+      "sourceRef": "官方考试要求;字数与分值待核实当年试卷"
+    },
+    {
+      "id": "k-cs-401",
+      "subjectId": "s3",
+      "chapterId": "c-cs-4",
+      "name": "数据库基础概念",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 25,
+      "concepts": "数据库、数据库管理系统(DBMS);关系型数据以二维表组织;记录、字段、主键;常见关系运算。",
+      "methods": "用“表—行—列”对应“记录—字段”记忆;对比 Excel 理解主键唯一性。",
+      "commonTypes": "选择题:基本概念与主键判断。",
+      "mistakes": "混淆 DBMS 与数据库应用软件;主键唯一性理解不足。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-cs-402",
+      "subjectId": "s3",
+      "chapterId": "c-cs-4",
+      "name": "信息安全与病毒防范",
+      "order": 1,
+      "prerequisites": [],
+      "difficulty": 1,
+      "importance": 2,
+      "estMinutes": 20,
+      "concepts": "信息安全要素(机密性、完整性、可用性);计算机病毒特征与传播途径;基本防范措施。",
+      "methods": "记病毒特征口诀(传染、隐蔽、潜伏、破坏、可触发);防范三件套(杀毒软件、补丁、备份)。",
+      "commonTypes": "选择题、判断题。",
+      "mistakes": "认为装了杀毒软件就绝对安全;混淆病毒与木马边界表述。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-cs-501",
+      "subjectId": "s3",
+      "chapterId": "c-cs-5",
+      "name": "算法与流程图基础",
+      "order": 0,
+      "prerequisites": [],
+      "difficulty": 2,
+      "importance": 2,
+      "estMinutes": 25,
+      "concepts": "算法的有穷性、确定性、可行性、输入输出;结构化程序的三种基本结构;流程图符号。",
+      "methods": "拿生活流程(泡茶步骤)对照三种结构;跟踪简单流程图练习“人脑执行”。",
+      "commonTypes": "选择题;读流程图求输出。",
+      "mistakes": "循环结构出口条件看错;三种基本结构之外的“混乱结构”误认。",
+      "sourceRef": "官方考试要求,待核实"
+    },
+    {
+      "id": "k-cs-502",
+      "subjectId": "s3",
+      "chapterId": "c-cs-5",
+      "name": "程序设计语言基础",
+      "order": 1,
+      "prerequisites": [
+        "算法与流程图基础"
+      ],
+      "difficulty": 2,
+      "importance": 1,
+      "estMinutes": 20,
+      "concepts": "机器语言、汇编语言、高级语言的区别;源程序到可执行程序的翻译过程(编译/解释)。",
+      "methods": "表格对比三代语言;记“高级语言—翻译—机器可执行”主线。",
+      "commonTypes": "选择题。",
+      "mistakes": "编译与解释的产物差异混淆。",
+      "sourceRef": "官方考试要求,待核实"
+    }
+  ]
+}

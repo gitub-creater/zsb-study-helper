@@ -1,0 +1,3030 @@
+{
+  "questions": [
+    {
+      "id": "q101",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "kpId": "k-yw-101",
+      "type": "single",
+      "stem": "下列词语中没有错别字的一项是:",
+      "options": [
+        "谈笑风声",
+        "世外桃源",
+        "一愁莫展",
+        "迫不急待"
+      ],
+      "answer": "B",
+      "explanation": "第一步:逐项检查易错字。第二步:A 应为“谈笑风生”,“声”是错别字;C 应为“一筹莫展”,“筹”指筹码;D 应为“迫不及待”,“及”是到达之意。第三步:B“世外桃源”出自陶渊明《桃花源记》,书写正确。记忆技巧:记成语的本义来源,错别字自然少。",
+      "wrongAnalysis": "A 把“生”误写为“声”;C 把“筹”误写为“愁”;D 把“及”误写为“急”,属于同音字误代。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "错别字"
+      ]
+    },
+    {
+      "id": "q102",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "kpId": "k-yw-102",
+      "type": "single",
+      "stem": "下列句子没有语病的一项是:",
+      "options": [
+        "通过这次活动,使我们增强了环保意识。",
+        "能否刻苦学习,是取得好成绩的关键。",
+        "我们要认真克服并善于发现工作中的问题。",
+        "他基本上把拖延的坏习惯改掉了。"
+      ],
+      "answer": "D",
+      "explanation": "第一步:A 滥用介词“通过……使……”导致句子缺主语,应删去其一。第二步:B“能否”两面词与“取得好成绩”一面对一面,不对应。第三步:C 语序不当,应先“发现”后“克服”。第四步:D 表意清楚,无语病。",
+      "wrongAnalysis": "A 成分残缺(缺主语);B 不合逻辑(两面对一面);C 语序不当(先发现才能克服)。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "病句"
+      ]
+    },
+    {
+      "id": "q103",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "single",
+      "stem": "被称为“诗圣”的唐代诗人是:",
+      "options": [
+        "李白",
+        "杜甫",
+        "白居易",
+        "王维"
+      ],
+      "answer": "B",
+      "explanation": "杜甫的诗沉郁顿挫、忧国忧民,被誉为“诗圣”,其诗被称为“诗史”。李白是“诗仙”,白居易号香山居士,王维被称为“诗佛”。口诀:仙白圣杜佛王维。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "文学常识"
+      ]
+    },
+    {
+      "id": "q104",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-3",
+      "kpId": "k-yw-301",
+      "type": "single",
+      "stem": "下列句子中,“之”作结构助词“的”解释的一项是:",
+      "options": [
+        "何陋之有?",
+        "水陆草木之花。",
+        "久之,目似瞑。",
+        "辍耕之垄上。"
+      ],
+      "answer": "B",
+      "explanation": "第一步:逐句判断用法。第二步:B“水陆草木之花”中“之”译为“的”,是结构助词。第三步:A 是宾语前置的标志;C 是音节助词,不译;D 是动词“到、往”。判断方法:能顺利翻译成“的”且前后为修饰关系时,是结构助词。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "文言虚词"
+      ]
+    },
+    {
+      "id": "q105",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-4",
+      "kpId": "k-yw-401",
+      "type": "judge",
+      "stem": "判断:分析段落在文中的作用时,只需从内容方面考虑,不必考虑结构。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "B",
+      "explanation": "作用题要从“内容+结构”两方面作答:内容上写了什么、表现了什么;结构上要看位置——开头常是总领/引出下文,中间是承上启下,结尾是总结全文/深化主旨。只答内容会丢一半分。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "答题方法"
+      ]
+    },
+    {
+      "id": "q106",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-4",
+      "kpId": "k-yw-402",
+      "type": "single",
+      "stem": "材料作文动笔之前,最关键的第一步是:",
+      "options": [
+        "直接套用背过的范文",
+        "抓住材料关键词,准确审题立意",
+        "先堆砌名人名言",
+        "写下想到的第一句话"
+      ],
+      "answer": "B",
+      "explanation": "审题立意决定作文等级:抓住材料中的关键词与逻辑关系,提炼出准确、深刻的中心论点,再谋篇布局。跑题的作文语言再好也难及格。正确顺序是:审题立意→拟题列提纲→行文→检查。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "写作"
+      ]
+    },
+    {
+      "id": "q201",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-1",
+      "kpId": "k-m1-102",
+      "type": "single",
+      "stem": "计算极限:$\\lim_{x\\to0}\\dfrac{1-\\cos x}{x^{2}}$",
+      "options": [
+        "0",
+        "$\\dfrac{1}{2}$",
+        "1",
+        "2"
+      ],
+      "answer": "B",
+      "explanation": "第一步:当 $x\\to0$ 时,这是 $\\frac00$ 型。第二步:使用等价无穷小 $1-\\cos x\\sim\\frac{1}{2}x^{2}$。第三步:原式 $=\\lim\\frac{\\frac12x^{2}}{x^{2}}=\\frac12$。也可用洛必达法则或半角公式 $1-\\cos x=2\\sin^{2}\\frac{x}{2}$ 验证,结果一致。",
+      "wrongAnalysis": "选 C 是误用了 $\\sin x\\sim x$ 直接把 $\\sin\\frac x2$ 当成 $\\frac x2$ 却丢了系数;选 D 是半角公式展开时系数算错。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "hot": true,
+      "tags": [
+        "等价替换"
+      ]
+    },
+    {
+      "id": "q202",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "kpId": "k-m1-201",
+      "type": "single",
+      "stem": "设 $f(x)=x\\ln x$,则 $f'(1)=$ ?",
+      "options": [
+        "0",
+        "1",
+        "e",
+        "2"
+      ],
+      "answer": "B",
+      "explanation": "第一步:用乘积法则,$f'(x)=1\\cdot\\ln x+x\\cdot\\frac1x=\\ln x+1$。第二步:代入 $x=1$,得 $f'(1)=\\ln 1+1=0+1=1$。",
+      "wrongAnalysis": "选 A 是只求了 $\\ln 1=0$ 而漏掉第二项;选 C 是把导数错算成 $\\ln x+x$ 后代入 $e$ 处的值。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "乘积法则"
+      ]
+    },
+    {
+      "id": "q203",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "kpId": "k-m1-202",
+      "type": "single",
+      "stem": "函数 $f(x)=x^{3}-3x$ 的极大值为:",
+      "options": [
+        "-2",
+        "0",
+        "2",
+        "3"
+      ],
+      "answer": "C",
+      "explanation": "第一步:$f'(x)=3x^{2}-3$,令 $f'=0$ 得 $x=\\pm1$。第二步:$x<-1$ 时 $f'>0$ 增,$-1<x<1$ 时 $f'<0$ 减,故 $x=-1$ 处取极大值。第三步:$f(-1)=-1+3=2$。",
+      "wrongAnalysis": "选 A 是把极小值 $f(1)=-2$ 当成了极大值;选 B 是只把驻点当成了极值。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "hot": true,
+      "tags": [
+        "极值"
+      ]
+    },
+    {
+      "id": "q204",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-1",
+      "kpId": "k-m1-103",
+      "type": "single",
+      "stem": "函数 $f(x)=\\dfrac{\\sin x}{x}$ 在 $x=0$ 处的间断点是:",
+      "options": [
+        "可去间断点",
+        "跳跃间断点",
+        "无穷间断点",
+        "振荡间断点"
+      ],
+      "answer": "A",
+      "explanation": "第一步:$f(x)$ 在 $x=0$ 处无定义,是间断点。第二步:$\\lim_{x\\to0}\\frac{\\sin x}{x}=1$,极限存在。第三步:极限存在但函数值不存在的间断点属于第一类中的可去间断点(补充定义 $f(0)=1$ 即可连续)。",
+      "wrongAnalysis": "选 B 需要左右极限都存在但不相等;选 C 需要极限为无穷,这里极限是 1。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "间断点"
+      ]
+    },
+    {
+      "id": "q205",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-4",
+      "kpId": "k-m1-401",
+      "type": "single",
+      "stem": "方程 $y'+2y=0$ 的通解为:",
+      "options": [
+        "$y=Ce^{2x}$",
+        "$y=Ce^{-2x}$",
+        "$y=e^{-2x}+C$",
+        "$y=-2x+C$"
+      ],
+      "answer": "B",
+      "explanation": "第一步:这是一阶线性齐次方程 $y'+P(x)y=0$,$P(x)=2$。第二步:通解 $y=Ce^{-\\int P dx}=Ce^{-2x}$。第三步:验证:$y'= -2Ce^{-2x}$,$y'+2y=-2Ce^{-2x}+2Ce^{-2x}=0$,成立。",
+      "wrongAnalysis": "选 A 是积分符号弄反;选 C 误把常数 $C$ 加在外面,形式不是指数型。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "微分方程"
+      ]
+    },
+    {
+      "id": "q206",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-6",
+      "kpId": "k-m1-601",
+      "type": "single",
+      "stem": "设 $z=x^{2}y$,则 $\\left.\\dfrac{\\partial z}{\\partial x}\\right|_{(1,2)}=$ ?",
+      "options": [
+        "2",
+        "4",
+        "$2y$",
+        "$4x$"
+      ],
+      "answer": "B",
+      "explanation": "第一步:对 $x$ 求偏导时把 $y$ 看作常数,$\\frac{\\partial z}{\\partial x}=2xy$。第二步:代入点 $(1,2)$,得 $2\\times1\\times2=4$。",
+      "wrongAnalysis": "选 C 是只写出了偏导函数没代值;选 A 是把 $y$ 当成了 1。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "偏导数"
+      ]
+    },
+    {
+      "id": "q207",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-7",
+      "kpId": "k-m1-701",
+      "type": "single",
+      "stem": "计算:$\\int_{0}^{1}dx\\int_{0}^{1}xy\\,dy=$ ?",
+      "options": [
+        "$\\dfrac{1}{2}$",
+        "$\\dfrac{1}{4}$",
+        "1",
+        "$\\dfrac{3}{4}$"
+      ],
+      "answer": "B",
+      "explanation": "第一步:积分区域是单位正方形,被积函数可分离。第二步:$\\int_0^1 x\\,dx=\\frac12$,$\\int_0^1 y\\,dy=\\frac12$。第三步:原式 $=\\frac12\\times\\frac12=\\frac14$。",
+      "wrongAnalysis": "选 A 是只算了一个方向的积分;选 D 是把 1 加进了运算。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "二重积分"
+      ]
+    },
+    {
+      "id": "q208",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-8",
+      "kpId": "k-m1-801",
+      "type": "single",
+      "stem": "级数 $\\sum_{n=1}^{\\infty}\\dfrac{1}{n^{2}}$ 的敛散性为:",
+      "options": [
+        "发散",
+        "条件收敛",
+        "绝对收敛",
+        "无法判断"
+      ],
+      "answer": "C",
+      "explanation": "第一步:这是 $p$-级数 $\\sum\\frac{1}{n^{p}}$,$p=2$。第二步:$p>1$ 时 $p$-级数收敛。第三步:正项级数收敛即绝对收敛,故选 C。对比:$\\sum\\frac1n$($p=1$)发散,是常考易错对照。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "hot": true,
+      "tags": [
+        "级数"
+      ]
+    },
+    {
+      "id": "q301",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-1",
+      "kpId": "k-m2-101",
+      "type": "single",
+      "stem": "计算极限:$\\lim_{x\\to3}\\dfrac{x^{2}-9}{x-3}=$ ?",
+      "options": [
+        "0",
+        "3",
+        "6",
+        "∞"
+      ],
+      "answer": "C",
+      "explanation": "第一步:$x\\to3$ 时分子分母都趋于 0,是 $\\frac00$ 型,不能直接代入。第二步:因式分解 $x^{2}-9=(x-3)(x+3)$,约去零因子 $x-3$。第三步:原式 $=\\lim(x+3)=6$。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "hot": true,
+      "tags": [
+        "极限"
+      ]
+    },
+    {
+      "id": "q302",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-2",
+      "kpId": "k-m2-201",
+      "type": "single",
+      "stem": "函数 $y=e^{2x}$ 的导数是:",
+      "options": [
+        "$e^{2x}$",
+        "$2e^{2x}$",
+        "$2xe^{2x}$",
+        "$\\dfrac{e^{2x}}{2}$"
+      ],
+      "answer": "B",
+      "explanation": "第一步:复合函数求导,外层 $(e^{u})'=e^{u}$,内层 $u=2x$。第二步:$y'=e^{2x}\\cdot(2x)'=2e^{2x}$。",
+      "wrongAnalysis": "选 A 是漏乘内层导数 2,这是复合函数求导最高频错误。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "导数"
+      ]
+    },
+    {
+      "id": "q303",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-3",
+      "kpId": "k-m2-301",
+      "type": "single",
+      "stem": "计算:$\\int_{0}^{1}3x^{2}\\,dx=$ ?",
+      "options": [
+        "1",
+        "3",
+        "0",
+        "$x^{3}$"
+      ],
+      "answer": "A",
+      "explanation": "第一步:原函数为 $x^{3}$。第二步:牛顿—莱布尼茨公式 $\\int_0^1 3x^{2}dx=[x^{3}]_0^{1}=1-0=1$。几何意义:曲线 $y=3x^{2}$ 在 $[0,1]$ 下的面积恰好为 1。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "定积分"
+      ]
+    },
+    {
+      "id": "q304",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-4",
+      "kpId": "k-m2-401",
+      "type": "single",
+      "stem": "设 $z=x+y+xy$,则 $\\dfrac{\\partial z}{\\partial x}=$ ?",
+      "options": [
+        "1",
+        "$1+y$",
+        "$1+x$",
+        "$x+y$"
+      ],
+      "answer": "B",
+      "explanation": "第一步:对 $x$ 求偏导时,$y$ 与 $xy$ 中的 $y$ 都视为常数。第二步:$\\frac{\\partial}{\\partial x}(x)=1$,$\\frac{\\partial}{\\partial x}(y)=0$,$\\frac{\\partial}{\\partial x}(xy)=y$。第三步:合计 $1+y$。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "偏导数"
+      ]
+    },
+    {
+      "id": "q305",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-5",
+      "kpId": "k-m2-501",
+      "type": "single",
+      "stem": "方程 $\\dfrac{dy}{dx}=y$ 的通解为:",
+      "options": [
+        "$y=Ce^{x}$",
+        "$y=x+C$",
+        "$y=Cx$",
+        "$y=e^{x}+C$"
+      ],
+      "answer": "A",
+      "explanation": "第一步:分离变量,$\\frac{dy}{y}=dx$。第二步:两边积分,$\\ln|y|=x+C_1$。第三步:整理得 $y=Ce^{x}$($C\\ne0$;补充 $C=0$ 得 $y=0$ 也满足)。验证:$y=Ce^{x}$ 求导仍为 $Ce^{x}=y$,成立。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "微分方程"
+      ]
+    },
+    {
+      "id": "q401",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-1",
+      "kpId": "k-m3-101",
+      "type": "single",
+      "stem": "计算极限:$\\lim_{x\\to2}(x+3)=$ ?",
+      "options": [
+        "5",
+        "2",
+        "3",
+        "不存在"
+      ],
+      "answer": "A",
+      "explanation": "多项式函数在一点处的极限等于函数值:直接代入 $x=2$,$2+3=5$。高数Ⅲ以这类基础计算为主,关键是计算准确。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj3"
+      ],
+      "tags": [
+        "极限"
+      ]
+    },
+    {
+      "id": "q402",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-2",
+      "kpId": "k-m3-201",
+      "type": "single",
+      "stem": "函数 $y=5x^{2}$ 在 $x=3$ 处的导数为:",
+      "options": [
+        "10",
+        "15",
+        "30",
+        "45"
+      ],
+      "answer": "C",
+      "explanation": "第一步:先求导函数 $y'=10x$。第二步:代入 $x=3$,得 $y'(3)=30$。",
+      "wrongAnalysis": "选 B 是误用了 $5\\times3$;选 D 是代入了 $x^{2}=9$ 再乘 5,混淆了函数值与导数值。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj3"
+      ],
+      "tags": [
+        "导数"
+      ]
+    },
+    {
+      "id": "q403",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-3",
+      "kpId": "k-m3-301",
+      "type": "single",
+      "stem": "$\\int x^{2}\\,dx=$ ?",
+      "options": [
+        "$x^{3}$",
+        "$\\dfrac{x^{3}}{3}+C$",
+        "$3x^{3}+C$",
+        "$\\dfrac{x^{3}}{2}+C$"
+      ],
+      "answer": "B",
+      "explanation": "幂函数积分公式 $\\int x^{a}dx=\\frac{x^{a+1}}{a+1}+C$,$a=2$ 时得 $\\frac{x^{3}}{3}+C$。验算:对 $\\frac{x^{3}}{3}$ 求导得 $x^{2}$,正确。注意不定积分必须加常数 $C$。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj3"
+      ],
+      "tags": [
+        "积分"
+      ]
+    },
+    {
+      "id": "q404",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-4",
+      "kpId": "k-m3-401",
+      "type": "judge",
+      "stem": "判断:$y=Ce^{x}$($C$ 为任意常数)是方程 $y'=y$ 的通解。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "对 $y=Ce^{x}$ 求导得 $y'=Ce^{x}=y$,恒成立,且含一个任意常数(与方程阶数一致),故为通解。解法回顾:分离变量 $\\frac{dy}{y}=dx$,两边积分即得。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "categories": [
+        "gj3"
+      ],
+      "tags": [
+        "微分方程"
+      ]
+    },
+    {
+      "id": "q501",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-1",
+      "kpId": "k-zz-101",
+      "type": "single",
+      "stem": "矛盾问题的精髓是矛盾的:",
+      "options": [
+        "同一性和斗争性",
+        "普遍性和特殊性",
+        "主要方面和次要方面",
+        "内部矛盾和外部矛盾"
+      ],
+      "answer": "B",
+      "explanation": "第一步:矛盾普遍性与特殊性的辩证关系问题,是关于事物矛盾问题的精髓。第二步:普遍性寓于特殊性之中,特殊性包含普遍性,二者相互联结。第三步:这一原理是马克思主义普遍原理同中国具体实际相结合的哲学基础。",
+      "wrongAnalysis": "A 是矛盾的基本属性,不是“精髓”表述;C 用于分析矛盾发展的不平衡性。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "马原"
+      ]
+    },
+    {
+      "id": "q502",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-1",
+      "kpId": "k-zz-102",
+      "type": "single",
+      "stem": "认识过程的第二次飞跃是指:",
+      "options": [
+        "从实践到认识",
+        "从认识到实践",
+        "从感觉到知觉",
+        "从概念到判断"
+      ],
+      "answer": "B",
+      "explanation": "第一次飞跃:在实践基础上从感性认识上升到理性认识;第二次飞跃:把理性认识运用于实践、指导实践并接受检验——这次飞跃意义更重大。记忆:两次飞跃的起点都是实践相关环节,方向相反。",
+      "difficulty": 2,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "认识论"
+      ]
+    },
+    {
+      "id": "q503",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "kpId": "k-zz-301",
+      "type": "single",
+      "stem": "新时代我国社会主要矛盾是:",
+      "options": [
+        "人民日益增长的物质文化需要同落后的社会生产之间的矛盾",
+        "人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾",
+        "无产阶级和资产阶级之间的矛盾",
+        "经济发展与环境保护之间的矛盾"
+      ],
+      "answer": "B",
+      "explanation": "第一步:党的十九大指出,中国特色社会主义进入新时代,我国社会主要矛盾已经转化为人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾。第二步:A 是过去的旧表述,是最典型的易错干扰项。答题时注意“美好生活”“不平衡不充分”两个关键词。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "时政结合"
+      ]
+    },
+    {
+      "id": "q504",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-4",
+      "kpId": "k-zz-402",
+      "type": "judge",
+      "stem": "判断:时事政治部分一般考查考试年度前一年内国内外重大时事(具体时间范围以当年考试要求为准,此表述待核实)。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "时政通常覆盖考前一年内的重大会议、成就与热点,但每年的具体范围、时间截点须以省教育招生考试院当年发布的考试要求为准。备考建议:考前两个月集中梳理年度时政清单。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "时政",
+        "待核实"
+      ]
+    },
+    {
+      "id": "q601",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-302",
+      "type": "single",
+      "stem": "The story ______ that honesty is the best policy.",
+      "options": [
+        "turns up",
+        "turns out",
+        "turns off",
+        "turns in"
+      ],
+      "answer": "B",
+      "explanation": "第一步:句意为“这个故事表明/结果是诚实为上策”。第二步:turn out 表示“结果是;证明是”,后接 that 从句。第三步:turn up 出现、调大;turn off 关掉;turn in 上交。",
+      "wrongAnalysis": "四项都是 turn 短语,靠介词含义区分:out(出来→结果)、up(向上→出现/调大)、off(离开→关闭)、in(进入→上交)。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "固定搭配"
+      ]
+    },
+    {
+      "id": "q602",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-303",
+      "type": "single",
+      "stem": "词根 spect 意为“看”,由此推测 inspect 的词义最接近:",
+      "options": [
+        "尊重",
+        "检查;视察",
+        "期望",
+        "怀疑"
+      ],
+      "answer": "B",
+      "explanation": "第一步:拆词,in-(进入,向内)+ spect(看)。第二步:向内/仔细地看→检查、视察。第三步:对照同根词 respect(re- 回头看→敬重)、expect(ex- 向外看→期望)、suspect(su- 从下面看→怀疑)。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "词根词缀"
+      ]
+    },
+    {
+      "id": "q603",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-301",
+      "type": "single",
+      "stem": "做完形填空时,推荐的第一个步骤是:",
+      "options": [
+        "逐空独立选择",
+        "通读全文,把握大意",
+        "先统一选 C 再检查",
+        "只比较四个选项的词义"
+      ],
+      "answer": "B",
+      "explanation": "完形填空的灵魂是语篇:第一步跳读全文抓住主旨与态度,之后每个空都要结合上下文复现、逻辑关系来选,最后代入复读。只看单句容易掉进出题人设置的语义陷阱。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "完形填空"
+      ]
+    },
+    {
+      "id": "q604",
+      "subjectId": "s1",
+      "chapterId": "c-eng-4",
+      "kpId": "k-eng-401",
+      "type": "judge",
+      "stem": "判断:英文书信正文结束后,通常应有结尾敬语(如 Yours sincerely)和署名。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "应用文格式是评分点:称呼(Dear ...,)+ 正文 + 结尾敬语 + 署名,缺一项就扣格式分。常见结尾敬语:Yours sincerely(认识对方)/ Yours faithfully(不认识对方)/ Best wishes(朋友之间)。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "写作格式"
+      ]
+    },
+    {
+      "id": "q701",
+      "subjectId": "s3",
+      "chapterId": "c-cs-4",
+      "kpId": "k-cs-401",
+      "type": "single",
+      "stem": "在关系型数据库中,二维表中的一行称为:",
+      "options": [
+        "字段",
+        "记录",
+        "属性",
+        "域"
+      ],
+      "answer": "B",
+      "explanation": "二维表的一行是一个记录(元组),描述一个实体;一列是一个字段(属性),描述实体的某方面特征;域是字段的取值范围。记忆:行=记录=一条完整信息;列=字段=一个特征。",
+      "wrongAnalysis": "A/C 是“列”的同义说法;D 是取值范围不是行。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "数据库"
+      ]
+    },
+    {
+      "id": "q702",
+      "subjectId": "s3",
+      "chapterId": "c-cs-4",
+      "kpId": "k-cs-402",
+      "type": "single",
+      "stem": "下列不属于计算机病毒特征的是:",
+      "options": [
+        "传染性",
+        "隐蔽性",
+        "自愈性",
+        "破坏性"
+      ],
+      "answer": "C",
+      "explanation": "计算机病毒的特征:传染性、隐蔽性、潜伏性、破坏性、可触发性。“自愈”即自我修复,病毒不具备该特征——病毒只会破坏和复制自己,修复需要杀毒软件或备份恢复。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "信息安全"
+      ]
+    },
+    {
+      "id": "q703",
+      "subjectId": "s3",
+      "chapterId": "c-cs-5",
+      "kpId": "k-cs-501",
+      "type": "single",
+      "stem": "算法的“有穷性”是指:",
+      "options": [
+        "程序代码行数有限",
+        "算法步骤有限,且能在有限时间内结束",
+        "处理的数据量必须很小",
+        "输出结果必须唯一"
+      ],
+      "answer": "B",
+      "explanation": "有穷性强调两点:步骤数量有限 + 每步时间有限,即算法必须在有限时间内终止。死循环的程序违反有穷性,不是有效算法。注意区分:确定性(每步含义唯一)、可行性(能实现)。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "算法"
+      ]
+    },
+    {
+      "id": "q704",
+      "subjectId": "s3",
+      "chapterId": "c-cs-5",
+      "kpId": "k-cs-502",
+      "type": "single",
+      "stem": "把高级语言源程序翻译成机器可执行形式的方式是:",
+      "options": [
+        "编译和解释",
+        "复制和粘贴",
+        "压缩和解压",
+        "扫描和打印"
+      ],
+      "answer": "A",
+      "explanation": "高级语言要经过“翻译”才能被执行:编译方式把整个源程序一次性翻译成目标程序(如 C 语言);解释方式逐句翻译并立即执行(如早期的 BASIC)。机器语言不需要翻译,汇编语言经汇编程序转换。",
+      "difficulty": 1,
+      "source": "自编示例题库",
+      "year": 2025,
+      "official": false,
+      "tags": [
+        "程序设计"
+      ]
+    },
+    {
+      "id": "q801",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k118",
+      "type": "single",
+      "stem": "The medical team ______ five doctors and ten nurses.",
+      "options": [
+        "is consisted of",
+        "consists of",
+        "consisting of",
+        "are consisted of"
+      ],
+      "answer": "B",
+      "explanation": "第一步:consist of(由……组成)只能用主动语态,没有被动形式。第二步:主语 team 是单数,谓语用 consists of。第三步:记忆口诀——consist of 主动表组成,永不用被动。",
+      "wrongAnalysis": "A/D 误用被动;C 是分词形式不能作谓语。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "词汇语法"
+      ]
+    },
+    {
+      "id": "q802",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k117",
+      "type": "single",
+      "stem": "If I ______ you, I would take the chance.",
+      "options": [
+        "am",
+        "was",
+        "were",
+        "be"
+      ],
+      "answer": "C",
+      "explanation": "第一步:与现在事实相反的虚拟语气,if 从句用一般过去式。第二步:be 动词统一用 were(虚拟语气固定用法)。第三步:主句用 would + 动词原形。口诀:虚拟现在,were 通吃。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "虚拟语气"
+      ]
+    },
+    {
+      "id": "q803",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k117",
+      "type": "single",
+      "stem": "It is high time that we ______ to bed.",
+      "options": [
+        "go",
+        "went",
+        "will go",
+        "going"
+      ],
+      "answer": "B",
+      "explanation": "第一步:It is (high) time that + 从句,谓语用一般过去式或 should + 动词原形。第二步:went 正确。第三步:这是虚拟语气的固定句型,意为“早该……了”。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "虚拟语气"
+      ]
+    },
+    {
+      "id": "q804",
+      "subjectId": "s1",
+      "chapterId": "c12",
+      "kpId": "k121",
+      "type": "single",
+      "stem": "阅读短文,回答问题。\n\nShandong University will hold an open day on July 15. Visitors can tour the labs and talk with professors. Registration is free, but it must be completed on the official website before July 10.\n\nWhat must visitors do before July 10?",
+      "options": [
+        "Tour the labs",
+        "Talk with professors",
+        "Register on the website",
+        "Pay a fee"
+      ],
+      "answer": "C",
+      "explanation": "第一步:定位题干关键词 before July 10。第二步:对应原文 Registration is free, but it must be completed on the official website before July 10。第三步:must be completed 即必须在网上报名,选 C。细节题答案通常是原文同义替换。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "阅读理解"
+      ]
+    },
+    {
+      "id": "q805",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-302",
+      "type": "single",
+      "stem": "Could you ______ me your dictionary for a while?",
+      "options": [
+        "borrow",
+        "lend",
+        "keep",
+        "get"
+      ],
+      "answer": "B",
+      "explanation": "第一步:borrow 是“借入”(borrow sth from sb),lend 是“借出”(lend sb sth)。第二步:句意是“把你的词典借给我”,方向是借出,用 lend。第三步:keep 可与一段时间连用表示借多久,但此处缺“借给”方向义,选 B。",
+      "wrongAnalysis": "A 方向反了(borrow from);C 语法上可用 keep...for a while 但空格后是 me,结构不符。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "固定搭配"
+      ]
+    },
+    {
+      "id": "q806",
+      "subjectId": "s1",
+      "chapterId": "c-eng-4",
+      "kpId": "k-eng-401",
+      "type": "judge",
+      "stem": "判断:专升本英语写作的首段通常应点明写作目的或文章主旨。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "首段的功能是“开门见山”:应用文在首段说明写信目的,议论文在首段亮出观点。这既是评分标准中“内容要点”的要求,也让阅卷老师第一眼抓住主旨。首段跑题会直接压低档次。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "写作"
+      ]
+    },
+    {
+      "id": "q807",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k113",
+      "type": "single",
+      "stem": "Neither of the two answers ______ correct.",
+      "options": [
+        "are",
+        "is",
+        "were",
+        "be"
+      ],
+      "answer": "B",
+      "explanation": "第一步:neither of + 复数名词作主语时,谓语动词按正式语法用单数。第二步:陈述事实用一般现在时,选 is。对比:both of the answers are correct(both 用复数)。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "主谓一致"
+      ]
+    },
+    {
+      "id": "q810",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "single",
+      "stem": "我国第一部诗歌总集是:",
+      "options": [
+        "《楚辞》",
+        "《诗经》",
+        "《乐府诗集》",
+        "《全唐诗》"
+      ],
+      "answer": "B",
+      "explanation": "《诗经》是我国第一部诗歌总集,收西周至春秋诗歌 305 篇,分风、雅、颂三部分,主要表现手法为赋、比、兴。《楚辞》是第一部文人创作的浪漫主义诗集。两部的“第一”是最常考的对比点。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "文学常识"
+      ]
+    },
+    {
+      "id": "q811",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "kpId": "k-yw-102",
+      "type": "single",
+      "stem": "下列句子有语病的一项是:",
+      "options": [
+        "济南的泉水天下闻名。",
+        "他的家乡是山东济南人。",
+        "我们参观了趵突泉。",
+        "春天的大明湖格外美丽。"
+      ],
+      "answer": "B",
+      "explanation": "B 句式杂糅:“他的家乡是山东济南”和“他是山东济南人”两种说法糅在了一起,只能说其一。修改:删去“人”,或改为“他是山东济南人”。其余三句结构完整、搭配得当。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "病句"
+      ]
+    },
+    {
+      "id": "q812",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-3",
+      "kpId": "k-yw-302",
+      "type": "single",
+      "stem": "“亚父者,范增也。”这句文言文属于:",
+      "options": [
+        "判断句",
+        "被动句",
+        "省略句",
+        "倒装句"
+      ],
+      "answer": "A",
+      "explanation": "“……者,……也”是文言文判断句的典型标志,“者”提顿主语,“也”收尾判断。相当于现代汉语“亚父就是范增”。常见判断句标志还有“乃”“即”“则”“非”等。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "文言句式"
+      ]
+    },
+    {
+      "id": "q813",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-4",
+      "kpId": "k-yw-402",
+      "type": "judge",
+      "stem": "判断:议论文的分论点一般应围绕中心论点,从不同角度展开。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "分论点是对中心论点的分解与支撑,通常按“是什么—为什么—怎么办”或并列、递进、对照等角度展开,共同服务于中心论点。分论点与中心论点脱节是议论文最常见的失分问题。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "写作"
+      ]
+    },
+    {
+      "id": "q814",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-1",
+      "kpId": "k-zz-102",
+      "type": "single",
+      "stem": "真理最基本的属性是:",
+      "options": [
+        "主观性",
+        "客观性",
+        "条件性",
+        "具体性"
+      ],
+      "answer": "B",
+      "explanation": "真理是标志主观同客观相符合的哲学范畴,其内容来自客观世界,因此客观性是真理最基本的属性。条件性和具体性说明真理是有条件的、发展的,但都以客观性为前提。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "马原"
+      ]
+    },
+    {
+      "id": "q815",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "kpId": "k-zz-301",
+      "type": "single",
+      "stem": "我国的根本政治制度是:",
+      "options": [
+        "人民代表大会制度",
+        "多党合作和政治协商制度",
+        "民族区域自治制度",
+        "基层群众自治制度"
+      ],
+      "answer": "A",
+      "explanation": "人民代表大会制度是我国的根本政治制度;多党合作和政治协商制度、民族区域自治制度、基层群众自治制度是基本政治制度。“根本”与“基本”一字之差,是最典型的易混考点。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "政治制度"
+      ]
+    },
+    {
+      "id": "q816",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "kpId": "k-zz-301",
+      "type": "judge",
+      "stem": "判断:党的二十大明确提出,以中国式现代化全面推进中华民族伟大复兴。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "这是党的二十大报告的中心任务表述,属于必须准确记忆的最新理论表述。政治科目的理论表述以党的最新文献为准,复习时应对照当年时政与最新大会文件更新记忆。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "时政结合"
+      ]
+    },
+    {
+      "id": "q820",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k311",
+      "type": "single",
+      "stem": "在计算机中,负责对指令进行译码并发出控制信号的部件是:",
+      "options": [
+        "运算器",
+        "控制器",
+        "存储器",
+        "总线"
+      ],
+      "answer": "B",
+      "explanation": "控制器是 CPU 的“指挥中心”:取指令、分析(译码)指令、发出控制信号协调各部件。运算器负责算术逻辑运算。判断技巧:管“算”的是运算器,管“指挥”的是控制器。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "计算机组成"
+      ]
+    },
+    {
+      "id": "q821",
+      "subjectId": "s3",
+      "chapterId": "c33",
+      "kpId": "k331",
+      "type": "single",
+      "stem": "IP 地址 192.168.1.1 属于哪一类地址?",
+      "options": [
+        "A 类",
+        "B 类",
+        "C 类",
+        "D 类"
+      ],
+      "answer": "C",
+      "explanation": "C 类地址范围是 192.0.0.0 ~ 223.255.255.255,192.168 开头的地址还属于私有地址段(192.168.0.0~192.168.255.255),常用于局域网。记忆:A 类 1 开头、B 类 128 开头、C 类 192 开头。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "网络基础"
+      ]
+    },
+    {
+      "id": "q822",
+      "subjectId": "s3",
+      "chapterId": "c-cs-4",
+      "kpId": "k-cs-402",
+      "type": "judge",
+      "stem": "判断:及时安装操作系统安全补丁,有助于降低计算机被攻击的风险。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "系统补丁修复的是已知安全漏洞,攻击者往往利用未修补的漏洞入侵,因此及时打补丁是最基础有效的防护措施之一。完整的防护还包括杀毒软件、防火墙和良好使用习惯。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "tags": [
+        "山东专升本",
+        "信息安全"
+      ]
+    },
+    {
+      "id": "q823",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k314",
+      "type": "single",
+      "stem": "十进制数 25 对应的二进制数是:",
+      "options": [
+        "11001",
+        "10011",
+        "11011",
+        "10101"
+      ],
+      "answer": "A",
+      "explanation": "方法一(除 2 取余):25÷2 连续取余得 11001。方法二(凑权值):25 = 16 + 8 + 1 = 2⁴ + 2³ + 2⁰,即从左到右第 5、4、1 位为 1,写作 11001。",
+      "wrongAnalysis": "B=19,C=27,D=21,都是权值凑错的结果;转换后建议用权值反加验算一遍。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "进制转换"
+      ]
+    },
+    {
+      "id": "q830",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-3",
+      "kpId": "k-m1-302",
+      "type": "single",
+      "stem": "由曲线 y = x²、直线 x = 1 与 x 轴围成的图形面积为:",
+      "options": [
+        "1/3",
+        "1/2",
+        "1",
+        "2/3"
+      ],
+      "answer": "A",
+      "explanation": "第一步:面积 S = ∫₀¹ x² dx。第二步:原函数为 x³/3。第三步:S = [x³/3]₀¹ = 1/3。几何意义:抛物线下方的曲边三角形面积,比同底同高的三角形(1/2)更小,可用来直觉检验。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "山东专升本",
+        "定积分应用"
+      ]
+    },
+    {
+      "id": "q831",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-4",
+      "kpId": "k-m1-401",
+      "type": "single",
+      "stem": "方程 y′ = 2xy 的通解为:",
+      "options": [
+        "y = Ce^(x²)",
+        "y = Ce^(−x²)",
+        "y = 2x² + C",
+        "y = x² + C"
+      ],
+      "answer": "A",
+      "explanation": "第一步:分离变量,dy/y = 2x dx。第二步:两边积分,ln|y| = x² + C₁。第三步:整理得 y = Ce^(x²)。验证:y′ = 2x·Ce^(x²) = 2xy,成立。",
+      "wrongAnalysis": "选 B 是积分时符号弄反(∫2x dx = x²,没有负号);这类题建议代入原方程回验一次。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "微分方程"
+      ]
+    },
+    {
+      "id": "q832",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-8",
+      "kpId": "k-m1-801",
+      "type": "single",
+      "stem": "用比较判别法判断:正项级数 ∑ 1/(n·2ⁿ) 的敛散性为:",
+      "options": [
+        "收敛",
+        "发散",
+        "条件收敛",
+        "无法判断"
+      ],
+      "answer": "A",
+      "explanation": "第一步:当 n ≥ 1 时,1/(n·2ⁿ) ≤ 1/2ⁿ。第二步:几何级数 ∑ 1/2ⁿ(公比 1/2 < 1)收敛。第三步:由比较判别法,大收敛则小收敛,原级数收敛。技巧:含 2ⁿ、n² 等因子的项,优先找可比的收敛级数。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "山东专升本",
+        "级数"
+      ]
+    },
+    {
+      "id": "q840",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-2",
+      "kpId": "k-m2-201",
+      "type": "single",
+      "stem": "设 y = ln(3x),则 y′ = ?",
+      "options": [
+        "1/x",
+        "1/(3x)",
+        "3/x",
+        "x/3"
+      ],
+      "answer": "A",
+      "explanation": "第一步:用复合函数求导,y′ = 1/(3x) · (3x)′ = 3/(3x)。第二步:化简得 y′ = 1/x。第二步也可以先化简 ln(3x) = ln3 + lnx(x>0),常数导数为 0,直接得 1/x。",
+      "wrongAnalysis": "选 B 是求导后忘记约分,这是 ln(ax) 型最常见的错误;化简后再求导可以避免。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "山东专升本",
+        "导数",
+        "易错"
+      ]
+    },
+    {
+      "id": "q841",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-3",
+      "kpId": "k-m2-301",
+      "type": "single",
+      "stem": "计算不定积分:∫ e^(2x) dx = ?",
+      "options": [
+        "e^(2x)",
+        "(1/2)·e^(2x) + C",
+        "2e^(2x) + C",
+        "e^(2x) / x + C"
+      ],
+      "answer": "B",
+      "explanation": "第一步:凑微分,e^(2x) dx = (1/2) e^(2x) d(2x)。第二步:积分得 (1/2)e^(2x) + C。第三步:求导验算:[(1/2)e^(2x)]′ = (1/2)·2e^(2x) = e^(2x),正确。口诀:内层导数是几,外面除以几。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "山东专升本",
+        "积分"
+      ]
+    },
+    {
+      "id": "q850",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-3",
+      "kpId": "k-m3-301",
+      "type": "single",
+      "stem": "计算定积分:∫₀¹ 2x dx = ?",
+      "options": [
+        "1",
+        "2",
+        "1/2",
+        "4"
+      ],
+      "answer": "A",
+      "explanation": "第一步:原函数为 x²。第二步:∫₀¹ 2x dx = [x²]₀¹ = 1 − 0 = 1。几何意义:直线 y=2x 在 [0,1] 与 x 轴围成的三角形,底 1、高 2,面积 = ½×1×2 = 1,两种方法互相印证。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "定积分"
+      ]
+    },
+    {
+      "id": "q901",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k311",
+      "type": "multiple",
+      "stem": "下列关于计算机基础知识的说法,正确的有:",
+      "options": [
+        "世界上第一台电子计算机是 ENIAC",
+        "存储程序控制原理由冯·诺依曼提出",
+        "CPU 由运算器和控制器组成",
+        "内存(RAM)断电后数据不会丢失"
+      ],
+      "answer": "ABC",
+      "explanation": "第一步:ENIAC 是 1946 年诞生的世界上第一台通用电子计算机,A 正确。第二步:冯·诺依曼提出的存储程序控制原理至今仍是计算机的基本工作原理,B 正确。第三步:CPU=运算器+控制器,C 正确。第四步:RAM 是随机存储器,断电后数据丢失;断电不丢的是 ROM 和外存,所以 D 错误。",
+      "wrongAnalysis": "D 是最高频陷阱:把内存(RAM,易失性)和外存/ROM(非易失性)混淆。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "计算机组成"
+      ]
+    },
+    {
+      "id": "q902",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k312",
+      "type": "judge",
+      "stem": "判断:U 盘中的数据在断电后不会丢失。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "U 盘采用闪存(Flash)芯片,属于非易失性存储器,断电后数据不会丢失,这也是它能随身携带保存文件的原因。对比:内存(RAM)断电即丢失数据;而 CPU 内的寄存器速度最快但容量最小。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "存储器"
+      ]
+    },
+    {
+      "id": "q903",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k313",
+      "type": "fill",
+      "stem": "存储容量单位换算:1MB = ______ KB。",
+      "options": [],
+      "answer": "1024",
+      "explanation": "存储单位按二进制换算:1KB=1024B,1MB=1024KB,1GB=1024MB,相邻单位之间是 2¹⁰=1024 倍。这是山东专升本计算机每年必考的基础换算,建议把 1KB→1TB 的链条完整背一遍。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "存储单位"
+      ]
+    },
+    {
+      "id": "q904",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k118",
+      "type": "single",
+      "stem": "Your exam is coming, but you look nervous. ______! I'm sure you can pass it.",
+      "options": [
+        "Take it easy",
+        "Take it away",
+        "Take it off",
+        "Take it out"
+      ],
+      "answer": "A",
+      "explanation": "第一步:语境是安慰对方别紧张,Take it easy 意为「放轻松,别紧张」。第二步:take away 拿走/外带,take off 脱下/起飞,take out 取出,均不符合语境。山东专升本英语常考这类语境+短语组合题,先看语境再看短语。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "情景交际"
+      ]
+    },
+    {
+      "id": "q905",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-301",
+      "type": "single",
+      "stem": "It was raining heavily outside, ______ he still went to school on time.",
+      "options": [
+        "so",
+        "but",
+        "because",
+        "or"
+      ],
+      "answer": "B",
+      "explanation": "第一步:前句「外面雨下得很大」,后句「他仍按时到校」,前后是转折关系。第二步:but 表转折,so 表结果,because 表原因,or 表选择。第三步:选 B。完形中连词题的口诀:先读懂两句之间的逻辑关系,再选连词。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "完形填空"
+      ]
+    },
+    {
+      "id": "q906",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-3",
+      "kpId": "k-yw-301",
+      "type": "judge",
+      "stem": "判断:文言文中的「走」,常表示「跑」,与现在的「行走」义不同,属于古今异义词。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "「走」在文言文中是「跑」的意思,如《木兰诗》「双兔傍地走」;「行」才表示现在的「行走」。古今异义是文言实词的高频考点,同类还有「妻子」(妻子和儿女)、「汤」(热水)、「牺牲」(祭祀用的牲畜)等。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "古今异义"
+      ]
+    },
+    {
+      "id": "q907",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-4",
+      "kpId": "k-zz-401",
+      "type": "multiple",
+      "stem": "下列属于社会主义核心价值观基本内容的有:",
+      "options": [
+        "富强",
+        "民主",
+        "发财",
+        "诚信"
+      ],
+      "answer": "ABD",
+      "points": 2,
+      "analysis": "社会主义核心价值观分三个层面:国家层面——富强、民主、文明、和谐;社会层面——自由、平等、公正、法治;个人层面——爱国、敬业、诚信、友善。共 24 字。「发财」不属于其中,是明显干扰项。记忆方法:按国家→社会→个人三个层面成组背诵。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "价值观"
+      ]
+    },
+    {
+      "id": "q908",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "kpId": "k-m1-201",
+      "type": "single",
+      "stem": "设 f(x) = sin x,则 f′(π/2) = ?",
+      "options": [
+        "0",
+        "1",
+        "−1",
+        "不存在"
+      ],
+      "answer": "A",
+      "explanation": "第一步:f′(x) = cos x。第二步:代入 x = π/2,cos(π/2) = 0。第三步:所以 f′(π/2) = 0。特殊角的三角函数值必须背熟:sin(π/2)=1,cos(π/2)=0,sin(π)=0。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1"
+      ],
+      "tags": [
+        "山东专升本",
+        "导数计算"
+      ]
+    },
+    {
+      "id": "q909",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-2",
+      "kpId": "k-m2-201",
+      "type": "single",
+      "stem": "函数 y = x² − 4x + 3 的单调递增区间是:",
+      "options": [
+        "(2, +∞)",
+        "(−∞, 2)",
+        "(0, 2)",
+        "全体实数"
+      ],
+      "answer": "A",
+      "explanation": "第一步:求导 y′ = 2x − 4。第二步:令 y′ > 0,解得 x > 2。第三步:所以单调递增区间是 (2, +∞)。对称轴 x = 2,开口向上,对称轴右侧递增——从图像看更快。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj2"
+      ],
+      "tags": [
+        "山东专升本",
+        "单调性"
+      ]
+    },
+    {
+      "id": "q910",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-302",
+      "type": "single",
+      "stem": "The sports meeting has been ______ until next Friday because of the heavy rain.",
+      "options": [
+        "put off",
+        "put up",
+        "put on",
+        "put away"
+      ],
+      "answer": "A",
+      "explanation": "第一步:because of the heavy rain(大雨)提示会议被「推迟」。第二步:put off 推迟;put up 张贴/搭建;put on 穿上/上演;put away 收好。第三步:选 A。「be put off until…」被推迟到……是固定表达。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "动词短语"
+      ]
+    },
+    {
+      "id": "q911",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "judge",
+      "stem": "判断:《水浒传》是我国第一部歌颂农民起义的长篇章回体小说。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "《水浒传》施耐庵著,是我国第一部歌颂农民起义的长篇章回体小说,塑造了108位梁山好汉。对比记忆:《三国演义》第一部章回体历史演义小说、《西游记》浪漫主义神魔小说、《红楼梦》古典小说巅峰。四大名著的「第一」定位是文学常识必考点。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "tags": [
+        "山东专升本",
+        "明清小说"
+      ]
+    },
+    {
+      "id": "q912",
+      "subjectId": "s3",
+      "chapterId": "c32",
+      "kpId": "k322",
+      "type": "single",
+      "stem": "在 Excel 2016 中,要计算 C2:C10 单元格区域中的最大值,应使用的函数是:",
+      "options": [
+        "SUM",
+        "MAX",
+        "COUNT",
+        "AVERAGE"
+      ],
+      "answer": "B",
+      "explanation": "MAX 求最大值,MIN 求最小值,SUM 求和,AVERAGE 求平均,COUNT 计数。五大统计函数是山东专升本 Excel 部分的必考内容,常以「给情境选函数」的方式命题,比如找最高分用 MAX、统计人数用 COUNT。",
+      "difficulty": 1,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "categories": [
+        "gj1",
+        "gj2",
+        "gj3"
+      ],
+      "hot": true,
+      "tags": [
+        "山东专升本",
+        "Excel 函数"
+      ]
+    },
+    {
+      "id": "q913",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k311",
+      "type": "single",
+      "stem": "计算机性能指标中,「3.20GHz」描述的是:",
+      "options": [
+        "CPU 主频",
+        "内存容量",
+        "硬盘转速",
+        "字长"
+      ],
+      "answer": "A",
+      "explanation": "GHz(吉赫兹)是频率单位,3.20GHz 描述的是 CPU 的主频,即 CPU 内部时钟的振荡频率,主频越高运算速度通常越快。这是 2025 年山东专升本计算机真题回忆中的高频考点。字长用位(bit)描述,容量用 KB/MB/GB 描述。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q914",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k315",
+      "type": "single",
+      "stem": "下列不属于系统软件的是:",
+      "options": [
+        "Windows 11",
+        "Linux",
+        "WPS Office",
+        "macOS"
+      ],
+      "answer": "C",
+      "explanation": "系统软件管理硬件资源、为应用软件提供运行环境,Windows 11、Linux、macOS 都是操作系统;WPS Office 是办公应用软件,属于应用软件类别。此考点与 2025 年真题「不属于系统软件的是」完全同型。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q915",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k313",
+      "type": "judge",
+      "stem": "判断:汉字在计算机内部采用机内码表示,每个汉字占用 2 个字节。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "一个汉字的机内码占 2 个字节(16 位);一个英文字符的 ASCII 码占 1 个字节。汉字编码体系包括输入码(如拼音)、机内码、字形码三类,这也是 2025 年真题的考查点。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q916",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k311",
+      "type": "single",
+      "stem": "CPU 能直接访问的存储器是:",
+      "options": [
+        "光盘",
+        "硬盘",
+        "内存",
+        "U 盘"
+      ],
+      "answer": "C",
+      "explanation": "CPU 只能直接读写内存(主存);硬盘、光盘、U 盘属于外存,外存中的程序和数据必须先调入内存才能被 CPU 执行和处理。判断口诀:CPU 直接访问——内存;长期保存——外存。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q917",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k312",
+      "type": "multiple",
+      "stem": "下列属于输入设备的有:",
+      "options": [
+        "扫描仪",
+        "鼠标",
+        "绘图仪",
+        "麦克风"
+      ],
+      "answer": "ABD",
+      "explanation": "扫描仪把纸质文档送入计算机,鼠标用于输入操作指令,麦克风输入声音,均为输入设备;绘图仪把计算机中的图形绘制到纸面上,是输出设备。判断技巧:数据流向机器=输入,机器流向外界=输出。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q918",
+      "subjectId": "s3",
+      "chapterId": "c-cs-4",
+      "kpId": "k-cs-402",
+      "type": "single",
+      "stem": "计算机病毒传播的基本途径不包括:",
+      "options": [
+        "下载来路不明的网络文件",
+        "使用盗版软件",
+        "通过空气自然传播",
+        "使用来路不明的移动存储介质"
+      ],
+      "answer": "C",
+      "explanation": "病毒传播依赖存储介质与网络通道:网络下载、盗版软件、移动存储介质都是典型传播途径;病毒是程序不是生物,不可能通过空气传播,选 C。这类「不包括」题型要先识别三项同类、找异项。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q919",
+      "subjectId": "s3",
+      "chapterId": "c31",
+      "kpId": "k314",
+      "type": "fill",
+      "stem": "二进制数 1010 对应的十进制数是______。",
+      "options": [],
+      "answer": "10",
+      "explanation": "按权展开:1010(B) = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10。技巧:从右往左权重依次为 1、2、4、8,把为 1 的位对应权重相加即可。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q920",
+      "subjectId": "s3",
+      "chapterId": "c33",
+      "kpId": "k331",
+      "type": "single",
+      "stem": "在 Internet 中,用来唯一标识网络中一台主机的是:",
+      "options": [
+        "IP 地址",
+        "网页标题",
+        "用户昵称",
+        "文件名"
+      ],
+      "answer": "A",
+      "explanation": "IP 地址是主机在网络中的唯一逻辑标识,如 192.168.1.1。域名(如 www.sdzk.cn)通过 DNS 解析成 IP 地址访问主机。记忆:IP=门牌号,域名=门牌号的别名。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q921",
+      "subjectId": "s3",
+      "chapterId": "c32",
+      "kpId": "k321",
+      "type": "judge",
+      "stem": "判断:在 Word 2016 中,「撤销」上一步操作的快捷键是 Ctrl+Z。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "Ctrl+Z 撤销,Ctrl+Y 恢复(重做),这对快捷键在 Word/Excel/PPT 中通用。办公软件快捷键是操作题的常考点,建议把 Ctrl+C/V/X/Z/Y/S/F/H 成组记忆。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q922",
+      "subjectId": "s3",
+      "chapterId": "c32",
+      "kpId": "k322",
+      "type": "single",
+      "stem": "在 Excel 2016 中,要统计 B2:B20 区域中包含数字的单元格个数,应使用的函数是:",
+      "options": [
+        "SUM",
+        "COUNT",
+        "AVERAGE",
+        "MAX"
+      ],
+      "answer": "B",
+      "explanation": "COUNT 只统计包含数字的单元格个数;COUNTA 统计非空单元格个数(含文本);SUM 求和;AVERAGE 求平均。区分点:数字用 COUNT、非空用 COUNTA,一字之差是最常见陷阱。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q923",
+      "subjectId": "s3",
+      "chapterId": "c32",
+      "kpId": "k322",
+      "type": "single",
+      "stem": "在 Excel 2016 中,工作表的行号用____表示,列标用字母表示。",
+      "options": [
+        "数字",
+        "字母",
+        "罗马数字",
+        "汉字"
+      ],
+      "answer": "A",
+      "explanation": "Excel 工作表由行和列组成:行号用数字(1、2、3……),列标用字母(A、B、C……),单元格地址=列标+行号,如 B3 表示第 B 列第 3 行。这是单元格引用的基础。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q924",
+      "subjectId": "s3",
+      "chapterId": "c32",
+      "kpId": "k322",
+      "type": "multiple",
+      "stem": "关于 PowerPoint 2016 的使用,下列说法正确的有:",
+      "options": [
+        "一张幻灯片中可以同时包含文字、图片和表格",
+        "可以为幻灯片的切换设置声音效果",
+        "放映过程中可通过右键菜单定位到指定幻灯片",
+        "修改幻灯片母版只对当前选中的一页生效"
+      ],
+      "answer": "ABC",
+      "explanation": "A:幻灯片是多媒体载体,可插入文字/图片/表格/图表等。B:「切换」选项卡可设置换页声音和持续时间。C:放映时右键→「定位到幻灯片」可跳页。D 错误:母版修改会应用到使用该版式的所有幻灯片,不是只对一页。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q925",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k117",
+      "type": "single",
+      "stem": "The teacher suggested that we ______ notes while listening.",
+      "options": [
+        "took",
+        "take",
+        "taking",
+        "to take"
+      ],
+      "answer": "B",
+      "explanation": "第一步:suggest 后接宾语从句时,从句谓语用 (should) + 动词原形的虚拟语气。第二步:所以用 take(should 被省略)。第三步:同类词还有 insist/require/demand 等。口诀:suggest that + (should) do。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q926",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k118",
+      "type": "single",
+      "stem": "This is the best film ______ I have ever seen.",
+      "options": [
+        "which",
+        "that",
+        "who",
+        "whom"
+      ],
+      "answer": "B",
+      "explanation": "第一步:先行词是 film(物),定语从句用 that/which 引导。第二步:但先行词被最高级 the best 修饰时,关系词只能用 that,不能用 which。这是定语从句的必考规则:最高级/序数词/all/everything 后用 that。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q927",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k113",
+      "type": "single",
+      "stem": "He is one of the students who ______ good at English.",
+      "options": [
+        "is",
+        "are",
+        "was",
+        "be"
+      ],
+      "answer": "B",
+      "explanation": "第一步:one of + 复数名词 + 定语从句,从句谓语与复数名词 students 保持一致,用 are。第二步:对比:the (only) one of the students who is...(only 时才用单数)。两句话一字之差,谓语单复数相反,是历年最经典的陷阱题。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        3
+      ]
+    },
+    {
+      "id": "q928",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k119",
+      "type": "single",
+      "stem": "The price of the computer is too ______; I can't afford it.",
+      "options": [
+        "high",
+        "expensive",
+        "cheap",
+        "low"
+      ],
+      "answer": "A",
+      "explanation": "第一步:price(价格)只能用 high 或 low 修饰。第二步:expensive/cheap 修饰物品本身(The computer is expensive),不能修饰 price。第三步:句意是价格太高买不起,用 high。同族考点:人口(population)用 large/small。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q929",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k118",
+      "type": "single",
+      "stem": "______ lovely weather it is today!",
+      "options": [
+        "What",
+        "What a",
+        "How",
+        "How a"
+      ],
+      "answer": "A",
+      "explanation": "第一步:感叹句结构:What + (a/an) + 形容词 + 名词;How + 形容词/副词。第二步:weather 是不可数名词,不加冠词 a,所以用 What lovely weather。第三步:判断口诀——看句中核心是名词用 What,是形容词/副词用 How。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q930",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-302",
+      "type": "single",
+      "stem": "Please ______ the lights when you leave the classroom.",
+      "options": [
+        "turn on",
+        "turn off",
+        "turn up",
+        "turn into"
+      ],
+      "answer": "B",
+      "explanation": "第一步:离开教室应「关灯」。第二步:turn off 关闭;turn on 打开;turn up 调大/出现;turn into 变成。第三步:选 B。turn 系列短语用介词的方向含义记忆:off=断开,on=接通,up=增大。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q931",
+      "subjectId": "s1",
+      "chapterId": "c12",
+      "kpId": "k121",
+      "type": "single",
+      "stem": "阅读短文,回答问题。\n\nQingdao is a beautiful coastal city in Shandong Province. Every summer, millions of tourists visit it to enjoy the beaches and the fresh seafood. The best time to visit is from June to September.\n\nWhat can tourists do in Qingdao according to the passage?",
+      "options": [
+        "Enjoy the beaches and seafood",
+        "Ski on the mountains",
+        "Visit museums only",
+        "Climb Mount Tai"
+      ],
+      "answer": "A",
+      "explanation": "第一步:定位关键词 tourists visit,对应原文 enjoy the beaches and the fresh seafood。第二步:B/C/D 均为原文未提及的无中生有项。第三步:阅读细节题的正确答案一定是原文的同义替换,排除没提到的选项即可。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q932",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k118",
+      "type": "single",
+      "stem": "「Where there is a will, there is a way.」的最佳译文是:",
+      "options": [
+        "那里有意志就有道路",
+        "有志者事竟成",
+        "条条大路通罗马",
+        "随遇而安"
+      ],
+      "answer": "B",
+      "explanation": "翻译谚语要译出神韵而非字面:will 指志向,way 指实现目标的途径,整句意为「有志者事竟成」。山东专升本翻译题偏爱谚语和常用表达,平时按主题(立志/坚持/时间)分类积累,考试直接对应。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q933",
+      "subjectId": "s1",
+      "chapterId": "c11",
+      "kpId": "k113",
+      "type": "judge",
+      "stem": "判断:「He as well as I is a student.」中谓语用 is 是正确的,因为 as well as 连接主语时,谓语与前一个主语保持一致。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "as well as / along with / together with / but 连接主语时,谓语遵循「就前原则」:与最前面的主语 He 保持一致,所以用 is。对比记忆:neither...nor / not only...but also 就近原则;as well as 就前原则。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        3
+      ]
+    },
+    {
+      "id": "q934",
+      "subjectId": "s1",
+      "chapterId": "c-eng-3",
+      "kpId": "k-eng-302",
+      "type": "single",
+      "stem": "We should ______ the habit of getting up early.",
+      "options": [
+        "get",
+        "form",
+        "do",
+        "make"
+      ],
+      "answer": "B",
+      "explanation": "第一步:「养成习惯」的固定搭配是 form the habit of doing。第二步:get 无此搭配习惯,do/make 也不与 habit 构成固定短语。第三步:同类搭配:develop the habit of。习惯类短语:form/develop(养成)、get rid of(改掉)。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q935",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "single",
+      "stem": "「四书」不包括下列哪部作品?",
+      "options": [
+        "《大学》",
+        "《中庸》",
+        "《论语》",
+        "《春秋》"
+      ],
+      "answer": "D",
+      "explanation": "「四书」指《大学》《中庸》《论语》《孟子》;《春秋》属于「五经」(诗、书、礼、易、春秋)。「四书五经」的构成划分是文学常识高频考点,注意区分四书与五经的成员。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q936",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "single",
+      "stem": "下列作家中,属于「唐宋八大家」的是:",
+      "options": [
+        "李白",
+        "杜甫",
+        "苏轼",
+        "白居易"
+      ],
+      "answer": "C",
+      "explanation": "唐宋八大家指唐宋时期八位散文大家:韩愈、柳宗元(唐)+ 苏轼、苏洵、苏辙、王安石、曾巩、欧阳修(宋)。李白、杜甫、白居易是诗人不以散文入列。记忆:唐二家 + 宋六家,宋代三苏占三席。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q937",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-202",
+      "type": "single",
+      "stem": "散文《背影》的作者是:",
+      "options": [
+        "老舍",
+        "朱自清",
+        "巴金",
+        "鲁迅"
+      ],
+      "answer": "B",
+      "explanation": "《背影》是朱自清的叙事散文,通过父亲翻越月台买橘子的背影细节表现父爱。作者作品对应:朱自清《背影》《荷塘月色》;老舍《骆驼祥子》《茶馆》;巴金《家》;鲁迅《呐喊》《彷徨》。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q938",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "kpId": "k-yw-102",
+      "type": "single",
+      "stem": "下列句子中没有语病的一项是:",
+      "options": [
+        "通过这次模拟考试,使我认识到了自己的不足。",
+        "能否坚持备考,是专升本成功的关键。",
+        "我们先讨论一下,然后再听取大家的意见。",
+        "他热爱运动,每天坚持锻炼一小时。"
+      ],
+      "answer": "D",
+      "explanation": "第一步:A 滥用「通过……使……」导致缺主语,应删去其一。第二步:B「能否」两面对一面。第三步:C 语序不当,应先「听取」再「讨论」。第四步:D 结构完整、表意清晰,无语病。病句六大类型中,缺主语、两面词、语序不当是最高频的三类。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q939",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-1",
+      "kpId": "k-yw-103",
+      "type": "single",
+      "stem": "「月亮像一只小船,静静地挂在夜空中。」使用的修辞手法是:",
+      "options": [
+        "比喻",
+        "拟人",
+        "夸张",
+        "排比"
+      ],
+      "answer": "A",
+      "explanation": "句中有本体(月亮)、喻体(小船)、比喻词(像),是典型的明喻。区分技巧:有「像」且本体喻体是不同类事物=比喻;把物直接当人写(如「月亮弯着腰」)=拟人。有「像」不一定是比喻,如「他像我弟弟」是比较。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q940",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-3",
+      "kpId": "k-yw-301",
+      "type": "single",
+      "stem": "下列句子中,「以」表示「用、拿」的一项是:",
+      "options": [
+        "以刀劈狼首",
+        "不以物喜,不以己悲",
+        "以其境过清",
+        "策之不以其道"
+      ],
+      "answer": "A",
+      "explanation": "第一步:「以刀劈狼首」意为「用刀劈向狼头」,以=用、拿(介词,表工具)。第二步:B/C/D 中的「以」分别表示因为、因为、按照。第三步:文言虚词要代入语境翻译验证,「用、拿」后通常接具体工具或方法。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q941",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "judge",
+      "stem": "判断:「初唐四杰」指王勃、杨炯、卢照邻、骆宾王。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "初唐四杰:王勃(《送杜少府之任蜀州》)、杨炯、卢照邻、骆宾王(《咏鹅》),简称「王杨卢骆」。名句「海内存知己,天涯若比邻」即出自王勃。与「唐宋八大家」区分:八大家是散文成就,四杰是初唐诗人。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q942",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-4",
+      "kpId": "k-yw-401",
+      "type": "judge",
+      "stem": "判断:记叙文的六要素包括时间、地点、人物和事情的起因、经过、结果。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "记叙文六要素是阅读和写作的基础框架:时间、地点、人物+起因、经过、结果。阅读题概括主要内容时,把这六要素串起来就是标准答案;写作时六要素齐备文章才完整。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q943",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "single",
+      "stem": "「但愿人长久,千里共婵娟」的作者是:",
+      "options": [
+        "李清照",
+        "苏轼",
+        "辛弃疾",
+        "柳永"
+      ],
+      "answer": "B",
+      "explanation": "出自苏轼《水调歌头·明月几时有》,婵娟指月亮。苏轼是豪放派代表,该词写于中秋怀念弟弟苏辙。名句—作者—篇名三对应是文学常识最高频的考查形式,豪放派代表:苏轼、辛弃疾;婉约派:柳永、李清照。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q944",
+      "subjectId": "s-yw",
+      "chapterId": "c-yw-2",
+      "kpId": "k-yw-201",
+      "type": "single",
+      "stem": "「生,亦我所欲也;义,亦我所欲也」这句关于舍生取义的论述出自:",
+      "options": [
+        "《论语》",
+        "《孟子》",
+        "《庄子》",
+        "《左传》"
+      ],
+      "answer": "B",
+      "explanation": "出自《孟子·告子上》的《鱼我所欲也》篇,提出「舍生而取义」的主张。诸子对应:孟子——仁义、性善、舍生取义;孔子——仁与礼;庄子——逍遥;左传——编年体史书。先秦诸子的核心主张要一一对应。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q945",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-1",
+      "kpId": "k-zz-101",
+      "type": "single",
+      "stem": "马克思主义哲学认为,世界的本原是:",
+      "options": [
+        "意识",
+        "物质",
+        "实践",
+        "矛盾"
+      ],
+      "answer": "B",
+      "explanation": "唯物主义认为物质是世界的本原,物质决定意识;唯心主义认为意识是本原。这是哲学基本问题第一方面(思维与存在何者为本原)的回答,是马克思主义哲学的立论起点。所有哲学问题的分析都从这个根本立场出发。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q946",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-4",
+      "kpId": "k-zz-401",
+      "type": "single",
+      "stem": "我国的最高国家权力机关是:",
+      "options": [
+        "国务院",
+        "全国人民代表大会",
+        "最高人民法院",
+        "中央军事委员会"
+      ],
+      "answer": "B",
+      "explanation": "全国人民代表大会是最高国家权力机关,行使立法权、监督权等;国务院是最高国家行政机关(由人大产生、对其负责);最高人民法院是最高审判机关。三者关系:人大产生并监督「一府一委两院」。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q947",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "kpId": "k-zz-301",
+      "type": "single",
+      "stem": "中国特色社会主义最本质的特征是:",
+      "options": [
+        "中国共产党领导",
+        "共同富裕",
+        "人民当家作主",
+        "依法治国"
+      ],
+      "answer": "A",
+      "explanation": "中国共产党领导是中国特色社会主义最本质的特征,是中国特色社会主义制度的最大优势。这一表述写入了宪法。四个选项都是重要内容,但「最本质的特征」有固定表述,必须按原文准确记忆。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q948",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-2",
+      "kpId": "k-zz-202",
+      "type": "judge",
+      "stem": "判断:改革开放是决定当代中国命运的关键一招。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "改革开放是党和人民大踏步赶上时代的重要法宝,是决定当代中国命运的关键一招,也是决定实现「两个一百年」奋斗目标、实现中华民族伟大复兴的关键一招。这一固定表述在选择题和材料题中都会出现。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q949",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-2",
+      "kpId": "k-zz-202",
+      "type": "single",
+      "stem": "我国正处于并将长期处于社会主义____阶段。",
+      "options": [
+        "初级",
+        "中级",
+        "高级",
+        "过渡"
+      ],
+      "answer": "A",
+      "explanation": "社会主义初级阶段是当代中国的最大实际、最大国情,是制定一切方针政策的根本依据。「一切从社会主义初级阶段的实际出发」是理解和回答中国特色社会主义问题的总前提。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q950",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "kpId": "k-zz-301",
+      "type": "multiple",
+      "stem": "下列属于我国基本政治制度的有:",
+      "options": [
+        "人民代表大会制度",
+        "中国共产党领导的多党合作和政治协商制度",
+        "民族区域自治制度",
+        "基层群众自治制度"
+      ],
+      "answer": "BCD",
+      "explanation": "人民代表大会制度是「根本政治制度」;中国共产党领导的多党合作和政治协商制度、民族区域自治制度、基层群众自治制度是「基本政治制度」。「根本」与「基本」的区分是本考点最经典的陷阱,多选题最常把人大制度混入基本制度中。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q951",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-3",
+      "kpId": "k-zz-301",
+      "type": "single",
+      "stem": "中国共产党人的初心和使命是:",
+      "options": [
+        "为中国人民谋幸福,为中华民族谋复兴",
+        "实现国家工业化",
+        "全面建成小康社会",
+        "打赢脱贫攻坚战"
+      ],
+      "answer": "A",
+      "explanation": "中国共产党人的初心和使命,就是为中国人民谋幸福,为中华民族谋复兴。这个表述有固定的两句话结构,「幸福—复兴」对应「人民—民族」,必须整体准确记忆,是时政与理论结合的高频考点。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q952",
+      "subjectId": "s-zz",
+      "chapterId": "c-zz-4",
+      "kpId": "k-zz-401",
+      "type": "judge",
+      "stem": "判断:宪法是国家的根本法,具有最高的法律效力。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer": "A",
+      "explanation": "宪法是国家的根本法,规定了国家最根本的制度与任务,具有最高的法律效力:一切法律、法规都不得与宪法相抵触。12 月 4 日是国家宪法日。法治部分的核心表述都要按原文记忆。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q953",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-1",
+      "kpId": "k-m1-103",
+      "type": "single",
+      "stem": "函数 y = 1/(x − 1) 的间断点 x = 1 是:",
+      "options": [
+        "可去间断点",
+        "跳跃间断点",
+        "无穷间断点",
+        "振荡间断点"
+      ],
+      "answer": "C",
+      "explanation": "第一步:x→1 时分母趋于 0,分子恒为 1,极限为无穷大。第二步:左右极限为无穷的间断点属于第二类中的无穷间断点。第三步:对比可去间断点(极限存在)、跳跃间断点(左右极限存在但不等)。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q954",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "kpId": "k-m1-202",
+      "type": "single",
+      "stem": "曲线 y = x³ − 3x 的拐点是:",
+      "options": [
+        "(0, 0)",
+        "(1, −2)",
+        "(−1, 2)",
+        "不存在"
+      ],
+      "answer": "A",
+      "explanation": "第一步:y′ = 3x² − 3,y″ = 6x。第二步:令 y″ = 0 得 x = 0,且两侧 y″ 变号(x<0 凹,x>0 凸),故 (0, y(0)) = (0, 0) 是拐点。第三步:注意拐点是一个点,坐标必须写 (0, 0),只写 x = 0 不完整。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        3
+      ]
+    },
+    {
+      "id": "q955",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-2",
+      "kpId": "k-m1-201",
+      "type": "single",
+      "stem": "设 f(x) 在 x = a 处可导,则 lim(h→0) [f(a+h) − f(a)] / h = ?",
+      "options": [
+        "f(a)",
+        "f′(a)",
+        "f′(h)",
+        "0"
+      ],
+      "answer": "B",
+      "explanation": "这正是导数在 x = a 处的定义式:函数增量与自变量增量之比当 h→0 时的极限,即 f′(a)。识别技巧:看到「Δy/Δx 当增量趋于 0」或「[f(a+h)−f(a)]/h」的形式,直接对应导数定义。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q956",
+      "subjectId": "s-m1",
+      "chapterId": "c-m1-3",
+      "kpId": "k-m1-302",
+      "type": "single",
+      "stem": "定积分 ∫(−1 → 1) x³ dx = ?",
+      "options": [
+        "0",
+        "1/2",
+        "1",
+        "2"
+      ],
+      "answer": "A",
+      "explanation": "第一步:x³ 是奇函数,积分区间 [−1, 1] 关于原点对称。第二步:奇函数在对称区间上的定积分为 0。第三步:也可直接计算 [x⁴/4] 从 −1 到 1 = 1/4 − 1/4 = 0。对称性是定积分计算的重要技巧。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        2
+      ]
+    },
+    {
+      "id": "q957",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-2",
+      "kpId": "k-m2-201",
+      "type": "single",
+      "stem": "由导数的几何意义,曲线 y = x³ 在 x = −1 处的切线斜率为:",
+      "options": [
+        "−3",
+        "3",
+        "−1",
+        "1"
+      ],
+      "answer": "B",
+      "explanation": "第一步:y′ = 3x²。第二步:代入 x = −1,y′ = 3×(−1)² = 3。第三步:注意 x² 使负号消失,所以斜率为正 3。易错点:把 −1 直接代入时忘记平方。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q958",
+      "subjectId": "s-m2",
+      "chapterId": "c-m2-3",
+      "kpId": "k-m2-301",
+      "type": "single",
+      "stem": "若 f′(x) = 2x,则 f(x) = ?",
+      "options": [
+        "x² + C",
+        "2x + C",
+        "x²",
+        "2 + C"
+      ],
+      "answer": "A",
+      "explanation": "第一步:求 f(x) 就是求 2x 的原函数。第二步:x² 的导数是 2x,所以 f(x) = x² + C。第三步:不定积分必须带任意常数 C。验算:对 x² + C 求导得 2x,正确。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q959",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-1",
+      "kpId": "k-m3-101",
+      "type": "single",
+      "stem": "计算极限:lim(x→1) (x² − 1)/(x − 1) = ?",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "不存在"
+      ],
+      "answer": "C",
+      "explanation": "第一步:x→1 时分子分母同时趋于 0,是 0/0 型。第二步:因式分解 x² − 1 = (x − 1)(x + 1),约去零因子。第三步:原式 = lim(x + 1) = 2。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    },
+    {
+      "id": "q960",
+      "subjectId": "s-m3",
+      "chapterId": "c-m3-2",
+      "kpId": "k-m3-201",
+      "type": "single",
+      "stem": "函数 y = 3x 在 x = 2 处的导数是:",
+      "options": [
+        "3",
+        "6",
+        "5",
+        "2"
+      ],
+      "answer": "A",
+      "explanation": "第一步:y′ = 3(常函数的导数为 0,即 (3x)′ = 3)。第二步:导数是常数 3,与 x 取值无关,所以在 x = 2 处导数仍为 3。对比:y = 3x² 才需要代入 x = 2 得 12。一次函数的导数恒等于斜率。",
+      "difficulty": 2,
+      "source": "山东专升本导向·自命题(非真题)",
+      "year": 2026,
+      "official": false,
+      "hot": false,
+      "tags": [
+        "山东专升本",
+        1
+      ]
+    }
+  ]
+}
