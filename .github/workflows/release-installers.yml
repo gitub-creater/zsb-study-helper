@@ -167,7 +167,15 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew --version
-          ./gradlew assembleRelease --stacktrace --info -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
+          set +e
+          ./gradlew assembleRelease --stacktrace --info -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}" 2>&1 | tee ../gradle-build.log
+          gradle_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$gradle_status" -ne 0 ]; then
+            details=$(tail -n 80 ../gradle-build.log | tr '\r\n' '  ' | sed 's/%/%25/g' | cut -c1-6000)
+            echo "::error title=Gradle build failure::$details"
+            exit "$gradle_status"
+          fi
           mkdir -p ../release
           cp app/build/outputs/apk/release/app-release.apk ../release/ZSB-Study-Helper.apk
       - uses: actions/upload-artifact@v4
