@@ -5,7 +5,7 @@ import { Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import {
   checkCode, createUser, ensureLegacyMigrated, findByPhone, issueCode, listUsers,
-  setSession, setPassword, uid, verifyPassword,
+  migrateUserId, setSession, setPassword, uid, verifyPassword,
 } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
 import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl } from '../services/cloud'
@@ -52,8 +52,13 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
         let local = users.find((u) => u.id === cloud.user.id)
         const sameName = users.find((u) => u.name === cloud.user.name)
         if (!local && sameName) {
-          toast('此设备已有同名的本地账号，请先更换账号名后再登录云端账号', { kind: 'error' })
-          return
+          if (!(await verifyPassword(sameName.id, pw))) {
+            toast('本机已有同名账号，但密码不一致。请确认使用的是同一账号密码', { kind: 'error' })
+            return
+          }
+          local = migrateUserId(sameName.id, cloud.user.id)
+          refresh()
+          toast('已关联本机账号和云端账号，学习记录正在同步', { kind: 'success' })
         }
         if (!local) {
           local = await createUser(cloud.user.name, pw, cloud.user.id)

@@ -18,6 +18,7 @@ export type CloudLoginResult =
   | { kind: 'error'; message: string }
 
 const API_URL_KEY = 'zsb_cloud_api_url_v1'
+const DEFAULT_CLOUD_API_URL = 'https://shandong-zsb-study-helper.vercel.app'
 
 function normalizeUrl(value: string): string {
   return value.trim().replace(/\/+$/, '')
@@ -31,7 +32,7 @@ export function getCloudApiUrl(): string | null {
     return window.location.origin
   }
 
-  return normalizeUrl(localStorage.getItem(API_URL_KEY) ?? '') || null
+  return normalizeUrl(localStorage.getItem(API_URL_KEY) ?? '') || DEFAULT_CLOUD_API_URL
 }
 
 export function saveCloudApiUrl(value: string): void {
