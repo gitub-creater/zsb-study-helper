@@ -57,7 +57,7 @@ echo --- Vercel Deployment ---
 echo Installing Vercel CLI (one-time)...
 call npx vercel --version >nul 2>&1
 echo Deploying...
-call npx vercel ./dist --prod --yes
+call npx vercel --prod --yes
 goto end
 
 :netlify

@@ -6,11 +6,12 @@
   "description": "山东专升本学习助手 - 可爱校园冒险风备考工具",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsc --project tsconfig.api.json --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "docx": "^9.7.1",
     "jszip": "^3.10.1",
     "katex": "^0.18.4",

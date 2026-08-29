@@ -5,16 +5,18 @@ import { Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import {
   checkCode, createUser, ensureLegacyMigrated, findByPhone, issueCode, listUsers,
-  setSession, setPassword, verifyPassword,
+  setSession, setPassword, uid, verifyPassword,
 } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
+import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl } from '../services/cloud'
 
 export function LoginGate({ onSession }: { onSession: () => void }) {
   const toast = useToast()
   const [users, setUsers] = useState<AuthUser[]>([])
   const [tab, setTab] = useState<'quick' | 'register' | 'forgot' | 'scan'>('quick')
-  const [pwFor, setPwFor] = useState<string | null>(null)
+  const [loginName, setLoginName] = useState('')
   const [pw, setPw] = useState('')
+  const [cloudApiUrl, setCloudApiUrl] = useState(() => getCloudApiUrl() ?? '')
   const [name, setName] = useState('')
   const [regPw, setRegPw] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,30 +33,69 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     refresh()
   }, [])
 
-  const enter = (u: AuthUser) => {
-    setSession({ userId: u.id, name: u.name })
+  const enter = (u: AuthUser, cloud?: { token: string; apiUrl: string }) => {
+    setSession({ userId: u.id, name: u.name, cloudToken: cloud?.token, cloudApiUrl: cloud?.apiUrl })
     onSession()
   }
 
-  const quickEnter = async (u: AuthUser) => {
-    if (u.salt && u.hash) {
-      setPwFor(u.id)
-      setPw('')
+  const submitLogin = async () => {
+    const normalized = loginName.trim()
+    if (!normalized || !pw) {
+      toast('请输入账号和密码', { kind: 'error' })
       return
     }
-    enter(u)
-  }
-
-  const submitPw = async () => {
-    if (!pwFor) return
     setBusy(true)
     try {
-      if (await verifyPassword(pwFor, pw)) {
-        const u = users.find((x) => x.id === pwFor)!
-        enter(u)
-      } else {
-        toast('密码不正确', { kind: 'error' })
+      if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
+      const cloud = await loginCloud(normalized, pw)
+      if (cloud.kind === 'ok') {
+        let local = users.find((u) => u.id === cloud.user.id)
+        const sameName = users.find((u) => u.name === cloud.user.name)
+        if (!local && sameName) {
+          toast('此设备已有同名的本地账号，请先更换账号名后再登录云端账号', { kind: 'error' })
+          return
+        }
+        if (!local) {
+          local = await createUser(cloud.user.name, pw, cloud.user.id)
+          refresh()
+        }
+        enter(local, cloud.session)
+        return
       }
+      if (cloud.kind === 'bad_password') {
+        toast('密码不正确', { kind: 'error' })
+        return
+      }
+      if (cloud.kind === 'error') {
+        toast(cloud.message, { kind: 'error' })
+        return
+      }
+
+      const local = users.find((u) => u.name === normalized)
+      if (!local) {
+        toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端不可用，且本机没有此账号', { kind: 'error' })
+        return
+      }
+      if (!(await verifyPassword(local.id, pw))) {
+        toast('密码不正确', { kind: 'error' })
+        return
+      }
+
+      // The account was created before cloud sync. Its verified local password authorizes a one-time migration.
+      if (cloud.kind === 'not_found') {
+        const migrated = await registerCloud(local.id, local.name, pw)
+        if (migrated.kind === 'ok') {
+          toast('本机账号已同步到云端', { kind: 'success' })
+          enter(local, migrated.session)
+          return
+        }
+        if (migrated.kind === 'error') {
+          toast(migrated.message, { kind: 'error' })
+          return
+        }
+      }
+      enter(local)
+      if (cloud.kind === 'unavailable') toast('当前离线登录，学习数据会在云端恢复后再同步')
     } finally {
       setBusy(false)
     }
@@ -71,9 +112,22 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     }
     setBusy(true)
     try {
-      const u = await createUser(name, regPw)
-      toast(`账号「${u.name}」创建成功`, { kind: 'success' })
-      enter(u)
+      if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
+      const id = uid()
+      const cloud = await registerCloud(id, name, regPw)
+      if (cloud.kind === 'error') {
+        toast(cloud.message, { kind: 'error' })
+        return
+      }
+      const u = await createUser(name, regPw, id)
+      refresh()
+      if (cloud.kind === 'ok') {
+        toast(`账号「${u.name}」创建成功，已开启云端同步`, { kind: 'success' })
+        enter(u, cloud.session)
+      } else {
+        toast(`账号「${u.name}」创建成功，暂时保存在本机`, { kind: 'success' })
+        enter(u)
+      }
     } catch (e) {
       toast(e instanceof Error ? e.message : '创建失败', { kind: 'error' })
     } finally {
@@ -88,7 +142,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
           <Mascot mood="idle" size={58} />
           <div>
             <h2 style={{ fontSize: 18 }}>专升本学习助手</h2>
-            <p className="muted fs13">知识校园 · 数据保存在本机,按账号隔离</p>
+            <p className="muted fs13">知识校园 · 本机可离线使用，登录后可同步到云端</p>
           </div>
         </div>
 
@@ -107,7 +161,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
 
         {tab === 'forgot' && (
           <div className="col">
-            <p className="fs12 muted mb8">通过绑定的手机号找回;找回后原密码作废,请牢记新密码。</p>
+            <p className="fs12 muted mb8">通过本机绑定的手机号找回；此功能暂不重置云端密码。</p>
             <Field label="绑定过的手机号">
               <input className="input" value={fpPhone} maxLength={11} onChange={(e) => setFpPhone(e.target.value)} placeholder="11 位手机号" />
             </Field>
@@ -172,35 +226,42 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
 
         {tab === 'quick' && (
           <div className="col" style={{ gap: 8 }}>
-            {users.length === 0 && <p className="fs13 muted">还没有账号,先注册一个,或点下方快速体验。</p>}
+            {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? (
+              <Field label="云端地址" hint="电脑本地版首次登录时填写 Vercel 网页地址，之后会自动记住">
+                <input className="input" value={cloudApiUrl} onChange={(e) => setCloudApiUrl(e.target.value)} placeholder="https://your-project.vercel.app" />
+              </Field>
+            ) : null}
+            <Field label="账号">
+              <input className="input" value={loginName} maxLength={12} onChange={(e) => setLoginName(e.target.value)} placeholder="输入已注册的账号" />
+            </Field>
+            <Field label="密码">
+              <input
+                className="input"
+                type="password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && submitLogin()}
+                placeholder="输入账号密码"
+              />
+            </Field>
+            <button className="btn btn-primary" disabled={busy || !loginName.trim() || !pw} onClick={submitLogin}>
+              登录
+            </button>
+            {users.length === 0 && <p className="fs13 muted">首次使用请注册；已注册的云端账号可直接登录。</p>}
             {users.map((u) => (
               <div key={u.id} className="node-h" style={{ border: '1px solid var(--line)', borderRadius: 8 }}>
                 <Icon name="user" size={16} />
                 <b className="fs13 grow">{u.name}</b>
                 {u.guest && <span className="chip">无密码</span>}
-                <button className="btn btn-sm btn-primary" onClick={() => quickEnter(u)}>
-                  进入
-                </button>
+                {u.guest ? (
+                  <button className="btn btn-sm" onClick={() => enter(u)}>进入</button>
+                ) : (
+                  <button className="btn btn-sm" onClick={() => { setLoginName(u.name); setPw('') }}>
+                    使用此账号
+                  </button>
+                )}
               </div>
             ))}
-            {pwFor && (
-              <div className="col" style={{ border: '1px solid var(--primary-soft)', borderRadius: 8, padding: 10, background: 'var(--primary-weak)' }}>
-                <Field label="输入密码">
-                  <input
-                    className="input"
-                    type="password"
-                    value={pw}
-                    autoFocus
-                    onChange={(e) => setPw(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && submitPw()}
-                  />
-                </Field>
-                <div className="row" style={{ justifyContent: 'flex-end' }}>
-                  <button className="btn btn-sm" onClick={() => setPwFor(null)}>取消</button>
-                  <button className="btn btn-sm btn-primary" disabled={busy || !pw} onClick={submitPw}>登录</button>
-                </div>
-              </div>
-            )}
             <button
               className="btn"
               disabled={busy}
@@ -228,13 +289,13 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
             <Field label="昵称">
               <input className="input" value={name} maxLength={12} onChange={(e) => setName(e.target.value)} placeholder="2-12 个字符" />
             </Field>
-            <Field label="密码" hint="至少 4 位;密码哈希后保存在本机,不会上传">
+            <Field label="密码" hint="至少 4 位；本机和云端都只保存加盐哈希，不保存明文">
               <input className="input" type="password" value={regPw} onChange={(e) => setRegPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && register()} placeholder="至少 4 位" />
             </Field>
             <button className="btn btn-primary" style={{ marginTop: 4 }} disabled={busy} onClick={register}>
               创建账号
             </button>
-            <p className="fs12 muted mt8">同一台设备可创建多个账号,各自的学习数据互相独立。</p>
+            <p className="fs12 muted mt8">账号创建后可在网页、手机和电脑端使用同一组账号密码登录。</p>
           </div>
         )}
 

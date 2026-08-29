@@ -12,6 +12,8 @@ import { uid } from '../lib/misc'
 import { computeKpMastery, difficultyWeight, nextStatus } from '../lib/mastery'
 import { entryOnCorrectReview, entryOnEarlyCorrect, entryOnWrong } from '../lib/spaced'
 import { generateTasks } from '../lib/plan'
+import { getSession } from '../lib/auth'
+import { downloadCloudState, uploadCloudState } from '../services/cloud'
 
 const STORAGE_KEY = 'zsb_helper_v1'
 
@@ -722,13 +724,44 @@ const UNDO_LABELS: Partial<Record<Action['type'], string>> = {
   DELETE_QUESTION: '已删除题目',
 }
 
-export function StoreProvider({ children, storageKey = STORAGE_KEY }: { children: ReactNode; storageKey?: string }) {
+export function StoreProvider({
+  children,
+  storageKey = STORAGE_KEY,
+}: {
+  children: ReactNode
+  storageKey?: string
+}) {
+  const cloudSession = getSession()
   const [state, dispatch] = useReducer(reducer, storageKey, load)
+  const [cloudReady, setCloudReady] = React.useState(!cloudSession?.cloudToken || !cloudSession.cloudApiUrl)
   const stateRef = useRef(state)
   stateRef.current = state
   const undoStack = useRef<{ state: State }[]>([])
   const keyRef = useRef(storageKey)
   keyRef.current = storageKey
+
+  // Remote state wins on a newly logged-in device. If it does not exist yet, upload this device's local history.
+  useEffect(() => {
+    const token = cloudSession?.cloudToken
+    const apiUrl = cloudSession?.cloudApiUrl
+    if (!token || !apiUrl) {
+      setCloudReady(true)
+      return
+    }
+
+    let cancelled = false
+    setCloudReady(false)
+    downloadCloudState({ token, apiUrl }).then(async (remoteState) => {
+      if (cancelled) return
+      if (remoteState) dispatch({ type: 'HYDRATE', state: remoteState })
+      else await uploadCloudState({ token, apiUrl }, stateRef.current)
+      if (!cancelled) setCloudReady(true)
+    }).catch(() => {
+      if (!cancelled) setCloudReady(true)
+    })
+
+    return () => { cancelled = true }
+  }, [cloudSession?.cloudToken, cloudSession?.cloudApiUrl])
 
   const dispatchWrapped = useCallback((action: Action) => {
     if (UNDO_LABELS[action.type]) {
@@ -754,6 +787,17 @@ export function StoreProvider({ children, storageKey = STORAGE_KEY }: { children
     }, 400)
     return () => window.clearTimeout(t)
   }, [state])
+
+  // Keep cloud and local snapshots aligned. A failed request leaves local learning fully usable and retries on the next change.
+  useEffect(() => {
+    const token = cloudSession?.cloudToken
+    const apiUrl = cloudSession?.cloudApiUrl
+    if (!cloudReady || !token || !apiUrl) return
+    const timer = window.setTimeout(() => {
+      void uploadCloudState({ token, apiUrl }, state)
+    }, 1000)
+    return () => window.clearTimeout(timer)
+  }, [state, cloudReady, cloudSession?.cloudToken, cloudSession?.cloudApiUrl])
 
   // 关键时刻立即落盘
   useEffect(() => {

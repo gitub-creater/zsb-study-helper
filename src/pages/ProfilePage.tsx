@@ -12,8 +12,9 @@ import { AVATAR_INFO, AVATAR_ORDER, THEMES, THEME_ORDER } from '../lib/theme'
 import { fmtDateTime, todayStr } from '../lib/date'
 import { masteredKpCount } from '../lib/selectors'
 import {
-  clearSession, getSession, getSessionUser, issueCode, checkCode, setPhone, setPassword, verifyPassword,
+  clearSession, getSession, getSessionUser, issueCode, checkCode, LEGACY_USER_ID, migrateUserId, setPhone, setPassword, setSession, uid, verifyPassword,
 } from '../lib/auth'
+import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl, updateCloudPassword } from '../services/cloud'
 
 function ringForLevel(level: number): string | undefined {
   if (level >= 5) return '#FFD34D'
@@ -40,6 +41,10 @@ export function ProfilePage() {
   const [phoneCode, setPhoneCode] = useState('')
   const [sentCode, setSentCode] = useState('')
   const [countdown, setCountdown] = useState(0)
+  const [cloudOpen, setCloudOpen] = useState(false)
+  const [cloudUrl, setCloudUrl] = useState(() => getCloudApiUrl() ?? '')
+  const [cloudPassword, setCloudPassword] = useState('')
+  const [cloudBusy, setCloudBusy] = useState(false)
 
   if (!state.profile) return null
   const p = state.profile
@@ -78,6 +83,51 @@ export function ProfilePage() {
   ]
 
   const todayCount = state.attempts.filter((a) => a.date === todayStr()).length
+  const activeSession = getSession()
+  const cloudConnected = !!activeSession?.cloudToken && !!activeSession.cloudApiUrl
+
+  const connectCloud = async () => {
+    if (!sessUser) return
+    if (!cloudUrl.trim()) {
+      toast('请输入 Vercel 网页地址', { kind: 'error' })
+      return
+    }
+    if (!sessUser.hash) {
+      toast('请先为当前临时账号设置密码，再开启云端同步', { kind: 'error' })
+      return
+    }
+    if (!(await verifyPassword(sessUser.id, cloudPassword))) {
+      toast('账号密码不正确', { kind: 'error' })
+      return
+    }
+
+    setCloudBusy(true)
+    try {
+      saveCloudApiUrl(cloudUrl)
+      const cloudId = sessUser.id === LEGACY_USER_ID ? uid() : sessUser.id
+      const loggedIn = await loginCloud(sessUser.name, cloudPassword)
+      const result = loggedIn.kind === 'not_found'
+        ? await registerCloud(cloudId, sessUser.name, cloudPassword)
+        : loggedIn
+      if (result.kind !== 'ok') {
+        const message = result.kind === 'bad_password' ? '云端密码不正确' : result.kind === 'unavailable'
+          ? '无法连接云端，请检查 Vercel 地址和部署状态'
+          : result.kind === 'error' ? result.message : '云端账号未找到'
+        toast(message, { kind: 'error' })
+        return
+      }
+      if (result.user.id !== cloudId) {
+        toast('云端存在同名但不同的账号，为保护数据未自动合并', { kind: 'error' })
+        return
+      }
+      const syncedUser = sessUser.id === LEGACY_USER_ID ? migrateUserId(sessUser.id, cloudId) : sessUser
+      setSession({ userId: syncedUser.id, name: syncedUser.name, cloudToken: result.session.token, cloudApiUrl: result.session.apiUrl })
+      toast('已连接云端，正在同步学习数据', { kind: 'success' })
+      window.setTimeout(() => window.location.reload(), 500)
+    } finally {
+      setCloudBusy(false)
+    }
+  }
 
   return (
     <div>
@@ -231,6 +281,10 @@ export function ProfilePage() {
               <span>绑定手机号</span>
               <b>{sessUser?.phone ?? '未绑定'}</b>
             </div>
+            <div className="stat-line">
+              <span>云端同步</span>
+              <b>{cloudConnected ? '已连接' : '未连接'}</b>
+            </div>
             <div className="row mt8" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button className="btn btn-sm" onClick={() => setPwOpen((v) => !v)}>
                 <Icon name="edit" size={13} /> 修改密码
@@ -238,6 +292,11 @@ export function ProfilePage() {
               <button className="btn btn-sm" onClick={() => setPhoneOpen((v) => !v)}>
                 <Icon name="mic" size={13} /> {sessUser?.phone ? '更换手机号' : '绑定手机号'}
               </button>
+              {!cloudConnected && (
+                <button className="btn btn-sm" onClick={() => { setCloudUrl(getCloudApiUrl() ?? ''); setCloudOpen((v) => !v) }}>
+                  <Icon name="refresh" size={13} /> 开启云端同步
+                </button>
+              )}
               <div className="grow" />
               <button
                 className="btn btn-sm"
@@ -284,6 +343,18 @@ export function ProfilePage() {
                       if (newPw1 !== newPw2) {
                         toast('两次输入的新密码不一致', { kind: 'error' })
                         return
+                      }
+                      if (activeSession?.cloudToken && activeSession.cloudApiUrl) {
+                        try {
+                          await updateCloudPassword(
+                            { token: activeSession.cloudToken, apiUrl: activeSession.cloudApiUrl },
+                            oldPw,
+                            newPw1
+                          )
+                        } catch (error) {
+                          toast(error instanceof Error ? error.message : '云端密码更新失败', { kind: 'error' })
+                          return
+                        }
                       }
                       await setPassword(sessUser.id, newPw1)
                       setPwOpen(false); setOldPw(''); setNewPw1(''); setNewPw2('')
@@ -342,7 +413,24 @@ export function ProfilePage() {
               </div>
             )}
 
-            <p className="fs12 muted mt8">微信/QQ 扫码登录需开放平台资质,当前版本提供本机账号密码登录;忘记密码可用绑定的手机号找回。</p>
+            {cloudOpen && (
+              <div className="col mt8" style={{ border: '1px solid var(--primary-soft)', borderRadius: 8, padding: 10, background: 'var(--primary-weak)' }}>
+                <p className="fs12 muted">首次同步会把本机学习记录上传；之后手机、网页和电脑端登录同一账号即可使用同一份记录。</p>
+                <Field label="Vercel 网页地址">
+                  <input className="input" value={cloudUrl} onChange={(e) => setCloudUrl(e.target.value)} placeholder="https://your-project.vercel.app" />
+                </Field>
+                <Field label="当前账号密码">
+                  <input className="input" type="password" value={cloudPassword} onChange={(e) => setCloudPassword(e.target.value)} />
+                </Field>
+                <div className="row" style={{ justifyContent: 'flex-end' }}>
+                  <button className="btn btn-sm btn-primary" disabled={cloudBusy} onClick={connectCloud}>
+                    {cloudBusy ? '连接中...' : '连接并同步'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <p className="fs12 muted mt8">账号密码可跨端登录；微信/QQ 扫码登录仍需开放平台资质。短信找回目前仅适用于本机账号，云端找回需接入真实短信服务。</p>
           </div>
 
           <div className="card">

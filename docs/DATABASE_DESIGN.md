@@ -1,6 +1,6 @@
 # 数据模型设计(山东专升本知识校园)
 
-本应用为单机优先架构:数据持久化在浏览器 `localStorage`(键 `zsb_helper_v1`),内容包(科目/章节/知识点/题目)与代码分离存放于 `public/data/*.json`。下表把通用数据库实体映射到本项目的实现,若未来迁移到服务端,可按此直接建表。
+本应用为本机优先、云端可同步架构:浏览器 `localStorage` 保存离线副本(键 `zsb_helper_v1__<userId>`),内容包(科目/章节/知识点/题目)与代码分离存放于 `public/data/*.json`。启用 Supabase 后，`app_users`、`app_sessions`、`user_states` 分别保存账号、会话和每位用户的学习状态快照，具体部署见 `docs/CLOUD_SYNC.md`。
 
 ## 实体映射
 

@@ -12,7 +12,7 @@ npm run test       # 单元测试(25 项:间隔复习/掌握度/计划/判分/CS
 npm run preview    # 预览构建产物
 ```
 
-同一套响应式代码覆盖电脑端(左侧导航)、手机端(底部导航 + 更多菜单)与平板;数据存于浏览器 localStorage,刷新/重开不丢失,断网可完整学习。
+同一套响应式代码覆盖电脑端(左侧导航)、手机端(底部导航 + 更多菜单)与平板。默认可离线使用本机存储；配置 Supabase + Vercel 后，账号和学习记录会在网页、手机、电脑端同步，断网时仍可继续学习。部署步骤见 [docs/CLOUD_SYNC.md](docs/CLOUD_SYNC.md)。
 
 ## 考试类别体系(依据官方文件)
 
@@ -42,7 +42,8 @@ npm run preview    # 预览构建产物
 ## 架构要点
 
 - **技术**:Vite + React 18 + TypeScript + 手写 CSS 设计系统 + KaTeX(本地公式渲染,断网可用)。
-- **状态**:`src/store/store.tsx` 单一 reducer + 防抖持久化 + 删除撤销;内容包合并为幂等操作。
+- **状态**:`src/store/store.tsx` 单一 reducer + 本机防抖持久化 + 删除撤销 + 云端快照同步;内容包合并为幂等操作。
+- **云端**:`api/` Vercel Serverless Functions + Supabase PostgreSQL。服务密钥仅存 Vercel 环境变量，账号密码用 scrypt 加盐哈希，浏览器仅保存过期会话令牌。
 - **核心算法**(`src/lib/`):间隔复习(1→3→7→14→30 可调,答错回退、最高档连对 2 次归档)、掌握度(<3 次显示数据不足)、计划生成(到期错题优先→类别范围内新知点→巩固练习→每 7 天小测)、经验防刷上限。
 - **服务解耦**:`src/services/{ai,search,tts}.ts` 为第三/四阶段预留接口,密钥不进前端,失败不影响本地功能。
 - **数据模型**:见 [docs/DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md)(实体映射与多对多设计)。

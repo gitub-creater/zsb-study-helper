@@ -18,6 +18,10 @@ export interface AuthUser {
 export interface AuthSession {
   userId: string
   name: string
+  /** 云端会话令牌只保存在当前设备,30 天后自动失效 */
+  cloudToken?: string
+  /** 电脑本地版调用 Vercel API 所需的公网地址 */
+  cloudApiUrl?: string
 }
 
 const USERS_KEY = 'zsb_users_v1'
@@ -93,12 +97,13 @@ export function ensureLegacyMigrated(): AuthUser[] {
   return users
 }
 
-export async function createUser(name: string, password?: string): Promise<AuthUser> {
+export async function createUser(name: string, password?: string, id = uid()): Promise<AuthUser> {
   const users = listUsers()
   const trimmed = name.trim()
   if (!trimmed) throw new Error('请填写昵称')
   if (users.some((u) => u.name === trimmed)) throw new Error('该昵称已存在')
-  const user: AuthUser = { id: uid(), name: trimmed, guest: !password, createdAt: new Date().toISOString() }
+  if (users.some((u) => u.id === id)) throw new Error('账号已存在')
+  const user: AuthUser = { id, name: trimmed, guest: !password, createdAt: new Date().toISOString() }
   if (password) {
     user.salt = makeSalt()
     user.hash = await hashHex(user.salt + password)
@@ -107,6 +112,25 @@ export async function createUser(name: string, password?: string): Promise<AuthU
   users.push(user)
   saveUsers(users)
   return user
+}
+
+/** 为早期“本机数据”账号生成可用于云端的 ID，并保留全部本地学习记录。 */
+export function migrateUserId(oldId: string, newId: string): AuthUser {
+  const users = listUsers()
+  const user = users.find((u) => u.id === oldId)
+  if (!user) throw new Error('账号不存在')
+  if (users.some((u) => u.id === newId)) throw new Error('新账号已存在')
+
+  const next = users.map((u) => (u.id === oldId ? { ...u, id: newId } : u))
+  const data = localStorage.getItem(dataKey(oldId))
+  if (data != null) {
+    localStorage.setItem(dataKey(newId), data)
+    localStorage.removeItem(dataKey(oldId))
+  }
+  const session = getSession()
+  if (session?.userId === oldId) setSession({ ...session, userId: newId })
+  saveUsers(next)
+  return next.find((u) => u.id === newId)!
 }
 
 export async function verifyPassword(id: string, password: string): Promise<boolean> {
