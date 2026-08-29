@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --registry=https://registry.npmjs.org/ --no-audit --no-fund
       - name: Set release version
         shell: pwsh
         run: |
@@ -47,7 +47,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm ci
+      - run: npm ci --registry=https://registry.npmjs.org/ --no-audit --no-fund
       - run: npm run build
       - run: npx cap sync android
       - name: Restore Android signing key

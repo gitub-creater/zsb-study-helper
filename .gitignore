@@ -15,3 +15,5 @@ android/app/build/
 android/local.properties
 android/capacitor-cordova-android-plugins/
 release/
+*.jks
+base64_key.txt
