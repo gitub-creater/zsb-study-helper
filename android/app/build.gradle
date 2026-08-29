@@ -4,6 +4,7 @@ def releaseStoreFile = System.getenv('ZSB_RELEASE_STORE_FILE')
 def releaseStorePassword = System.getenv('ZSB_RELEASE_STORE_PASSWORD')
 def releaseKeyAlias = System.getenv('ZSB_RELEASE_KEY_ALIAS')
 def releaseKeyPassword = System.getenv('ZSB_RELEASE_KEY_PASSWORD')
+def releaseStoreType = System.getenv('ZSB_RELEASE_STORE_TYPE')
 def hasReleaseSigning = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
 
 android {
@@ -26,6 +27,9 @@ android {
         release {
             if (hasReleaseSigning) {
                 storeFile file(releaseStoreFile)
+                if (releaseStoreType) {
+                    storeType releaseStoreType
+                }
                 storePassword releaseStorePassword
                 keyAlias releaseKeyAlias
                 keyPassword releaseKeyPassword
