@@ -92,7 +92,8 @@ jobs:
           test -n "$ZSB_RELEASE_KEY_ALIAS" || (echo "Missing Android signing secrets." && exit 1)
           test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing Android signing secrets." && exit 1)
           cd android
-          ./gradlew assembleRelease -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
           mkdir -p ../release
           cp app/build/outputs/apk/release/app-release.apk ../release/ZSB-Study-Helper.apk
       - uses: actions/upload-artifact@v4
