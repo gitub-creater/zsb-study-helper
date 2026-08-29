@@ -124,6 +124,25 @@ jobs:
             fi
           fi
           echo "ZSB_RELEASE_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+      - name: Validate Android private-key password
+        env:
+          ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
+          ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ZSB_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing ANDROID_KEY_PASSWORD repository secret." && exit 1)
+          temp_keystore=$(mktemp --suffix=.p12)
+          trap 'rm -f "$temp_keystore"' EXIT
+          keytool -importkeystore -noprompt \
+            -srckeystore "$ZSB_RELEASE_STORE_FILE" \
+            -srcstoretype "$ZSB_RELEASE_STORE_TYPE" \
+            -srcstorepass "$ZSB_RELEASE_STORE_PASSWORD" \
+            -srcalias "$ZSB_RELEASE_KEY_ALIAS" \
+            -srckeypass "$ZSB_RELEASE_KEY_PASSWORD" \
+            -destkeystore "$temp_keystore" \
+            -deststoretype PKCS12 \
+            -deststorepass "$ZSB_RELEASE_STORE_PASSWORD" \
+            -destkeypass "$ZSB_RELEASE_STORE_PASSWORD" >/dev/null
       - name: Build release APK
         env:
           ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
