@@ -4,7 +4,7 @@ import { Mascot } from '../components/Mascot'
 import { Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import {
-  checkCode, clearSession, createUser, ensureLegacyMigrated, findByPhone, getSession, issueCode, listUsers,
+  checkCode, createUser, ensureLegacyMigrated, findByPhone, issueCode, listUsers,
   setSession, setPassword, verifyPassword,
 } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
@@ -27,7 +27,6 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
 
   const refresh = () => setUsers(listUsers())
   useEffect(() => {
-    clearSession()
     ensureLegacyMigrated()
     refresh()
   }, [])
