@@ -42,9 +42,9 @@ if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
 )
 
 if defined BROWSER (
-    start "" "%BROWSER%" --app=http://localhost:5173 --window-size=1280,860 --window-position=60,30
+    start "" "%BROWSER%" --app=http://localhost:5173/?desktop=20260829 --window-size=1280,860 --window-position=60,30
 ) else (
-    start http://localhost:5173
+    start http://localhost:5173/?desktop=20260829
 )
 
 exit
