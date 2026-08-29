@@ -59,6 +59,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Install Android SDK platform
+        uses: android-actions/setup-android@v3
+      - name: Ensure Android SDK 36
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - name: Install dependencies
         shell: bash
         run: |
@@ -81,6 +88,7 @@ jobs:
         run: |
           test -n "$ANDROID_KEYSTORE_BASE64" || (echo "Missing ANDROID_KEYSTORE_BASE64 repository secret." && exit 1)
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/zsb-release.jks
+          test -s android/app/zsb-release.jks || (echo "Android signing key decoded to an empty file." && exit 1)
       - name: Build release APK
         env:
           ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
@@ -93,7 +101,8 @@ jobs:
           test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing Android signing secrets." && exit 1)
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
+          ./gradlew --version
+          ./gradlew assembleRelease --stacktrace --info -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
           mkdir -p ../release
           cp app/build/outputs/apk/release/app-release.apk ../release/ZSB-Study-Helper.apk
       - uses: actions/upload-artifact@v4
