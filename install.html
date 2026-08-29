@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>专升本学习助手 - 安装到手机</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #87CEEB 0%, #B0D4F1 40%, #E8F4FD 100%);
+  min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.card {
+  background:#fff; border-radius:16px; padding:28px 22px; max-width:400px; width:100%;
+  box-shadow:0 8px 32px rgba(36,101,184,.15); text-align:center;
+}
+.icon { font-size:48px; margin-bottom:8px; }
+h1 { font-size:20px; color:#26313E; margin-bottom:4px; }
+.sub { font-size:13px; color:#8792A0; margin-bottom:20px; }
+.step { display:flex; align-items:flex-start; gap:12px; text-align:left; margin-bottom:16px; padding:12px; background:#F5F8FC; border-radius:10px; }
+.step .num { width:28px; height:28px; border-radius:50%; background:var(--primary,#3E9BFF); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+.step .txt { font-size:14px; color:#26313E; line-height:1.6; }
+.step .txt small { display:block; color:#8792A0; font-size:12px; margin-top:2px; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; padding:14px; border-radius:12px; border:none; font-size:16px; font-weight:700;
+  cursor:pointer; text-decoration:none; margin-top:8px; transition:transform .15s;
+}
+.btn:active { transform:scale(.97); }
+.btn-primary { background:#2465B8; color:#fff; }
+.btn-green { background:#2FA96E; color:#fff; }
+.divider { display:flex; align-items:center; gap:12px; margin:20px 0; color:#CBD6E4; font-size:12px; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:#E3EAF2; }
+.ios-only, .android-only { display:none; }
+.show-ios .ios-only { display:block; }
+.show-android .android-only { display:block; }
+.os-pick { display:flex; gap:10px; margin-bottom:16px; }
+.os-btn { flex:1; padding:12px; border-radius:10px; border:2px solid #E3EAF2; background:#fff; font-size:15px; font-weight:600; cursor:pointer; color:#55616E; }
+.os-btn.on { border-color:#3E9BFF; background:#E7F2FF; color:#2465B8; }
+.note { font-size:11px; color:#B0BCC8; margin-top:16px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🎓</div>
+  <h1>专升本学习助手</h1>
+  <p class="sub">选择你的手机类型，按步骤添加到桌面</p>
+  <div class="os-pick">
+    <button class="os-btn on" onclick="show('ios')">📱 iPhone</button>
+    <button class="os-btn" onclick="show('android')">🤖 Android</button>
+  </div>
+
+  <div id="ios" class="show-ios">
+    <div class="step"><div class="num">1</div><div class="txt">先打开应用<b>（必须先打开一次）</b><small>点击下方绿色按钮打开网页</small></div></div>
+    <div class="step"><div class="num">2</div><div class="txt">点击浏览器底部的<b>分享按钮 ⬆️</b><small>Safari 底部中间的方框加箭头图标</small></div></div>
+    <div class="step"><div class="num">3</div><div class="txt">向下滑动，点击<b>「添加到主屏幕」</b><small>如果没有此选项，点「更多」找一下</small></div></div>
+    <div class="step"><div class="num">4</div><div class="txt">点击右上角<b>「添加」</b>完成安装<small>桌面出现图标，点击即全屏打开</small></div></div>
+    <a class="btn btn-green" href="https://gitub-creater.github.io/zsb-study-helper/" target="_blank">🔗 第一步：打开应用</a>
+  </div>
+
+  <div id="android" class="android-only">
+    <div class="step"><div class="num">1</div><div class="txt">先打开应用<b>（必须用 Chrome 浏览器）</b><small>点击下方绿色按钮打开网页</small></div></div>
+    <div class="step"><div class="num">2</div><div class="txt">点击 Chrome 右上角的<b> ⋮ 三点菜单</b></div></div>
+    <div class="step"><div class="num">3</div><div class="txt">选择<b>「添加到主屏幕」</b>或<b>「安装应用」</b></div></div>
+    <div class="step"><div class="num">4</div><div class="txt">点击<b>「安装」</b>确认<small>桌面出现图标，点击即全屏打开</small></div></div>
+    <a class="btn btn-green" href="https://gitub-creater.github.io/zsb-study-helper/" target="_blank">🔗 第一步：打开应用</a>
+  </div>
+
+  <div class="divider">或者直接复制链接</div>
+  <button class="btn btn-primary" onclick="navigator.clipboard.writeText('https://gitub-creater.github.io/zsb-study-helper/');this.textContent='✓ 已复制，粘贴到浏览器打开'">📋 复制应用链接</button>
+  <p class="note">数据保存在手机浏览器中，各设备独立互不影响。<br>GitHub Pages 免费托管 · 无需下载安装包</p>
+</div>
+<script>
+function show(os){document.body.className='show-'+os;
+document.querySelectorAll('.os-btn').forEach(b=>b.classList.remove('on'));
+event.target.classList.add('on');}
+// Auto-detect
+if(/iPhone|iPad|iPod/.test(navigator.userAgent)){show('ios');
+document.querySelectorAll('.os-btn')[0].click();}
+else if(/Android/.test(navigator.userAgent)){show('android');
+document.querySelectorAll('.os-btn')[1].click();}
+</script>
+</body>
+</html>
