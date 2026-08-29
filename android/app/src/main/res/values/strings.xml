@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">专升本学习助手</string>
+    <string name="title_activity_main">专升本学习助手</string>
+    <string name="package_name">com.gitubcreater.zsbstudyhelper</string>
+    <string name="custom_url_scheme">com.gitubcreater.zsbstudyhelper</string>
+</resources>

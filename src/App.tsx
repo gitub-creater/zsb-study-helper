@@ -29,6 +29,7 @@ import { nav } from './lib/misc'
 import { clearSession, dataKey, getSession } from './lib/auth'
 import { LoginGate } from './pages/LoginPage'
 import { Splash } from './components/Splash'
+import { InstallBanner } from './components/InstallBanner'
 
 interface NavItem {
   key: string
@@ -259,6 +260,7 @@ export default function App() {
       <StoreProvider key={session.userId} storageKey={dataKey(session.userId)}>
         <ToastProvider>
           <Router />
+          <InstallBanner />
         </ToastProvider>
       </StoreProvider>
     </ErrorBoundary>

@@ -28,7 +28,13 @@ export function getCloudApiUrl(): string | null {
   const configured = normalizeUrl(import.meta.env.VITE_CLOUD_API_URL ?? '')
   if (configured) return configured
 
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  // Electron loads bundled files with the file: protocol. Its origin is not an API host,
+  // so native desktop builds must use the same cloud service as local/mobile builds.
+  if (
+    window.location.protocol !== 'file:'
+    && window.location.hostname !== 'localhost'
+    && window.location.hostname !== '127.0.0.1'
+  ) {
     return window.location.origin
   }
 

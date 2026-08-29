@@ -1,0 +1,91 @@
+name: Release installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Set release version
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          npm version $version --no-git-tag-version
+      - run: npm run desktop:installer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: |
+            release/ZSB-Study-Helper-Setup.exe
+            release/ZSB-Study-Helper-Setup.exe.blockmap
+            release/latest.yml
+          if-no-files-found: error
+
+  android:
+    name: Build signed Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Restore Android signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || (echo "Missing ANDROID_KEYSTORE_BASE64 repository secret." && exit 1)
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/zsb-release.jks
+      - name: Build release APK
+        env:
+          ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
+          ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ZSB_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ZSB_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ZSB_RELEASE_STORE_PASSWORD" || (echo "Missing Android signing secrets." && exit 1)
+          test -n "$ZSB_RELEASE_KEY_ALIAS" || (echo "Missing Android signing secrets." && exit 1)
+          test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing Android signing secrets." && exit 1)
+          cd android
+          ./gradlew assembleRelease -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
+          mkdir -p ../release
+          cp app/build/outputs/apk/release/app-release.apk ../release/ZSB-Study-Helper.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: release/ZSB-Study-Helper.apk
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" release/* --title "$GITHUB_REF_NAME" --generate-notes

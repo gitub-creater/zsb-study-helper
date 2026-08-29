@@ -1,18 +1,63 @@
 {
   "name": "zsb-study-helper",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "山东专升本学习助手 - 可爱校园冒险风备考工具",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && tsc --project tsconfig.api.json --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "android:sync": "npm run build && cap sync android",
+    "android:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1 -Configuration Debug",
+    "android:release": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1 -Configuration Release",
+    "desktop:dev": "npm run build && electron electron/main.cjs",
+    "desktop:installer": "npm run build && electron-builder --win nsis --publish never"
+  },
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.gitubcreater.zsbstudyhelper",
+    "productName": "专升本学习助手",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "artifactName": "ZSB-Study-Helper-Setup.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "gitub-creater",
+        "repo": "zsb-study-helper",
+        "releaseType": "release"
+      }
+    ]
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.0",
     "@supabase/supabase-js": "^2.112.4",
     "docx": "^9.7.1",
+    "electron-updater": "^6.8.9",
     "jszip": "^3.10.1",
     "katex": "^0.18.4",
     "pptxgenjs": "^4.0.1",
@@ -21,11 +66,15 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
     "@types/katex": "^0.16.8",
     "@types/node": "^26.4.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vitest": "^4.1.11"

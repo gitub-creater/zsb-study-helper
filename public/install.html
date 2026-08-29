@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安装到手机桌面 - 专升本学习助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#87CEEB,#B0D4F1 40%,#E8F4FD);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:#fff;border-radius:16px;padding:24px 20px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(36,101,184,.15)}
+.icon{font-size:42px;text-align:center;margin-bottom:6px}
+h1{font-size:19px;color:#26313E;text-align:center;margin-bottom:4px}
+.sub{font-size:12px;color:#8792A0;text-align:center;margin-bottom:16px}
+.tip{background:#FFF6DF;border:1px solid #F0DCA0;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#8A5C00;margin-bottom:14px;line-height:1.6}
+.browser-tag{display:inline-flex;align-items:center;gap:4px;background:#E7F2FF;color:#2465B8;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;margin-bottom:10px}
+.step{display:flex;gap:10px;margin-bottom:10px;padding:10px;background:#F5F8FC;border-radius:10px}
+.step .n{width:24px;height:24px;border-radius:50%;background:#3E9BFF;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.step .t{font-size:13.5px;color:#26313E;line-height:1.55}
+.step .t b{color:#2465B8}
+.open-btn{display:block;width:100%;padding:14px;border-radius:12px;border:none;background:#2465B8;color:#fff;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;margin-top:16px;transition:transform .15s}
+.open-btn:active{transform:scale(.97)}
+.note{font-size:11px;color:#B0BCC8;margin-top:14px;line-height:1.7;text-align:center}
+.browser-note{background:#F0F7F0;border:1px solid #C8E6C8;border-radius:8px;padding:8px 12px;font-size:12px;color:#2E7D32;margin-top:8px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🎓</div>
+  <h1>添加到手机桌面</h1>
+  <p class="sub">添加后点击图标直接打开，像 App 一样使用</p>
+
+  <div id="detected"></div>
+  <div id="steps"></div>
+
+  <a class="open-btn" href="https://gitub-creater.github.io/zsb-study-helper/" target="_blank">📱 第一步：点击打开应用</a>
+  <p class="note">打开后按上方步骤操作即可<br>数据保存在手机浏览器中，各设备独立<br>GitHub Pages 免费托管 · 无需下载安装包</p>
+</div>
+
+<script>
+(function(){
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua);
+  var os = isIOS ? 'iOS' : /Android/.test(ua) ? 'Android' : 'PC';
+  var browser = '其他浏览器';
+  var browserId = 'other';
+
+  if (/MicroMessenger/i.test(ua)) { browser = '微信'; browserId = 'weixin'; }
+  else if (/Baidu/i.test(ua)) { browser = '百度浏览器'; browserId = 'baidu'; }
+  else if (/UCBrowser|UCWEB/i.test(ua)) { browser = 'UC 浏览器'; browserId = 'uc'; }
+  else if (/QQBrowser/i.test(ua)) { browser = 'QQ 浏览器'; browserId = 'qq'; }
+  else if (/Edg\//i.test(ua)) { browser = 'Edge'; browserId = 'edge'; }
+  else if (/SamsungBrowser/i.test(ua)) { browser = '三星浏览器'; browserId = 'samsung'; }
+  else if (/Chrome/i.test(ua) && !/OPR/i.test(ua)) { browser = 'Chrome'; browserId = 'chrome'; }
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) { browser = 'Safari'; browserId = 'safari'; }
+
+  var detected = document.getElementById('detected');
+  detected.innerHTML = '<span class="browser-tag">📱 ' + os + ' · ' + browser + '</span>';
+
+  var stepsHTML = '';
+  var menuName = '菜单';
+  var extraTip = '';
+
+  if (browserId === 'weixin') {
+    stepsHTML = '<div class="step"><div class="n">1</div><div class="t">点击右上角<b> ⋯ </b>更多按钮</div></div>'
+      + '<div class="step"><div class="n">2</div><div class="t">选择<b>「在浏览器打开」</b><span style="color:#999">(微信内无法添加到桌面)</span></div></div>'
+      + '<div class="step"><div class="n">3</div><div class="t">在打开的浏览器中,点<b>菜单</b> → <b>「添加到桌面」</b>或<b>「收藏」</b></div></div>';
+    extraTip = '<div class="browser-note">💡 微信内置浏览器不支持直接添加,按上面步骤在系统浏览器中操作即可。</div>';
+  } else if (browserId === 'baidu') {
+    menuName = '☰';
+    stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+      + '<div class="step"><div class="n">2</div><div class="t">点击底部或顶部的<b> ☰ 菜单按钮</b></div></div>'
+      + '<div class="step"><div class="n">3</div><div class="t">找到并点击<b>「添加到桌面」</b>或<b>「收藏到桌面」</b></div></div>'
+      + '<div class="step"><div class="n">4</div><div class="t">确认添加,桌面出现<b>「专升本学习助手」</b>图标</div></div>';
+  } else if (browserId === 'uc') {
+    menuName = '☰';
+    stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+      + '<div class="step"><div class="n">2</div><div class="t">点击底部工具栏的<b> ☰ 菜单</b></div></div>'
+      + '<div class="step"><div class="n">3</div><div class="t">选择<b>「收藏网址」</b>→ 勾选<b>「发送到桌面」</b></div></div>';
+  } else if (browserId === 'qq') {
+    menuName = '☰';
+    stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+      + '<div class="step"><div class="n">2</div><div class="t">点击底部<b> ☰ 菜单</b> → 找到<b>「添加到桌面」</b>或<b>「收藏」</b></div></div>';
+  } else if (browserId === 'chrome' || browserId === 'edge') {
+    menuName = '⋮';
+    if (/Android/.test(ua)) {
+      stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+        + '<div class="step"><div class="n">2</div><div class="t">等几秒,底部可能自动弹出<b>「添加到主屏幕」</b>提示条 → 点击<b>「安装」</b></div></div>'
+        + '<div class="step"><div class="n">3</div><div class="t">如果没有弹条:点右上角<b> ⋮ </b>→ 选<b>「添加到主屏幕」</b>或<b>「安装应用」</b></div></div>'
+        + '<div class="step"><div class="n">4</div><div class="t">点击<b>「安装」</b>确认</div></div>';
+    } else {
+      stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+        + '<div class="step"><div class="n">2</div><div class="t">点地址栏右侧的<b> ⊕ 安装图标</b><span style="color:#999">(如果有的话)</span></div></div>'
+        + '<div class="step"><div class="n">3</div><div class="t">或点右上角 <b>⋮</b> → <b>「安装」/「创建快捷方式」</b></div></div>';
+    }
+  } else if (browserId === 'safari') {
+    if (isIOS) {
+      stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+        + '<div class="step"><div class="n">2</div><div class="t">点击底部中间的<b> 分享按钮 ⬆️</b><span style="color:#999">(方框+箭头)</span></div></div>'
+        + '<div class="step"><div class="n">3</div><div class="t">向下滑动,点击<b>「添加到主屏幕」</b></div></div>'
+        + '<div class="step"><div class="n">4</div><div class="t">点击右上角<b>「添加」</b>完成</div></div>';
+    } else {
+      stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+        + '<div class="step"><div class="n">2</div><div class="t">双击页面 → <b>「添加到主屏幕」</b></div></div>';
+    }
+  } else {
+    menuName = '菜单';
+    stepsHTML = '<div class="step"><div class="n">1</div><div class="t">先点击下方按钮打开应用</div></div>'
+      + '<div class="step"><div class="n">2</div><div class="t">点击浏览器的<b>菜单按钮</b>(通常在底部或右上角)</div></div>'
+      + '<div class="step"><div class="n">3</div><div class="t">找到并点击<b>「添加到主屏幕」</b>、<b>「收藏」</b>或<b>「添加书签」</b></div></div>';
+  }
+
+  document.getElementById('steps').innerHTML = stepsHTML + extraTip;
+})();
+</script>
+</body>
+</html>

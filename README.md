@@ -14,6 +14,11 @@ npm run preview    # 预览构建产物
 
 同一套响应式代码覆盖电脑端(左侧导航)、手机端(底部导航 + 更多菜单)与平板。默认可离线使用本机存储；配置 Supabase + Vercel 后，账号和学习记录会在网页、手机、电脑端同步，断网时仍可继续学习。部署步骤见 [docs/CLOUD_SYNC.md](docs/CLOUD_SYNC.md)。
 
+## 安装包发布
+
+- Android 和 Windows 安装入口会自动指向 GitHub Releases 最新版本；安装详情和首次签名配置见 [docs/INSTALLERS.md](docs/INSTALLERS.md)。
+- Android 新版本使用同一签名密钥和更高版本号安装时，会覆盖旧版本；Windows 新安装包会自动替换旧版，并在启动时检查更新。
+
 ## 考试类别体系(依据官方文件)
 
 | 类别 | 学科门类 | 高数科目 | 科目组合 |
