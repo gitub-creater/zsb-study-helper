@@ -1,6 +1,6 @@
-import { db, getBody, handleOptions, sendError, sessionUser, setCors } from '../server/cloud-api'
+import { db, getBody, handleOptions, sendError, sessionUser, setCors } from '../server/cloud-api.js'
 
-export default async function handler(req: import('../server/cloud-api').ApiRequest, res: import('../server/cloud-api').ApiResponse) {
+export default async function handler(req: import('../server/cloud-api.js').ApiRequest, res: import('../server/cloud-api.js').ApiResponse) {
   if (handleOptions(req, res)) return
   setCors(req, res)
   if (req.method !== 'GET' && req.method !== 'PUT') return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
