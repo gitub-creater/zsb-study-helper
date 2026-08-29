@@ -100,8 +100,8 @@ export function ensureLegacyMigrated(): AuthUser[] {
 export async function createUser(name: string, password?: string, id = uid()): Promise<AuthUser> {
   const users = listUsers()
   const trimmed = name.trim()
-  if (!trimmed) throw new Error('请填写昵称')
-  if (users.some((u) => u.name === trimmed)) throw new Error('该昵称已存在')
+  if (!trimmed) throw new Error('请填写账号')
+  if (users.some((u) => u.name === trimmed)) throw new Error('该账号已存在')
   if (users.some((u) => u.id === id)) throw new Error('账号已存在')
   const user: AuthUser = { id, name: trimmed, guest: !password, createdAt: new Date().toISOString() }
   if (password) {

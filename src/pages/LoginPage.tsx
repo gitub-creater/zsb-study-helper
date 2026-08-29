@@ -17,7 +17,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
   const [loginName, setLoginName] = useState('')
   const [pw, setPw] = useState('')
   const [cloudApiUrl, setCloudApiUrl] = useState(() => getCloudApiUrl() ?? '')
-  const [name, setName] = useState('')
+  const [account, setAccount] = useState('')
   const [regPw, setRegPw] = useState('')
   const [busy, setBusy] = useState(false)
   // 忘记密码
@@ -102,8 +102,8 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
   }
 
   const register = async () => {
-    if (name.trim().length < 2) {
-      toast('昵称至少 2 个字符', { kind: 'error' })
+    if (account.trim().length < 2) {
+      toast('账号至少 2 个字符', { kind: 'error' })
       return
     }
     if (regPw.length < 4) {
@@ -114,12 +114,12 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     try {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
       const id = uid()
-      const cloud = await registerCloud(id, name, regPw)
+      const cloud = await registerCloud(id, account, regPw)
       if (cloud.kind === 'error') {
         toast(cloud.message, { kind: 'error' })
         return
       }
-      const u = await createUser(name, regPw, id)
+      const u = await createUser(account, regPw, id)
       refresh()
       if (cloud.kind === 'ok') {
         toast(`账号「${u.name}」创建成功，已开启云端同步`, { kind: 'success' })
@@ -286,8 +286,8 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
 
         {tab === 'register' && (
           <div className="col">
-            <Field label="昵称">
-              <input className="input" value={name} maxLength={12} onChange={(e) => setName(e.target.value)} placeholder="2-12 个字符" />
+            <Field label="账号" hint="用于登录；注册后可在首次引导设置学习昵称">
+              <input className="input" value={account} maxLength={12} onChange={(e) => setAccount(e.target.value)} placeholder="设置登录账号(2-12 个字符)" />
             </Field>
             <Field label="密码" hint="至少 4 位；本机和云端都只保存加盐哈希，不保存明文">
               <input className="input" type="password" value={regPw} onChange={(e) => setRegPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && register()} placeholder="至少 4 位" />
