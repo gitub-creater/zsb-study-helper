@@ -89,16 +89,12 @@ jobs:
           test -n "$ANDROID_KEYSTORE_BASE64" || (echo "Missing ANDROID_KEYSTORE_BASE64 repository secret." && exit 1)
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/zsb-release.jks
           test -s android/app/zsb-release.jks || (echo "Android signing key decoded to an empty file." && exit 1)
-      - name: Build release APK
+      - name: Validate Android signing key
         env:
           ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
           ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ZSB_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ZSB_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           test -n "$ZSB_RELEASE_STORE_PASSWORD" || (echo "Missing Android signing secrets." && exit 1)
-          test -n "$ZSB_RELEASE_KEY_ALIAS" || (echo "Missing Android signing secrets." && exit 1)
-          test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing Android signing secrets." && exit 1)
           store_type=""
           for candidate in PKCS12 JKS; do
             if keytool -list -keystore "$ZSB_RELEASE_STORE_FILE" -storetype "$candidate" -storepass "$ZSB_RELEASE_STORE_PASSWORD" >/dev/null 2>&1; then
@@ -107,11 +103,27 @@ jobs:
             fi
           done
           test -n "$store_type" || (echo "Android keystore cannot be opened. Check ANDROID_STORE_PASSWORD and the base64 key." && exit 1)
-          keytool -list -keystore "$ZSB_RELEASE_STORE_FILE" -storetype "$store_type" -storepass "$ZSB_RELEASE_STORE_PASSWORD" -alias "$ZSB_RELEASE_KEY_ALIAS" >/dev/null 2>&1 || (echo "Android key alias not found or key password is invalid. Check ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD." && exit 1)
+          echo "ZSB_RELEASE_STORE_TYPE=$store_type" >> "$GITHUB_ENV"
+          echo "Android keystore format: $store_type"
+      - name: Validate Android signing alias
+        env:
+          ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
+          ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ZSB_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$ZSB_RELEASE_KEY_ALIAS" || (echo "Missing ANDROID_KEY_ALIAS repository secret." && exit 1)
+          keytool -list -keystore "$ZSB_RELEASE_STORE_FILE" -storetype "$ZSB_RELEASE_STORE_TYPE" -storepass "$ZSB_RELEASE_STORE_PASSWORD" -alias "$ZSB_RELEASE_KEY_ALIAS" >/dev/null 2>&1 || (echo "Android key alias not found. Check ANDROID_KEY_ALIAS." && exit 1)
+      - name: Build release APK
+        env:
+          ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
+          ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ZSB_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ZSB_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing ANDROID_KEY_PASSWORD repository secret." && exit 1)
           cd android
           chmod +x gradlew
           ./gradlew --version
-          export ZSB_RELEASE_STORE_TYPE="$store_type"
           ./gradlew assembleRelease --stacktrace --info -PzsbVersionCode="$GITHUB_RUN_NUMBER" -PzsbVersionName="${GITHUB_REF_NAME#v}"
           mkdir -p ../release
           cp app/build/outputs/apk/release/app-release.apk ../release/ZSB-Study-Helper.apk
