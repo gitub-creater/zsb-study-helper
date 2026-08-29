@@ -109,15 +109,25 @@ jobs:
         env:
           ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
           ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ZSB_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          test -n "$ZSB_RELEASE_KEY_ALIAS" || (echo "Missing ANDROID_KEY_ALIAS repository secret." && exit 1)
-          keytool -list -keystore "$ZSB_RELEASE_STORE_FILE" -storetype "$ZSB_RELEASE_STORE_TYPE" -storepass "$ZSB_RELEASE_STORE_PASSWORD" -alias "$ZSB_RELEASE_KEY_ALIAS" >/dev/null 2>&1 || (echo "Android key alias not found. Check ANDROID_KEY_ALIAS." && exit 1)
+          test -n "$ANDROID_KEY_ALIAS" || (echo "Missing ANDROID_KEY_ALIAS repository secret." && exit 1)
+          if ! keytool -list -keystore "$ZSB_RELEASE_STORE_FILE" -storetype "$ZSB_RELEASE_STORE_TYPE" -storepass "$ZSB_RELEASE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null 2>&1; then
+            aliases=$(keytool -list -keystore "$ZSB_RELEASE_STORE_FILE" -storetype "$ZSB_RELEASE_STORE_TYPE" -storepass "$ZSB_RELEASE_STORE_PASSWORD" | awk -F, '/PrivateKeyEntry/ {print $1}')
+            alias_count=$(printf '%s\n' "$aliases" | sed '/^$/d' | wc -l)
+            if [ "$alias_count" -eq 1 ]; then
+              ANDROID_KEY_ALIAS=$(printf '%s' "$aliases" | sed -n '1p' | xargs)
+              echo "Configured alias was not found; using the only signing alias in the keystore."
+            else
+              echo "Android key alias not found and the keystore has $alias_count signing aliases. Check ANDROID_KEY_ALIAS."
+              exit 1
+            fi
+          fi
+          echo "ZSB_RELEASE_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
       - name: Build release APK
         env:
           ZSB_RELEASE_STORE_FILE: ${{ github.workspace }}/android/app/zsb-release.jks
           ZSB_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ZSB_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ZSB_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           test -n "$ZSB_RELEASE_KEY_PASSWORD" || (echo "Missing ANDROID_KEY_PASSWORD repository secret." && exit 1)
