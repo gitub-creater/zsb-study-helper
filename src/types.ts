@@ -1,0 +1,447 @@
+// 数据模型定义 —— 所有实体与状态的唯一来源
+
+export type AvatarKind = 'sprout' | 'cat' | 'rabbit' | 'bear'
+export type ThemeKind = 'sky' | 'mint' | 'sakura' | 'lemon' | 'lavender'
+
+/** 考试类别:高教一类(理学/工学·高数Ⅰ)、二类(经/农/医/管·高数Ⅱ)、三类(文/法/教/史/艺/哲·高数Ⅲ) */
+export type ExamCategory = 'gj1' | 'gj2' | 'gj3'
+/** 公共课二选一 */
+export type Elective = 'english' | 'politics'
+
+/** 知识点状态 */
+export type KPStatus = 'unlearned' | 'learning' | 'toReview' | 'basic' | 'mastered'
+export const KP_STATUS_TEXT: Record<KPStatus, string> = {
+  unlearned: '未学习',
+  learning: '学习中',
+  toReview: '待复习',
+  basic: '基本掌握',
+  mastered: '已掌握',
+}
+export const KP_STATUS_ORDER: KPStatus[] = ['unlearned', 'learning', 'toReview', 'basic', 'mastered']
+
+export type QuestionType = 'single' | 'multiple' | 'judge' | 'fill'
+export const QUESTION_TYPE_TEXT: Record<QuestionType, string> = {
+  single: '单选',
+  multiple: '多选',
+  judge: '判断',
+  fill: '填空',
+}
+
+export type WrongReason =
+  | '概念不清'
+  | '公式忘记'
+  | '计算失误'
+  | '审题错误'
+  | '记忆混淆'
+  | '完全不会'
+  | '蒙对或蒙错'
+  | '答案存疑'
+export const WRONG_REASONS: WrongReason[] = [
+  '概念不清',
+  '公式忘记',
+  '计算失误',
+  '审题错误',
+  '记忆混淆',
+  '完全不会',
+  '蒙对或蒙错',
+  '答案存疑',
+]
+
+export type TaskType = 'learnKP' | 'chapterPractice' | 'reviewWrong' | 'memorize' | 'stageTest' | 'mockExam'
+export const TASK_TYPE_TEXT: Record<TaskType, string> = {
+  learnKP: '学习知识点',
+  chapterPractice: '章节练习',
+  reviewWrong: '错题复习',
+  memorize: '背诵记忆',
+  stageTest: '阶段小测',
+  mockExam: '模拟考试',
+}
+
+export type PracticeMode = 'sequential' | 'random' | 'chapter' | 'kp' | 'weak' | 'wrong' | 'timed'
+export const PRACTICE_MODE_TEXT: Record<PracticeMode, string> = {
+  sequential: '顺序练习',
+  random: '随机练习',
+  chapter: '章节练习',
+  kp: '知识点专项',
+  weak: '薄弱点强化',
+  wrong: '错题复习',
+  timed: '限时测试',
+}
+
+export interface Profile {
+  nickname: string
+  avatar: AvatarKind
+  theme: ThemeKind
+  /** 报考专业 */
+  major: string
+  /** 报考类别(高教一类/二类/三类),决定高数科目与内容范围 */
+  category?: ExamCategory
+  /** 公共课二选一:英语或政治 */
+  elective?: Elective
+  /** 全部解锁(装扮/边框等外观项,仅影响显示) */
+  allUnlocked?: boolean
+  /** 目标院校(报考意向,可随时修改) */
+  targetCollege?: string
+  /** 考试日期 YYYY-MM-DD */
+  examDate: string
+  /** 考试大纲年份 */
+  syllabusYear: number
+  baseLevel: 'zero' | 'basic' | 'solid'
+  /** 每天可学习时间(分钟) */
+  dailyMinutes: number
+  /** 每周可学习天数 */
+  weeklyDays: number
+  createdAt: string
+}
+
+export interface Subject {
+  id: string
+  name: string
+  color: string
+  targetScore: number
+  order: number
+  /** 适用考试类别;空=全部类别 */
+  applicableCategories?: ExamCategory[]
+  /** 公共课二选一归属;空=必考科目 */
+  elective?: Elective
+  /** 示例/旧版科目标记,仅用于展示分组,不影响数据 */
+  legacy?: boolean
+  /** 考纲信息(版本化,可追溯) */
+  syllabus?: {
+    version: string
+    year: number
+    source: string
+    sourceUrl?: string
+    verified: string
+    updatedAt: string
+  }
+}
+
+export interface Chapter {
+  id: string
+  subjectId: string
+  name: string
+  order: number
+  /** 考纲考查要求 */
+  requirement?: string
+  /** 考纲来源说明 */
+  source?: string
+}
+
+export interface KPStats {
+  attempts: number
+  correct: number
+  wrongCount: number
+  lastPracticedAt: string | null
+  /** 连续答对次数 */
+  streak: number
+  /** 错题复习成功累计加分 */
+  reviewBonus: number
+}
+
+export interface KnowledgePoint {
+  id: string
+  subjectId: string
+  chapterId: string
+  name: string
+  status: KPStatus
+  order: number
+  notes: string
+  stats: KPStats
+  /** 缓存的掌握度(0-100),null=数据不足 */
+  mastery: number | null
+  // ---- 内容元数据(catalog 导入,均可选,兼容旧数据) ----
+  /** 适用考试类别;空=全部 */
+  applicableCategories?: ExamCategory[]
+  /** 前置知识点名称 */
+  prerequisites?: string[]
+  /** 核心概念 */
+  concepts?: string
+  /** 重点公式(LaTeX,用 $...$ 包裹) */
+  formulas?: string
+  /** 解题方法 */
+  methods?: string
+  /** 常见题型 */
+  commonTypes?: string
+  /** 典型例题(LaTeX 用 $...$) */
+  example?: string
+  /** 易错点 */
+  mistakes?: string
+  /** 学习难度 1-3 */
+  difficulty?: 1 | 2 | 3
+  /** 重要程度 1-3 */
+  importance?: 1 | 2 | 3
+  /** 预计学习时间(分钟) */
+  estMinutes?: number
+  /** 资料来源说明 */
+  sourceRef?: string
+}
+
+export interface Question {
+  id: string
+  subjectId: string
+  chapterId: string
+  kpId: string
+  type: QuestionType
+  stem: string
+  options: string[]
+  /** single/judge: 'A'/'B'... multiple: 'ABD' fill: 文本 */
+  answer: string
+  explanation: string
+  difficulty: 1 | 2 | 3
+  source: string
+  year: number
+  official: boolean
+  createdAt: string
+  // ---- 扩展字段(可选,兼容旧数据) ----
+  /** 适用考试类别;空=全部 */
+  categories?: ExamCategory[]
+  /** 是否真题(需有可靠来源) */
+  isReal?: boolean
+  /** 高频考点题 */
+  hot?: boolean
+  /** 标签 */
+  tags?: string[]
+  /** 错误选项分析 */
+  wrongAnalysis?: string
+  /** 次要关联知识点(一题多考点) */
+  secondaryKpIds?: string[]
+  updatedAt?: string
+  // ---- 题库管理扩展字段 ----
+  /** 题目类型:真题/模拟题/预测题/机构题/原创题/AI生成 */
+  qType?: '真题' | '模拟题' | '预测题' | '机构题' | '原创题' | 'AI生成'
+  /** 是否已人工审核 */
+  reviewed?: boolean
+  /** 来源网址 */
+  sourceUrl?: string
+  /** 相似题标记(指向被关联的题目 id) */
+  similarTo?: string
+}
+
+export interface Attempt {
+  id: string
+  questionId: string
+  kpId: string
+  subjectId: string
+  correct: boolean
+  userAnswer: string
+  mode: PracticeMode
+  at: string
+  date: string
+}
+
+export interface WrongReviewLog {
+  date: string
+  correct: boolean
+}
+
+export interface WrongEntry {
+  questionId: string
+  kpId: string
+  subjectId: string
+  wrongCount: number
+  firstWrongAt: string
+  lastWrongAt: string
+  lastUserAnswer: string
+  correctAnswer: string
+  reason: WrongReason | null
+  /** 当前所处间隔档位(0..intervals.length-1) */
+  intervalIndex: number
+  streakCorrect: number
+  reviewLog: WrongReviewLog[]
+  /** 下次复习日期;null 且 archived=true 表示已克服 */
+  nextReviewAt: string | null
+  archived: boolean
+}
+
+export interface Task {
+  id: string
+  type: TaskType
+  title: string
+  kpIds?: string[]
+  chapterId?: string
+  subjectId?: string
+  /** 练习类任务的题数(可调整);学习类=知识点个数 */
+  questionCount: number
+  progress: number
+  done: boolean
+  estMinutes: number
+  xp: number
+  note?: string
+}
+
+export interface SessionAnswer {
+  userAnswer: string
+  correct: boolean
+}
+
+export interface Session {
+  id: string
+  mode: PracticeMode
+  name: string
+  questionIds: string[]
+  index: number
+  answers: Record<string, SessionAnswer>
+  startedAt: string
+  taskId?: string
+  /** 限时测试:总时长(秒) */
+  limitSeconds?: number
+  expiresAt?: number
+  /** 本次练习已获得经验 */
+  xpGained: number
+}
+
+export interface SessionSummary {
+  mode: PracticeMode
+  name: string
+  total: number
+  answered: number
+  correct: number
+  xpGained: number
+  at: string
+  wrongKpIds: string[]
+}
+
+export interface Settings {
+  /** 错题间隔复习天数,如 [1,3,7,14,30] */
+  intervals: number[]
+  /** 每日答题经验上限(防刷) */
+  dailyPracticeXpCap: number
+  reduceMotion: boolean
+  mascotEnabled: boolean
+  /** 远程内容包更新源 URL(可为空;指向静态托管的 catalog JSON) */
+  updateSourceUrl?: string
+  /** 软件版本清单 URL(可为空;JSON 格式 {version, notes, url}) */
+  updateManifestUrl?: string
+  /** AI 判题服务配置(豆包/DeepSeek/千问/自定义 OpenAI 兼容),密钥仅存本机 */
+  ai?: { provider: string; baseURL: string; apiKey: string; model: string }
+}
+
+export interface OfficeResultRecord {
+  level: string
+  earned: number
+  total: number
+  at: string
+}
+
+export interface XpLogEntry {
+  t: number
+  amount: number
+  reason: string
+}
+
+export interface State {
+  version: number
+  onboarded: boolean
+  profile: Profile | null
+  subjects: Subject[]
+  chapters: Chapter[]
+  kps: KnowledgePoint[]
+  questions: Question[]
+  attempts: Attempt[]
+  wrong: Record<string, WrongEntry>
+  /** 日期 -> 当日任务 */
+  tasks: Record<string, Task[]>
+  session: Session | null
+  lastSummary: SessionSummary | null
+  xp: number
+  xpLog: XpLogEntry[]
+  practiceXpDate: string
+  practiceXpToday: number
+  streak: { current: number; best: number; lastActive: string | null }
+  /** 日期 -> 累计学习秒数 */
+  studyTime: Record<string, number>
+  favorites: string[]
+  questionNotes: Record<string, string>
+  /** 已发放"全部完成"奖励的日期 */
+  allDoneBonus: string[]
+  settings: Settings
+  seedLoaded: boolean
+  /** 已合并的内容包版本(考试类别目录) */
+  catalogVersion?: number
+  /** 热门题页用户手动隐藏的题目 */
+  hiddenHot: string[]
+  /** 上次检查更新的时间戳 */
+  lastUpdateCheck?: number
+  /** 上次检查软件新版本的时间戳 */
+  lastAppUpdateCheck?: number
+  /** 实操大题最近一次判题结果 */
+  officeResults?: Record<string, OfficeResultRecord>
+  /** 英语打卡:打卡日期与已掌握单词 */
+  english?: { checkedDates: string[]; mastered: string[] }
+  /** 更新日志(导入/审核/迁移等事件) */
+  qaLog?: { t: number; text: string }[]
+}
+
+/** 内容包结构(public/data/catalog*.json,与代码分离,可随大纲年度更新) */
+export interface CatalogKp {
+  id: string
+  subjectId: string
+  chapterId: string
+  name: string
+  order: number
+  applicableCategories?: ExamCategory[]
+  prerequisites?: string[]
+  concepts?: string
+  formulas?: string
+  methods?: string
+  commonTypes?: string
+  example?: string
+  mistakes?: string
+  difficulty?: 1 | 2 | 3
+  importance?: 1 | 2 | 3
+  estMinutes?: number
+  sourceRef?: string
+}
+
+export interface CatalogQuestion {
+  id: string
+  subjectId: string
+  chapterId: string
+  kpId: string
+  type: QuestionType
+  stem: string
+  options: string[]
+  answer: string
+  explanation: string
+  difficulty: 1 | 2 | 3
+  source: string
+  year: number
+  official: boolean
+  categories?: ExamCategory[]
+  isReal?: boolean
+  hot?: boolean
+  tags?: string[]
+  wrongAnalysis?: string
+}
+
+export interface CatalogData {
+  meta: { name: string; version: number; updatedAt: string; note?: string; legacySubjectIds?: string[]; removeSubjectIds?: string[]; removeQuestionIds?: string[] }
+  subjects: Subject[]
+  chapters: Chapter[]
+  kps: CatalogKp[]
+  questions?: CatalogQuestion[]
+}
+
+/** 种子数据结构(public/data/seed.json,与代码分离) */
+export interface SeedData {
+  meta: { name: string; version: number; note?: string }
+  subjects: Subject[]
+  chapters: Chapter[]
+  kps: { id: string; subjectId: string; chapterId: string; name: string; order: number }[]
+  questions: {
+    id: string
+    subjectId: string
+    chapterId: string
+    kpId: string
+    type: QuestionType
+    stem: string
+    options: string[]
+    answer: string
+    explanation: string
+    difficulty: 1 | 2 | 3
+    source: string
+    year: number
+    official: boolean
+  }[]
+}
