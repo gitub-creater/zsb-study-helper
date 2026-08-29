@@ -172,7 +172,7 @@ jobs:
           gradle_status=${PIPESTATUS[0]}
           set -e
           if [ "$gradle_status" -ne 0 ]; then
-            details=$(tail -n 80 ../gradle-build.log | tr '\r\n' '  ' | sed 's/%/%25/g' | cut -c1-6000)
+            details=$({ head -n 160 ../gradle-build.log; tail -n 40 ../gradle-build.log; } | tr '\r\n' '  ' | sed 's/%/%25/g' | cut -c1-6000)
             echo "::error title=Gradle build failure::$details"
             exit "$gradle_status"
           fi
