@@ -199,7 +199,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes 2>&1 | tee release-create.log
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes 2>&1 | tee release-create.log
           release_status=${PIPESTATUS[0]}
           set -e
           if [ "$release_status" -ne 0 ]; then
@@ -212,7 +212,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          gh release upload "$GITHUB_REF_NAME" release/* --clobber 2>&1 | tee release-upload.log
+          gh release upload "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --clobber 2>&1 | tee release-upload.log
           release_status=${PIPESTATUS[0]}
           set -e
           if [ "$release_status" -ne 0 ]; then
