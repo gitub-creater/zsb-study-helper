@@ -6,7 +6,8 @@
   "description": "山东专升本学习助手 - 可爱校园冒险风备考工具",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && tsc --project tsconfig.api.json --noEmit && vite build",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.api.json --noEmit",
     "web:build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
