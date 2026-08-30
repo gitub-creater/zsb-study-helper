@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "npm run web:build",
+  "buildCommand": "vite build",
   "outputDirectory": "dist",
   "installCommand": "npm install --include=dev --no-audit --no-fund"
 }
