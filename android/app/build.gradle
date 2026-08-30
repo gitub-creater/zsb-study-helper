@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+println("ZSB_GRADLE_MARKER: app script start")
 
 def releaseStoreFile = System.getenv('ZSB_RELEASE_STORE_FILE')
 def releaseStorePassword = System.getenv('ZSB_RELEASE_STORE_PASSWORD')
@@ -8,6 +9,7 @@ def releaseStoreType = System.getenv('ZSB_RELEASE_STORE_TYPE')
 def hasReleaseSigning = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
 
 android {
+    println("ZSB_GRADLE_MARKER: android block")
     namespace = "com.gitubcreater.zsbstudyhelper"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
@@ -24,6 +26,7 @@ android {
         }
     }
     signingConfigs {
+        println("ZSB_GRADLE_MARKER: signing configs")
         release {
             if (hasReleaseSigning) {
                 storeFile = file(releaseStoreFile)
@@ -37,6 +40,7 @@ android {
         }
     }
     buildTypes {
+        println("ZSB_GRADLE_MARKER: build types")
         release {
             if (hasReleaseSigning) {
                 signingConfig signingConfigs.release
@@ -54,6 +58,7 @@ repositories {
 }
 
 dependencies {
+    println("ZSB_GRADLE_MARKER: dependencies")
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
