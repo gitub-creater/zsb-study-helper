@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { createClient } from '@supabase/supabase-js'
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 
