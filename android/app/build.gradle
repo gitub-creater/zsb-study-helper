@@ -26,13 +26,13 @@ android {
     signingConfigs {
         release {
             if (hasReleaseSigning) {
-                storeFile file(releaseStoreFile)
+                storeFile = file(releaseStoreFile)
                 if (releaseStoreType) {
-                    storeType releaseStoreType
+                    storeType = releaseStoreType.toString()
                 }
-                storePassword releaseStorePassword
-                keyAlias releaseKeyAlias
-                keyPassword releaseKeyPassword
+                storePassword = releaseStorePassword.toString()
+                keyAlias = releaseKeyAlias.toString()
+                keyPassword = releaseKeyPassword.toString()
             }
         }
     }
