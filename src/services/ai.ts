@@ -11,6 +11,16 @@ export interface AiConfig {
   model: string
   /** 思考程度:仅用于提示词分级与界面显示,不作为请求参数发送 */
   reasoningEffort?: 'low' | 'medium' | 'high'
+  /** 请求协议。默认 chat/completions，Responses API 仅在服务商明确支持时选择。 */
+  apiMode?: 'chat' | 'responses'
+  /** 单次请求超时（毫秒）。 */
+  timeoutMs?: number
+  /** 是否请求 SSE 流式输出。 */
+  stream?: boolean
+  /** 发送给网关的额外请求头（不会写入源码）。 */
+  customHeaders?: Record<string, string>
+  temperature?: number
+  maxTokens?: number
 }
 
 export const AI_PRESETS: Record<AiProviderId, { name: string; baseURL: string; model: string; note: string }> = {
@@ -60,13 +70,38 @@ export class AiAbortedError extends Error {
   }
 }
 
-/** 服务商返回非 2xx 时抛出带原因的 Error */
-async function throwForStatus(res: Response): Promise<never> {
+export class AiRequestError extends Error {
+  readonly status: number
+  readonly retryable: boolean
+  constructor(status: number, message: string, retryable = false) {
+    super(message)
+    this.name = 'AiRequestError'
+    this.status = status
+    this.retryable = retryable
+  }
+}
+
+function retryHint(status: number): string {
+  if (status === 401 || status === 403) return '请检查 API Key、请求头和服务商权限。'
+  if (status === 404) return '请检查 Base URL、接口协议和模型名称。'
+  if (status === 402) return '请检查账户余额或套餐额度。'
+  if (status === 408 || status === 429 || status >= 500) return '请稍后重试，或适当增大超时时间。'
+  return '请检查服务商返回信息和网络连接。'
+}
+
+/** 服务商返回非 2xx 时抛出带 HTTP 状态、原始错误和重试建议的 Error。 */
+export async function throwForStatus(res: Response): Promise<never> {
   const text = await res.text().catch(() => '')
-  if (res.status === 401) throw new Error('API Key 无效(401),请检查密钥')
-  if (res.status === 404) throw new Error('接口地址或模型名不存在(404),请检查配置')
-  if (res.status === 429) throw new Error('请求过于频繁或额度不足(429),请稍后重试')
-  throw new Error(`服务商返回 ${res.status}:${text.slice(0, 160)}`)
+  let detail = text.trim()
+  try {
+    const data = JSON.parse(text) as { error?: { message?: string; code?: string }; message?: string; detail?: string }
+    detail = data.error?.message || data.message || data.detail || detail
+    if (data.error?.code) detail = `${detail}（${data.error.code}）`
+  } catch {
+    // 部分中转站返回纯文本，保留原文。
+  }
+  const short = detail.slice(0, 240) || res.statusText || '未提供错误详情'
+  throw new AiRequestError(res.status, `请求失败（HTTP ${res.status}）：${short} ${retryHint(res.status)}`, res.status === 408 || res.status === 429 || res.status >= 500)
 }
 
 function mapFetchError(e: unknown): unknown {
@@ -83,6 +118,62 @@ function assertConfigured(cfg: AiConfig): void {
   }
 }
 
+export function normalizeAiBaseURL(baseURL: string): string {
+  return baseURL.trim().replace(/\/+$/, '')
+}
+
+/** Base URL 可带 /v1；只在缺少具体路径时追加一次。 */
+export function aiEndpoint(baseURL: string, mode: 'chat' | 'responses' = 'chat'): string {
+  const base = normalizeAiBaseURL(baseURL)
+  const path = mode === 'responses' ? '/responses' : '/chat/completions'
+  if (base.endsWith(path)) return base
+  return `${base}${path}`
+}
+
+function requestHeaders(cfg: AiConfig): Headers {
+  const headers = new Headers({ ...(cfg.customHeaders ?? {}) })
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  if (cfg.apiKey && !headers.has('Authorization') && !headers.has('api-key') && !headers.has('x-api-key')) {
+    headers.set('Authorization', `Bearer ${cfg.apiKey}`)
+  }
+  return headers
+}
+
+function chatBody(cfg: AiConfig, messages: ChatMessage[], stream: boolean): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model: cfg.model,
+    messages,
+    temperature: cfg.temperature ?? 0.2,
+    stream,
+  }
+  if (cfg.maxTokens != null && Number.isFinite(cfg.maxTokens)) body.max_tokens = cfg.maxTokens
+  return body
+}
+
+function responsesBody(cfg: AiConfig, messages: ChatMessage[], stream: boolean): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model: cfg.model,
+    input: messages,
+    temperature: cfg.temperature ?? 0.2,
+    stream,
+  }
+  if (cfg.maxTokens != null && Number.isFinite(cfg.maxTokens)) body.max_output_tokens = cfg.maxTokens
+  return body
+}
+
+function responseText(data: unknown): string {
+  const value = data as {
+    choices?: { message?: { content?: string | { text?: string }[] } }[]
+    output_text?: string
+    output?: { content?: { text?: string; type?: string }[] }[]
+  }
+  const content = value.choices?.[0]?.message?.content
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) return content.map((part) => part.text ?? '').join('')
+  if (typeof value.output_text === 'string') return value.output_text
+  return value.output?.flatMap((item) => item.content ?? []).map((part) => part.text ?? '').join('') ?? ''
+}
+
 /** 解析 OpenAI 兼容 SSE 的 data 行,返回增量文本;非数据行/[DONE]/解析失败返回 null */
 export function sseDataDelta(line: string): string | null {
   const t = line.trim()
@@ -90,8 +181,8 @@ export function sseDataDelta(line: string): string | null {
   const payload = t.slice(5).trim()
   if (!payload || payload === '[DONE]') return null
   try {
-    const j = JSON.parse(payload) as { choices?: { delta?: { content?: string } }[] }
-    return j.choices?.[0]?.delta?.content ?? ''
+    const j = JSON.parse(payload) as { choices?: { delta?: { content?: string } }[]; delta?: string; type?: string }
+    return j.choices?.[0]?.delta?.content ?? (typeof j.delta === 'string' ? j.delta : '')
   } catch {
     return null
   }
@@ -101,23 +192,23 @@ export function sseDataDelta(line: string): string | null {
 export async function aiChat(cfg: AiConfig, messages: ChatMessage[], timeoutMs = 60000): Promise<string> {
   assertConfigured(cfg)
   const controller = new AbortController()
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? timeoutMs)
   try {
-    const res = await fetch(`${cfg.baseURL.replace(/\/+$/, '')}/chat/completions`, {
+    const mode = cfg.apiMode ?? 'chat'
+    const res = await fetch(aiEndpoint(cfg.baseURL, mode), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-      body: JSON.stringify({ model: cfg.model, messages, temperature: 0.2, stream: false }),
+      headers: requestHeaders(cfg),
+      body: JSON.stringify(mode === 'responses' ? responsesBody(cfg, messages, false) : chatBody(cfg, messages, false)),
       signal: controller.signal,
     })
     if (!res.ok) await throwForStatus(res)
-    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
-    const out = data.choices?.[0]?.message?.content ?? ''
+    const out = responseText(await res.json())
     if (!out) throw new Error('服务商返回了空回复')
     return out
   } catch (e) {
     throw mapFetchError(e)
   } finally {
-    window.clearTimeout(timer)
+    clearTimeout(timer)
   }
 }
 
@@ -133,7 +224,7 @@ export interface AiStreamOptions {
 export async function aiChatStream(cfg: AiConfig, messages: ChatMessage[], opts: AiStreamOptions = {}): Promise<string> {
   assertConfigured(cfg)
   const controller = new AbortController()
-  const timer = window.setTimeout(() => controller.abort(), opts.timeoutMs ?? 120000)
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? cfg.timeoutMs ?? 120000)
   const onOuterAbort = () => controller.abort()
   opts.signal?.addEventListener('abort', onOuterAbort)
   const emit = (delta: string, full: string): string => {
@@ -141,18 +232,19 @@ export async function aiChatStream(cfg: AiConfig, messages: ChatMessage[], opts:
     return full + delta
   }
   try {
-    const res = await fetch(`${cfg.baseURL.replace(/\/+$/, '')}/chat/completions`, {
+    const mode = cfg.apiMode ?? 'chat'
+    const stream = cfg.stream !== false
+    const res = await fetch(aiEndpoint(cfg.baseURL, mode), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-      body: JSON.stringify({ model: cfg.model, messages, temperature: 0.2, stream: true }),
+      headers: requestHeaders(cfg),
+      body: JSON.stringify(mode === 'responses' ? responsesBody(cfg, messages, stream) : chatBody(cfg, messages, stream)),
       signal: controller.signal,
     })
     if (!res.ok) await throwForStatus(res)
     const contentType = res.headers.get('content-type') ?? ''
     if (!contentType.includes('text/event-stream') || !res.body) {
       // 网关不支持流式:退化为一次性读取
-      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
-      const out = data.choices?.[0]?.message?.content ?? ''
+      const out = responseText(await res.json())
       if (!out) throw new Error('服务商返回了空回复')
       return emit(out, '')
     }
@@ -179,7 +271,7 @@ export async function aiChatStream(cfg: AiConfig, messages: ChatMessage[], opts:
     if (opts.signal?.aborted) throw new AiAbortedError()
     throw mapFetchError(e)
   } finally {
-    window.clearTimeout(timer)
+    clearTimeout(timer)
     opts.signal?.removeEventListener('abort', onOuterAbort)
   }
 }

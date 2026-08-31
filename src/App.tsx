@@ -22,6 +22,7 @@ import { HotPage } from './pages/HotPage'
 import { SourcesPage } from './pages/SourcesPage'
 import { RankWindow } from './pages/RankWindow'
 import { OfficePage } from './pages/OfficePage'
+import { AiOfficePage } from './pages/AiOfficePage'
 import { EnglishPage } from './pages/EnglishPage'
 import { AiMathPage } from './pages/AiMathPage'
 import { AVATAR_INFO, applyTheme } from './lib/theme'
@@ -47,6 +48,7 @@ const NAV: NavItem[] = [
   { key: 'bank', label: '题库', icon: 'book' },
   { key: 'aimath', label: 'AI 数学讲题', icon: 'math' },
   { key: 'office', label: '实操大题', icon: 'edit' },
+  { key: 'aioffice', label: 'AI 办公文档', icon: 'sparkle' },
   { key: 'english', label: '英语打卡', icon: 'mic' },
   { key: 'sources', label: '考试资料', icon: 'cap' },
   { key: 'hot', label: '热门题', icon: 'fire' },
@@ -58,7 +60,7 @@ const NAV: NavItem[] = [
   { key: 'settings', label: '设置', icon: 'settings' },
 ]
 
-const MOBILE_MAIN: NavItem[] = [NAV[0], NAV[2], NAV[4], NAV[5]]
+const MOBILE_MAIN: NavItem[] = [NAV[0], NAV[2], NAV[4], NAV[6]]
 
 const PAGE_TITLES: Record<string, string> = Object.fromEntries(NAV.map((n) => [n.key, n.label]))
 
@@ -233,6 +235,7 @@ function Router() {
     bank: <Bank />,
     aimath: <AiMathPage />,
     office: <OfficePage />,
+    aioffice: <AiOfficePage />,
     english: <EnglishPage />,
     sources: <SourcesPage />,
     hot: <HotPage />,

@@ -755,7 +755,7 @@ export function ScheduledPage() {
                     aria-pressed={scheduleVoiceEnabled(task)}
                     onClick={() => toggleTaskVoice(task)}
                   >
-                    <Icon name="volume" size={15} />
+                    <Icon name={scheduleVoiceEnabled(task) ? 'volume' : 'volumeOff'} size={15} />
                   </button>
                   <button
                     className="btn btn-icon btn-ghost"

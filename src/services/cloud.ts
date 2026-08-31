@@ -28,11 +28,14 @@ const DEFAULT_CLOUD_API_URL = 'https://shandong-zsb-study-helper.vercel.app'
 export function removeAiApiKeyFromCloudState(state: State | null): State | null {
   const ai = state?.settings?.ai
   if (!state || !ai) return state
+  const customHeaders = Object.fromEntries(
+    Object.entries(ai.customHeaders ?? {}).filter(([name]) => !/^(authorization|api-key|x-api-key|cookie|set-cookie)$/i.test(name))
+  )
   return {
     ...state,
     settings: {
       ...state.settings,
-      ai: { ...ai, apiKey: '' },
+      ai: { ...ai, apiKey: '', customHeaders },
     },
   }
 }
@@ -45,11 +48,12 @@ export function retainLocalAiApiKey(remoteState: State, localState: State): Stat
   const localAi = localState.settings?.ai
   if (!localAi?.apiKey) return remoteState
   const remoteAi = remoteState.settings?.ai
+  const localHeaders = localAi.customHeaders ?? {}
   return {
     ...remoteState,
     settings: {
       ...remoteState.settings,
-      ai: { ...(remoteAi ?? localAi), apiKey: localAi.apiKey },
+      ai: { ...(remoteAi ?? localAi), apiKey: localAi.apiKey, customHeaders: { ...(remoteAi?.customHeaders ?? {}), ...localHeaders } },
     },
   }
 }

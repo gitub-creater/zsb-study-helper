@@ -48,6 +48,12 @@ export function SettingsPage() {
   const [aiKey, setAiKey] = useState(state.settings.ai?.apiKey ?? '')
   const [aiModel, setAiModel] = useState(state.settings.ai?.model ?? AI_PRESETS[preset0].model)
   const [aiEffort, setAiEffort] = useState<'low' | 'medium' | 'high'>(state.settings.ai?.reasoningEffort ?? 'medium')
+  const [aiMode, setAiMode] = useState<'chat' | 'responses'>(state.settings.ai?.apiMode ?? 'chat')
+  const [aiTimeout, setAiTimeout] = useState(state.settings.ai?.timeoutMs ?? 60000)
+  const [aiStream, setAiStream] = useState(state.settings.ai?.stream !== false)
+  const [aiTemperature, setAiTemperature] = useState(state.settings.ai?.temperature ?? 0.2)
+  const [aiMaxTokens, setAiMaxTokens] = useState(state.settings.ai?.maxTokens ?? 2048)
+  const [aiHeaders, setAiHeaders] = useState(() => JSON.stringify(state.settings.ai?.customHeaders ?? {}, null, 2))
   const [aiTesting, setAiTesting] = useState(false)
 
   const currentAiCfg = (): AiConfig => ({
@@ -56,6 +62,14 @@ export function SettingsPage() {
     apiKey: aiKey.trim(),
     model: aiModel.trim(),
     reasoningEffort: aiEffort,
+    apiMode: aiMode,
+    timeoutMs: aiTimeout,
+    stream: aiStream,
+    temperature: aiTemperature,
+    maxTokens: aiMaxTokens,
+    customHeaders: (() => {
+      try { return JSON.parse(aiHeaders || '{}') as Record<string, string> } catch { return {} }
+    })(),
   })
 
   const saveAi = () => {
@@ -64,7 +78,16 @@ export function SettingsPage() {
       toast('接口地址 / API Key / 模型名都需要填写', { kind: 'error' })
       return
     }
-    dispatch({ type: 'SET_SETTINGS', patch: { ai: { ...cfg, reasoningEffort: aiEffort } } })
+    let headers: Record<string, string>
+    try {
+      const parsed = JSON.parse(aiHeaders || '{}') as unknown
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object' || Object.values(parsed).some((value) => typeof value !== 'string')) throw new Error('请求头必须是 JSON 对象，值为文本')
+      headers = parsed as Record<string, string>
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '自定义请求头格式不正确', { kind: 'error' })
+      return
+    }
+    dispatch({ type: 'SET_SETTINGS', patch: { ai: { ...cfg, customHeaders: headers, reasoningEffort: aiEffort } } })
     toast('AI 服务配置已保存(密钥仅存本机)', { kind: 'success' })
   }
 
@@ -515,6 +538,38 @@ export function SettingsPage() {
             </Field>
             <Field label="模型名">
               <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)} placeholder="如 deepseek-chat / qwen-plus" />
+            </Field>
+            <Field label="接口协议" hint="大多数中转站使用 Chat Completions；仅在服务商说明支持时选择 Responses">
+              <Segmented
+                small
+                value={aiMode}
+                onChange={setAiMode}
+                options={[
+                  { value: 'chat' as const, label: '对话补全接口' },
+                  { value: 'responses' as const, label: '响应接口' },
+                ]}
+              />
+            </Field>
+            <div className="form-grid">
+              <Field label="请求超时(秒)">
+                <input className="input" type="number" min={5} max={300} value={Math.round(aiTimeout / 1000)} onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value)) setAiTimeout(Math.max(5000, Math.min(300000, value * 1000))) }} />
+              </Field>
+              <Field label="最大输出 Token">
+                <input className="input" type="number" min={128} max={32768} value={aiMaxTokens} onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value)) setAiMaxTokens(Math.max(128, Math.min(32768, value))) }} />
+              </Field>
+              <Field label="温度">
+                <input className="input" type="number" min={0} max={2} step={0.1} value={aiTemperature} onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value)) setAiTemperature(Math.max(0, Math.min(2, value))) }} />
+              </Field>
+            </div>
+            <div className="setting-row">
+              <div className="info grow">
+                <b>启用流式输出</b>
+                <span>服务商支持 SSE 时边生成边显示；关闭后等待完整 JSON 回复。</span>
+              </div>
+              <button className={`switch${aiStream ? ' on' : ''}`} aria-label="启用流式输出" aria-pressed={aiStream} onClick={() => setAiStream((value) => !value)} />
+            </div>
+            <Field label="自定义请求头(JSON)" hint="例如 {&quot;X-Channel&quot;:&quot;codex&quot;}；不要把密钥写进源码或分享给他人">
+              <textarea className="input" rows={3} value={aiHeaders} onChange={(e) => setAiHeaders(e.target.value)} placeholder={'{\n  "X-Channel": "study"\n}'} />
             </Field>
             <Field label="思考程度" hint="只影响讲解详细程度与验证强度:高=完整验证流程,低=精炼输出">
               <Segmented

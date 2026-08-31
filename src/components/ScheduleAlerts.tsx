@@ -66,7 +66,7 @@ function sendSystemNotification(task: ScheduleTask, key: string): void {
     notification.onclick = () => {
       try {
         window.focus()
-        nav('#/scheduled')
+        nav('scheduled')
       } catch {
         // 系统通知点击失败不影响应用内提醒。
       }
@@ -282,7 +282,7 @@ export function ScheduleAlerts() {
 
   const onStart = () => {
     closeAndRecord()
-    nav('#/plan')
+    nav('plan')
   }
 
   const onSnooze = () => {

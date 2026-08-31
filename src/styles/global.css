@@ -2869,6 +2869,49 @@ body.rm *::after {
   margin-top: 14px;
 }
 
+/* ---------- AI 办公文档 ---------- */
+.ai-office-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  gap: 12px;
+}
+
+.ai-office-textarea {
+  min-height: 290px;
+  font-size: 14px;
+}
+
+.ai-office-preview {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg);
+}
+
+.ai-office-preview p {
+  margin: 3px 0 0;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.mathai-speech-head > .btn-icon.is-active,
+.sched-acts > .btn-icon.is-active {
+  color: var(--primary-deep);
+  background: var(--primary-weak);
+  border-color: var(--primary-soft);
+}
+
+@media (max-width: 760px) {
+  .ai-office-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-office-textarea {
+    min-height: 220px;
+  }
+}
+
 /* ---------- AI 讲题朗读（设备原生 SpeechSynthesis） ---------- */
 .mathai-speech {
   margin-top: 10px;

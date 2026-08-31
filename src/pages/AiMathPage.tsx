@@ -48,6 +48,8 @@ interface SpeechUiState {
   error: string | null
 }
 
+type SpeechPermissionState = 'default' | 'granted' | 'denied' | 'unsupported'
+
 const INITIAL_SPEECH_UI: SpeechUiState = {
   messageId: null,
   playback: 'idle',
@@ -191,6 +193,7 @@ function SpeechControls({
   onReplay,
   onSettingsChange,
   onRefreshVoices,
+  permission,
 }: {
   messageId: string
   text: string
@@ -205,6 +208,7 @@ function SpeechControls({
   onReplay: () => void
   onSettingsChange: (patch: Partial<SpeechSettings>) => void
   onRefreshVoices: () => void
+  permission: SpeechPermissionState
 }) {
   const active = speech.messageId === messageId
   const playback = active ? speech.playback : 'idle'
@@ -215,7 +219,17 @@ function SpeechControls({
   return (
     <section className={`mathai-speech${active ? ' is-active' : ''}`} aria-label="讲解朗读控制">
       <div className="mathai-speech-head">
-        <span className="mathai-speech-title"><Icon name="volume" size={15} /> 讲解朗读</span>
+        <span className="mathai-speech-title"><Icon name={speechEnabled ? 'volume' : 'volumeOff'} size={15} /> 讲解朗读</span>
+        <button
+          type="button"
+          className={`btn btn-icon btn-ghost${speechEnabled ? ' is-active' : ''}`}
+          aria-label={speechEnabled ? '关闭讲解朗读' : '开启讲解朗读'}
+          title={speechEnabled ? '关闭讲解朗读' : '开启讲解朗读'}
+          aria-pressed={speechEnabled}
+          onClick={() => onSettingsChange({ enabled: !speechEnabled })}
+        >
+          <Icon name={speechEnabled ? 'volume' : 'volumeOff'} size={16} />
+        </button>
         {active && playback !== 'idle' && playback !== 'unsupported' && (
           <span className={`mathai-speech-state is-${playback}`} aria-live="polite">
             {playback === 'speaking' ? '正在朗读' : playback === 'paused' ? '已暂停' : '朗读异常'}
@@ -300,6 +314,12 @@ function SpeechControls({
           当前设备不支持语音朗读，文字讲解可继续正常使用。
         </p>
       )}
+      {speechEnabled && supported && permission === 'default' && (
+        <p className="mathai-speech-note" role="status">语音权限尚未验证。首次点击“朗读”后，浏览器会按设备规则尝试播放；若被拦截，请允许本站媒体播放。</p>
+      )}
+      {speechEnabled && supported && permission === 'denied' && (
+        <p className="mathai-speech-note" role="alert">语音播放被设备或浏览器拦截。请打开浏览器地址栏的网站设置，允许声音/媒体播放后返回重试；文字讲解不受影响。</p>
+      )}
       {supported && voices.length > 0 && !hasMandarin && (
         <p className="mathai-speech-note">
           当前系统未提供普通话音色，将使用所选声音或系统默认声音。
@@ -341,6 +361,7 @@ function MessageBubble({
   onSpeechReplay,
   onSpeechSettingsChange,
   onRefreshSpeechVoices,
+  speechPermission,
 }: {
   m: ChatMsg
   generating: boolean
@@ -362,6 +383,7 @@ function MessageBubble({
   onSpeechReplay: (m: ChatMsg) => void
   onSpeechSettingsChange: (patch: Partial<SpeechSettings>) => void
   onRefreshSpeechVoices: () => void
+  speechPermission: SpeechPermissionState
 }) {
   if (m.role === 'user') {
     return (
@@ -449,6 +471,7 @@ function MessageBubble({
               onReplay={() => onSpeechReplay(m)}
               onSettingsChange={onSpeechSettingsChange}
               onRefreshVoices={onRefreshSpeechVoices}
+              permission={speechPermission}
             />
           </>
         )}
@@ -494,6 +517,7 @@ export function AiMathPage() {
   const taRef = useRef<HTMLTextAreaElement>(null)
   const speechRef = useRef<BrowserSpeechController | null>(null)
   const [speechSupported, setSpeechSupported] = useState(false)
+  const [speechPermission, setSpeechPermission] = useState<SpeechPermissionState>('default')
   const [speechVoices, setSpeechVoices] = useState<SpeechVoiceOption[]>([])
   const [speech, setSpeech] = useState<SpeechUiState>(INITIAL_SPEECH_UI)
 
@@ -508,13 +532,20 @@ export function AiMathPage() {
 
   useEffect(() => {
     const controller = new BrowserSpeechController({
-      onStateChange: (playback) => setSpeech((prev) => ({ ...prev, playback })),
+      onStateChange: (playback) => {
+        setSpeech((prev) => ({ ...prev, playback }))
+        if (playback === 'speaking') setSpeechPermission('granted')
+      },
       onSentenceChange: (sentence) => setSpeech((prev) => ({ ...prev, sentence })),
       onVoicesChange: setSpeechVoices,
-      onError: (error) => setSpeech((prev) => ({ ...prev, error })),
+      onError: (error) => {
+        setSpeech((prev) => ({ ...prev, error }))
+        if (/禁止|拦截|权限/.test(error)) setSpeechPermission('denied')
+      },
     })
     speechRef.current = controller
     setSpeechSupported(controller.supported)
+    setSpeechPermission(controller.supported ? 'default' : 'unsupported')
     setSpeechVoices(controller.refreshVoices())
     return () => {
       if (speechRef.current === controller) speechRef.current = null
@@ -597,7 +628,19 @@ export function AiMathPage() {
         warnNoConfig()
         return
       }
-      const cfg: AiConfig = { provider: presetId, baseURL: ai.baseURL, apiKey: ai.apiKey, model: ai.model }
+      const cfg: AiConfig = {
+        provider: presetId,
+        baseURL: ai.baseURL,
+        apiKey: ai.apiKey,
+        model: ai.model,
+        reasoningEffort: ai.reasoningEffort,
+        apiMode: ai.apiMode,
+        timeoutMs: ai.timeoutMs,
+        stream: ai.stream,
+        customHeaders: ai.customHeaders,
+        temperature: ai.temperature,
+        maxTokens: ai.maxTokens,
+      }
       const aid = uid('m')
       setMsgs([...history, { id: aid, role: 'assistant', text: '' }])
       setBusy(true)
@@ -820,6 +863,7 @@ export function AiMathPage() {
               onSpeechReplay={startSpeech}
               onSpeechSettingsChange={updateSpeechSettings}
               onRefreshSpeechVoices={refreshSpeechVoices}
+              speechPermission={speechPermission}
             />
           ))
         )}
