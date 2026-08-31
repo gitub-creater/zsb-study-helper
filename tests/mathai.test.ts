@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { sseDataDelta, AiAbortedError } from '../src/services/ai'
 import {
   buildRequestMessages,
+  deleteTurnIds,
   extractFinalAnswer,
   validateImageFile,
 } from '../src/lib/mathai'
@@ -149,6 +150,33 @@ describe('数学题技能模块', () => {
   it('提供快捷追问', () => {
     expect(MATH_SKILL.quickActions.length).toBeGreaterThanOrEqual(3)
     expect(MATH_SKILL.quickActions.some((q) => q.prompt.includes('换一种方法'))).toBe(true)
+  })
+})
+
+describe('删除问答(按题删除)', () => {
+  const msgs = [
+    { id: 'u1', role: 'user' as const },
+    { id: 'a1', role: 'assistant' as const },
+    { id: 'u2', role: 'user' as const },
+    { id: 'a2', role: 'assistant' as const },
+    { id: 'a3', role: 'assistant' as const },
+  ]
+
+  it('点问题删除整题(问题 + 回答)', () => {
+    expect(deleteTurnIds(msgs, 'u1')).toEqual(['u1', 'a1'])
+  })
+
+  it('点回答连同其问题一起删除', () => {
+    expect(deleteTurnIds(msgs, 'a1')).toEqual(['u1', 'a1'])
+  })
+
+  it('回答带追问时一并删除,不影响下一题', () => {
+    expect(deleteTurnIds(msgs, 'a2')).toEqual(['u2', 'a2', 'a3'])
+    expect(deleteTurnIds(msgs, 'u2')).toEqual(['u2', 'a2', 'a3'])
+  })
+
+  it('id 不存在返回空', () => {
+    expect(deleteTurnIds(msgs, 'nope')).toEqual([])
   })
 })
 

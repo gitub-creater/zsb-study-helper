@@ -2,7 +2,7 @@
 // 支持:文字题 / 图片题(上传·拖拽·粘贴)/ 流式输出 / 停止生成 / 复制答案 / 重新解析 / 追问上下文
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { useConfirm, useToast } from '../components/ui'
+import { Modal, useConfirm, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { Mascot } from '../components/Mascot'
 import { Markdown } from '../components/Markdown'
@@ -14,6 +14,7 @@ import { getSession } from '../lib/auth'
 import {
   buildRequestMessages,
   copyText,
+  deleteTurnIds,
   extractFinalAnswer,
   fileToDataUrl,
   IMAGE_ACCEPT,
@@ -67,12 +68,105 @@ function saveHistory(msgs: ChatMsg[]): void {
   }
 }
 
+interface TurnInfo {
+  num: number
+  user?: ChatMsg
+  answers: ChatMsg[]
+}
+
+/** 取某条消息所在"题"(任务)的完整内容:题号 = 第几条提问 */
+function turnInfo(msgs: ChatMsg[], msgId: string): TurnInfo | null {
+  const ids = deleteTurnIds(msgs, msgId)
+  if (!ids.length) return null
+  const set = new Set(ids)
+  const items = msgs.filter((m) => set.has(m.id))
+  const startIdx = msgs.findIndex((m) => m.id === items[0].id)
+  return {
+    num: msgs.slice(0, startIdx + 1).filter((m) => m.role === 'user').length,
+    user: items.find((m) => m.role === 'user'),
+    answers: items.filter((m) => m.role === 'assistant'),
+  }
+}
+
+/** 单题详情界面:完整展示这道题的问答,并提供复制 / 重新解析 / 删除 */
+function TurnDetailModal({
+  turn,
+  busy,
+  onClose,
+  onCopy,
+  onRegenerate,
+  onDelete,
+}: {
+  turn: TurnInfo
+  busy: boolean
+  onClose: () => void
+  onCopy: (m: ChatMsg) => void
+  onRegenerate: (id: string) => void
+  onDelete: (id: string) => void
+}) {
+  const last = turn.answers[turn.answers.length - 1]
+  return (
+    <Modal open title={`第 ${turn.num} 题 · 题目详情`} onClose={onClose} width={720} footer={
+      <>
+        <button className="btn" onClick={onClose}>关闭</button>
+        {last && (
+          <>
+            <button className="btn" onClick={() => onCopy(last)}>
+              <Icon name="copy" size={14} /> 复制答案
+            </button>
+            <button className="btn" disabled={busy} onClick={() => onRegenerate(last.id)}>
+              <Icon name="refresh" size={14} /> 重新解析
+            </button>
+            <button className="btn btn-danger-solid" disabled={busy} onClick={() => onDelete(last.id)}>
+              <Icon name="trash" size={14} /> 删除本题
+            </button>
+          </>
+        )}
+        {!last && turn.user && (
+          <button className="btn btn-danger-solid" disabled={busy} onClick={() => onDelete(turn.user!.id)}>
+            <Icon name="trash" size={14} /> 删除本题
+          </button>
+        )}
+      </>
+    }>
+      {turn.user && (
+        <div className="mathai-detail-q">
+          {turn.user.images?.length ? (
+            <div className="mathai-msgimgs">
+              {turn.user.images.map((u, i) => (
+                <img key={i} src={u} alt={`题目图片 ${i + 1}`} />
+              ))}
+            </div>
+          ) : turn.user.imageCount ? (
+            <span className="chip chip-blue"><Icon name="image" size={12} /> 图片题 ×{turn.user.imageCount}(图片仅本会话内可见)</span>
+          ) : null}
+          {turn.user.text && <div className="mathai-utext">{turn.user.text}</div>}
+        </div>
+      )}
+      {turn.answers.map((a) => (
+        <div key={a.id} className="mathai-detail-a">
+          {a.stopped && (
+            <div className="mathai-note"><Icon name="stop" size={12} /> {a.text ? '已停止生成,以下为部分内容' : '已停止生成'}</div>
+          )}
+          {a.error && (
+            <div className="mathai-note error"><Icon name="close" size={12} /> {a.error}</div>
+          )}
+          {a.text && <Markdown text={a.text} />}
+        </div>
+      ))}
+      {!turn.user && !turn.answers.length && <p className="muted">该题内容已不存在。</p>}
+    </Modal>
+  )
+}
+
 function MessageBubble({
   m,
   generating,
   busy,
   onRegenerate,
   onCopy,
+  onDelete,
+  onDetail,
   quickActions,
   onQuick,
 }: {
@@ -81,6 +175,8 @@ function MessageBubble({
   busy: boolean
   onRegenerate: (id: string) => void
   onCopy: (m: ChatMsg) => void
+  onDelete: (id: string) => void
+  onDetail: (id: string) => void
   quickActions?: { label: string; prompt: string }[]
   onQuick?: (prompt: string) => void
 }) {
@@ -100,6 +196,14 @@ function MessageBubble({
             </span>
           ) : null}
           {m.text && <div className="mathai-utext">{m.text}</div>}
+          <div className="mathai-acts end">
+            <button className="btn btn-xs" onClick={() => onDetail(m.id)}>
+              <Icon name="search" size={12} /> 详情
+            </button>
+            <button className="btn btn-xs" aria-label="删除本题问答" title="删除本题问答" onClick={() => onDelete(m.id)}>
+              <Icon name="trash" size={12} /> 删除
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -131,11 +235,17 @@ function MessageBubble({
         )}
         {m.text && !generating && (
           <div className="mathai-acts">
+            <button className="btn btn-xs" onClick={() => onDetail(m.id)}>
+              <Icon name="search" size={12} /> 详情
+            </button>
             <button className="btn btn-xs" onClick={() => onCopy(m)}>
               <Icon name="copy" size={13} /> 复制答案
             </button>
             <button className="btn btn-xs" disabled={busy} onClick={() => onRegenerate(m.id)}>
               <Icon name="refresh" size={13} /> 重新解析
+            </button>
+            <button className="btn btn-xs" aria-label="删除本题问答" title="删除本题问答(连同题目)" disabled={busy} onClick={() => onDelete(m.id)}>
+              <Icon name="trash" size={12} /> 删除
             </button>
           </div>
         )}
@@ -170,6 +280,7 @@ export function AiMathPage() {
   const [images, setImages] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [detailId, setDetailId] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -311,11 +422,45 @@ export function AiMathPage() {
     toast(ok ? '最终答案已复制到剪贴板' : '复制失败,请手动选择文本复制', { kind: ok ? 'success' : 'error' })
   }
 
+  /** 删除一整题的问答(问题 + 回答/追问);6 秒内可撤销 */
+  const deleteTurn = (msgId: string) => {
+    if (busy) {
+      toast('请先停止生成再删除', { kind: 'error' })
+      return
+    }
+    const ids = new Set(deleteTurnIds(msgs, msgId))
+    if (!ids.size) return
+    const at = msgs.findIndex((m) => ids.has(m.id))
+    const removed = msgs.filter((m) => ids.has(m.id))
+    setMsgs(msgs.filter((m) => !ids.has(m.id)))
+    toast(`已删除 ${removed.length} 条问答记录`, {
+      kind: 'success',
+      duration: 6000,
+      action: {
+        label: '撤销',
+        onClick: () => {
+          setMsgs((prev) => {
+            const next = [...prev]
+            next.splice(Math.min(at, next.length), 0, ...removed)
+            return next
+          })
+        },
+      },
+    })
+  }
+
   const useQuick = (prompt: string) => {
     setInput(prompt)
     taRef.current?.focus()
   }
 
+  /** 从详情界面删除本题:删除后关闭详情 */
+  const deleteFromDetail = (msgId: string) => {
+    setDetailId(null)
+    deleteTurn(msgId)
+  }
+
+  const detail = detailId ? turnInfo(msgs, detailId) : null
   const lastId = msgs[msgs.length - 1]?.id
 
   return (
@@ -363,12 +508,25 @@ export function AiMathPage() {
               generating={busy && m.id === lastId && m.role === 'assistant'}
               onRegenerate={regenerate}
               onCopy={copyAnswer}
+              onDelete={deleteTurn}
+              onDetail={setDetailId}
               quickActions={m.id === lastId && m.role === 'assistant' && !m.error ? skill.quickActions : undefined}
               onQuick={useQuick}
             />
           ))
         )}
       </div>
+
+      {detail && (
+        <TurnDetailModal
+          turn={detail}
+          busy={busy}
+          onClose={() => setDetailId(null)}
+          onCopy={copyAnswer}
+          onRegenerate={regenerate}
+          onDelete={deleteFromDetail}
+        />
+      )}
 
       <div className="mathai-composer">
         {images.length > 0 && (

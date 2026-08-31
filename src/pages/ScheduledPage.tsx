@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon'
 import { requestScheduleTest } from '../components/ScheduleAlerts'
 import { makeScheduleTask, repeatText } from '../lib/schedule'
 import type { ScheduleRepeat, ScheduleRun, ScheduleTask } from '../types'
-import { addDays, fmtDate, todayStr, weekdayCn } from '../lib/date'
+import { addDays, fmtDate, fmtDateTime, todayStr, weekdayCn } from '../lib/date'
 import { uid } from '../lib/misc'
 
 type FilterKind = 'all' | 'on' | 'off'
@@ -221,6 +221,131 @@ function HistoryModal({ task, onClose }: { task: ScheduleTask; onClose: () => vo
   )
 }
 
+// ---------- 任务详情(每个任务自己的界面,可在此删除该任务) ----------
+function DetailModal({
+  taskId,
+  onClose,
+  onEdit,
+}: {
+  taskId: string
+  onClose: () => void
+  onEdit: (t: ScheduleTask) => void
+}) {
+  const { state, dispatch, undo } = useStore()
+  const toast = useToast()
+  const [confirmNode, confirm] = useConfirm()
+  // 每次渲染都从最新状态取,删除/暂停后界面立刻跟着变;任务不存在(刚被删)时自动关闭
+  const task = (state.schedules ?? []).find((t) => t.id === taskId)
+  if (!task) return null
+
+  const st = statusOf(task)
+  const removed = task.repeat.kind === 'once' && task.firedKeys.length > 0 && !task.nextRunAt
+
+  const toggle = () => {
+    dispatch({ type: 'SCHEDULE_TOGGLE', id: task.id })
+    toast(task.enabled ? '已暂停,恢复后会重新计算下次时间' : '已恢复启用', { kind: 'success' })
+  }
+
+  const remove = async () => {
+    const ok = await confirm({
+      title: '删除这条安排?',
+      desc: `「${task.name}」会被删除,它的执行历史也会一并清除,删除后可以在提示条里撤销。`,
+      danger: true,
+      confirmText: '删除',
+    })
+    if (!ok) return
+    dispatch({ type: 'SCHEDULE_DELETE', id: task.id })
+    toast('已删除安排任务', { kind: 'success', action: { label: '撤销', onClick: undo } })
+    onClose()
+  }
+
+  const STATUS_TEXT = { on: '启用中', off: '已暂停', ended: '已结束' } as const
+
+  return (
+    <Modal
+      open
+      title="任务详情"
+      onClose={onClose}
+      width={520}
+      footer={
+        <>
+          <button className="btn" onClick={() => requestScheduleTest(task.id)}>
+            <Icon name="zap" size={14} /> 测试提醒
+          </button>
+          <div className="spacer" />
+          <button className="btn" onClick={() => onEdit(task)}>
+            <Icon name="edit" size={14} /> 编辑
+          </button>
+          <button className="btn" onClick={toggle}>
+            <Icon name={task.enabled ? 'pause' : 'play'} size={14} /> {task.enabled ? '暂停' : '恢复'}
+          </button>
+          <button className="btn btn-danger-solid" onClick={() => void remove()}>
+            <Icon name="trash" size={14} /> 删除
+          </button>
+        </>
+      }
+    >
+      {confirmNode}
+      <div className="sched-detail">
+        <div className="sched-detail-head">
+          <b>{task.name}</b>
+          <Chip tone={st === 'on' ? 'green' : 'gray'}>{STATUS_TEXT[st]}</Chip>
+          {task.snoozed && <Chip tone="yellow">稍后提醒中</Chip>}
+        </div>
+        {task.note ? (
+          <p className="sched-detail-note">{task.note}</p>
+        ) : (
+          <p className="sched-detail-note muted">没有填写学习内容</p>
+        )}
+        <div className="stat-line">
+          <span>执行时间</span>
+          <b className="num">{task.time}{task.remindBefore > 0 ? `(提前 ${task.remindBefore} 分钟提醒)` : '(准时)'}</b>
+        </div>
+        <div className="stat-line">
+          <span>重复规则</span>
+          <b>{repeatText(task)}</b>
+        </div>
+        <div className="stat-line">
+          <span>提醒后标记完成</span>
+          <b>{task.afterDone === 'pause' ? '暂停任务' : '继续下一次'}</b>
+        </div>
+        <div className="stat-line">
+          <span>下次执行</span>
+          <b className="num">{task.nextRunAt ? fmtNext(task.nextRunAt) : removed ? '已执行完毕' : '暂无(已暂停)'}</b>
+        </div>
+        <div className="stat-line">
+          <span>创建时间</span>
+          <b className="num">{fmtDateTime(task.createdAt)}</b>
+        </div>
+        <div className="stat-line">
+          <span>更新时间</span>
+          <b className="num">{fmtDateTime(task.updatedAt)}</b>
+        </div>
+
+        <div className="sched-detail-hist">
+          <b className="fs13">执行历史({task.history.length})</b>
+          {task.history.length === 0 ? (
+            <p className="fs13 muted" style={{ margin: 0 }}>还没有执行记录,到点提醒之后会记录在这里。</p>
+          ) : (
+            <div className="col" style={{ gap: 6 }}>
+              {task.history.map((h) => {
+                const [d, t] = h.at.split('T')
+                return (
+                  <div key={h.at} className="sched-hist">
+                    <span className="num">{fmtDate(d)} {weekdayCn(d)} {t}</span>
+                    <Chip tone={h.status === 'done' ? 'green' : 'blue'}>{h.status === 'done' ? '已完成' : '已提醒'}</Chip>
+                    <span className="fs12 muted">{h.handledAt ? `处理于 ${h.handledAt.slice(11, 16)}` : ''}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ---------- 主页面 ----------
 export function ScheduledPage() {
   const { state, dispatch, undo } = useStore()
@@ -229,6 +354,7 @@ export function ScheduledPage() {
   const [filter, setFilter] = useState<FilterKind>('all')
   const [editing, setEditing] = useState<{ task: ScheduleTask | null } | null>(null)
   const [historyOf, setHistoryOf] = useState<ScheduleTask | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(null)
   const [noticePerm, setNoticePerm] = useState<string>(
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
   )
@@ -340,7 +466,20 @@ export function ScheduledPage() {
           {shown.map((t) => {
             const st = statusOf(t)
             return (
-              <div key={t.id} className={`sched-row${t.enabled ? '' : ' paused'}`}>
+              <div
+                key={t.id}
+                className={`sched-row${t.enabled ? '' : ' paused'}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`打开任务详情:${t.name}`}
+                onClick={() => setDetailId(t.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setDetailId(t.id)
+                  }
+                }}
+              >
                 <div className="sched-when">
                   <b className="sched-time num">{t.time}</b>
                   <span className="fs12 muted">{repeatText(t)}</span>
@@ -363,27 +502,60 @@ export function ScheduledPage() {
                   </div>
                 </div>
                 <div className="sched-acts">
-                  <button className="btn btn-icon btn-ghost" title="测试提醒" aria-label={`测试提醒:${t.name}`} onClick={() => requestScheduleTest(t.id)}>
+                  <button
+                    className="btn btn-icon btn-ghost"
+                    title="测试提醒"
+                    aria-label={`测试提醒:${t.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      requestScheduleTest(t.id)
+                    }}
+                  >
                     <Icon name="zap" size={15} />
                   </button>
-                  <button className="btn btn-icon btn-ghost" title="查看执行历史" aria-label={`查看历史:${t.name}`} onClick={() => setHistoryOf(t)}>
+                  <button
+                    className="btn btn-icon btn-ghost"
+                    title="查看执行历史"
+                    aria-label={`查看历史:${t.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setHistoryOf(t)
+                    }}
+                  >
                     <Icon name="clock" size={15} />
                   </button>
-                  <button className="btn btn-icon btn-ghost" title="编辑" aria-label={`编辑:${t.name}`} onClick={() => setEditing({ task: t })}>
+                  <button
+                    className="btn btn-icon btn-ghost"
+                    title="编辑"
+                    aria-label={`编辑:${t.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditing({ task: t })
+                    }}
+                  >
                     <Icon name="edit" size={15} />
                   </button>
                   <button
                     className="btn btn-icon btn-ghost"
                     title={t.enabled ? '暂停' : '恢复'}
                     aria-label={`${t.enabled ? '暂停' : '恢复'}:${t.name}`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       dispatch({ type: 'SCHEDULE_TOGGLE', id: t.id })
                       toast(t.enabled ? '已暂停,恢复后会重新计算下次时间' : '已恢复启用', { kind: 'success' })
                     }}
                   >
                     <Icon name={t.enabled ? 'pause' : 'play'} size={15} />
                   </button>
-                  <button className="btn btn-icon btn-ghost" title="删除" aria-label={`删除:${t.name}`} onClick={() => void remove(t)}>
+                  <button
+                    className="btn btn-icon btn-ghost"
+                    title="删除"
+                    aria-label={`删除:${t.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void remove(t)
+                    }}
+                  >
                     <Icon name="trash" size={15} />
                   </button>
                 </div>
@@ -395,6 +567,16 @@ export function ScheduledPage() {
 
       {editing && <ScheduleForm initial={editing.task} onClose={() => setEditing(null)} />}
       {historyOf && <HistoryModal task={historyOf} onClose={() => setHistoryOf(null)} />}
+      {detailId && (
+        <DetailModal
+          taskId={detailId}
+          onClose={() => setDetailId(null)}
+          onEdit={(t) => {
+            setDetailId(null)
+            setEditing({ task: t })
+          }}
+        />
+      )}
     </div>
   )
 }

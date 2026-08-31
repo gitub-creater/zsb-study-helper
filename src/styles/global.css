@@ -2749,3 +2749,81 @@ body.rm *::after {
     flex-basis: 100%;
   }
 }
+
+.mathai-acts.end {
+  justify-content: flex-end;
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.mathai-bubble.user .mathai-acts {
+  border-top-color: var(--primary-soft);
+}
+
+.mathai-bubble.user .btn-xs {
+  color: var(--ink-2);
+}
+
+.mathai-detail-q {
+  background: var(--primary-weak);
+  border: 1px solid var(--primary-soft);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mathai-detail-a {
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+}
+
+.mathai-detail-a + .mathai-detail-a {
+  margin-top: 14px;
+}
+
+/* ---------- 任务详情界面 ---------- */
+.sched-row {
+  cursor: pointer;
+}
+.sched-row .sched-acts {
+  cursor: default;
+}
+.sched-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sched-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sched-detail-head b {
+  font-size: 17px;
+}
+.sched-detail-note {
+  margin: 6px 0 10px;
+  color: var(--ink-2);
+  background: var(--bg);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.sched-detail-hist {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sched-detail-hist > b {
+  color: var(--ink);
+}
+.spacer {
+  flex: 1;
+}

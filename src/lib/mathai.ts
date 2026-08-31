@@ -87,6 +87,22 @@ export function buildRequestMessages(system: string, history: ChatTurnLike[], op
   return msgs
 }
 
+/**
+ * 计算删除某条消息所在的完整问答应移除的消息 id:
+ * 一"题"= 一条用户消息 + 其后的所有回答;点回答上的删除会连同它的问题一起删。
+ */
+export function deleteTurnIds(msgs: { id: string; role: 'user' | 'assistant' }[], msgId: string): string[] {
+  const idx = msgs.findIndex((m) => m.id === msgId)
+  if (idx < 0) return []
+  let start = idx
+  if (msgs[idx].role === 'assistant') {
+    while (start > 0 && msgs[start].role !== 'user') start--
+  }
+  let end = start
+  while (end + 1 < msgs.length && msgs[end + 1].role === 'assistant') end++
+  return msgs.slice(start, end + 1).map((m) => m.id)
+}
+
 const ANSWER_HEADING = /^(#{1,4})\s*最终答案\s*$|^\*\*最终答案\*\*\s*$/
 
 /** 从回复中提取「最终答案」小节(按标题截取到下一个标题);找不到时回退为全文 */
