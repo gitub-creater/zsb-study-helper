@@ -43,7 +43,7 @@ npm run preview    # 预览构建产物
 
 ### AI 服务与中转配置
 
-在「设置 → AI 服务」选择官方服务或「自定义(OpenAI 兼容网关)」，填写 Base URL、API Key、模型、协议、超时、流式开关和自定义请求头。Base URL 可以是 `https://example.com` 或已经包含 `/v1` 的地址，程序会自动拼接一次 `/chat/completions`（Responses 协议则拼接 `/responses`）。API Key 只保存在当前设备的本地状态，云端快照会清除密钥及 Authorization 类请求头；生产环境建议使用服务商自己的安全网关，避免在公共浏览器中暴露密钥。
+在「设置 → AI 服务」选择官方服务或「自定义(OpenAI 兼容网关)」，填写 Base URL、API Key、模型、协议、超时、流式开关和自定义请求头。Base URL 可以是 `https://example.com` 或已经包含 `/v1` 的地址，程序会自动拼接一次 `/chat/completions`（Responses 协议则拼接 `/responses`）。对于 CC Switch、Codex++ 配置的上游或其他未开放 CORS 的 OpenAI-compatible 服务，选择「自动（推荐）」：浏览器直连被拦截时会改走应用中转；也可直接选择「应用中转」。中转仅接受 HTTPS 的这两个标准端点，不保存 API Key，不允许访问本机或内网地址。大于约 4MB 的代理请求会被拒绝，请先压缩图片或改用服务商自建网关。API Key 只保存在当前设备的本地状态，云端快照会清除密钥及 Authorization 类请求头；生产环境建议使用服务商自己的安全网关，避免在公共浏览器中暴露密钥。
 
 浏览器通知权限只能由用户授予：未询问时点击「开启系统通知」，已拒绝时请点击地址栏的锁形图标 → 网站设置 → 通知/声音 → 允许，然后回到页面「重新检查授权」。网页关闭、浏览器后台冻结、系统休眠和省电策略下，JavaScript 与网页语音无法保证执行；Android 原生通知也可能受 Doze 延迟，页面提供「测试提醒」用于验证当前设备。
 

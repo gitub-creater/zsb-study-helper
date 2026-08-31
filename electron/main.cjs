@@ -4,6 +4,9 @@ const path = require('node:path')
 
 let mainWindow
 
+// 定时学习提醒不是点击事件触发。桌面端在应用运行时允许其播放用户已开启的声音；网页端仍受浏览器策略约束。
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,

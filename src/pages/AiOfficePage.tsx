@@ -61,6 +61,8 @@ export function AiOfficePage() {
         baseURL: ai.baseURL,
         apiKey: ai.apiKey,
         model: ai.model,
+        transport: ai.transport,
+        proxyURL: ai.proxyURL,
         apiMode: ai.apiMode,
         timeoutMs: ai.timeoutMs,
         stream: false,

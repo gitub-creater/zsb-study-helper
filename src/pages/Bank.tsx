@@ -326,7 +326,19 @@ export function Bank() {
       const kpName = state.kps.find((k) => k.id === aiKp)?.name ?? ''
       const subjName = state.subjects.find((s) => s.id === aiSubject)?.name ?? ''
       const out = await aiChat(
-        { provider: cfg.provider as never, baseURL: cfg.baseURL, apiKey: cfg.apiKey, model: cfg.model },
+        {
+          provider: cfg.provider as never,
+          baseURL: cfg.baseURL,
+          apiKey: cfg.apiKey,
+          model: cfg.model,
+          transport: cfg.transport,
+          proxyURL: cfg.proxyURL,
+          apiMode: cfg.apiMode,
+          timeoutMs: cfg.timeoutMs,
+          customHeaders: cfg.customHeaders,
+          temperature: cfg.temperature,
+          maxTokens: cfg.maxTokens,
+        },
         [{
           role: 'user',
           content: [

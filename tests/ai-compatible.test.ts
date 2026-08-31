@@ -21,6 +21,20 @@ describe('OpenAI-compatible AI 接口', () => {
     expect(new Headers(request.headers).get('X-Relay')).toBe('yes')
   })
 
+  it('自动模式在浏览器直连被 CORS 拦截时改走应用中转', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: '中转连接成功' } }] }), { status: 200, headers: { 'content-type': 'application/json' } }))
+
+    await expect(aiChat({ ...cfg, transport: 'auto', proxyURL: 'https://study.example/api/ai/proxy' }, [{ role: 'user', content: 'hi' }])).resolves.toBe('中转连接成功')
+    expect(fetchMock.mock.calls[0][0]).toBe('https://relay.example/v1/chat/completions')
+    expect(fetchMock.mock.calls[1][0]).toBe('https://study.example/api/ai/proxy')
+    const body = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body))
+    expect(body.target).toBe('https://relay.example/v1/chat/completions')
+    expect(body.headers.authorization).toBe('Bearer test-key')
+    expect(body.payload).toMatchObject({ model: 'test-model', stream: false })
+  })
+
   it('解析 OpenAI SSE delta 和 Responses delta', () => {
     expect(sseDataDelta('data: {"choices":[{"delta":{"content":"你好"}}]}')).toBe('你好')
     expect(sseDataDelta('data: {"type":"response.output_text.delta","delta":"世界"}')).toBe('世界')

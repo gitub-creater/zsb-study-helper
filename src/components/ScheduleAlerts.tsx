@@ -32,8 +32,8 @@ export function scheduleNotificationPermission(): ScheduleNotificationPermission
   return typeof window === 'undefined' || typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
 }
 
-export function requestScheduleTest(taskId: string): void {
-  window.dispatchEvent(new CustomEvent(SCHEDULE_TEST_EVENT, { detail: taskId }))
+export function requestScheduleTest(taskId: string, skipAudio = false): void {
+  window.dispatchEvent(new CustomEvent(SCHEDULE_TEST_EVENT, { detail: { taskId, skipAudio } }))
 }
 
 function findTask(list: ScheduleTask[], id: string): ScheduleTask | undefined {
@@ -82,7 +82,7 @@ type StopAudio = () => void
  * 只用 Web Audio API 实时合成两声短提示，不引用、下载或内置第三方音频文件。
  * 某些浏览器要求用户手势才能播放；失败时返回空清理函数，提醒弹窗仍会正常显示。
  */
-function playReminderChime(): StopAudio {
+export function playReminderChime(): StopAudio {
   try {
     const AudioContextCtor = window.AudioContext
       ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -126,6 +126,8 @@ interface AlertState {
   key: string
   /** 测试提醒不写历史、不改计划。 */
   test?: boolean
+  /** 已由点击手势直接播放过声音，弹窗只展示文字，避免重复且绕开自动播放拦截。 */
+  skipAudio?: boolean
 }
 
 export function ScheduleAlerts() {
@@ -211,10 +213,17 @@ export function ScheduleAlerts() {
   // 页面“测试提醒”按钮：测试不会改动任务历史和下次时间。
   useEffect(() => {
     const handler = (event: Event) => {
-      const id = (event as CustomEvent<string>).detail
+      const detail = (event as CustomEvent<string | { taskId?: string; skipAudio?: boolean }>).detail
+      const id = typeof detail === 'string' ? detail : detail?.taskId
+      if (!id) return
       const task = findTask(stateRef.current.schedules ?? [], id)
       if (!task) return
-      setAlert({ taskId: id, key: task.nextRunAt ?? `${localStamp(new Date()).slice(0, 10)}T${task.time}`, test: true })
+      setAlert({
+        taskId: id,
+        key: task.nextRunAt ?? `${localStamp(new Date()).slice(0, 10)}T${task.time}`,
+        test: true,
+        skipAudio: typeof detail === 'string' ? false : detail.skipAudio,
+      })
     }
     window.addEventListener(SCHEDULE_TEST_EVENT, handler)
     return () => window.removeEventListener(SCHEDULE_TEST_EVENT, handler)
@@ -239,7 +248,7 @@ export function ScheduleAlerts() {
   useEffect(() => {
     stopAudio()
     setAudioIssue(null)
-    if (!alert || !task) return
+    if (!alert || !task || alert.skipAudio) return
     let usedAudio = false
     if (canSpeakScheduleReminder(task, globalSpeechEnabled)) {
       usedAudio = speechRef.current?.speak(reminderSpeechText(task), {
@@ -257,6 +266,7 @@ export function ScheduleAlerts() {
   }, [
     alert?.taskId,
     alert?.key,
+    alert?.skipAudio,
     task?.id,
     task?.voiceEnabled,
     task?.reminderSound,

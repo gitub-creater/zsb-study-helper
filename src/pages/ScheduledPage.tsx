@@ -1,9 +1,15 @@
 // 已安排任务：创建、编辑、权限引导和历史记录。任务时刻统一按北京时间展示与保存。
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../store/store'
 import { Chip, EmptyState, Field, Modal, Segmented, useConfirm, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
-import { requestScheduleTest, scheduleNotificationPermission } from '../components/ScheduleAlerts'
+import {
+  canSpeakScheduleReminder,
+  playReminderChime,
+  reminderSpeechText,
+  requestScheduleTest,
+  scheduleNotificationPermission,
+} from '../components/ScheduleAlerts'
 import {
   nativeExactAlarmPermission,
   nativeScheduleNotificationPermission,
@@ -30,6 +36,7 @@ import {
 import type { ScheduleRepeat, ScheduleRun, ScheduleTask } from '../types'
 import { fmtDate, fmtDateTime, weekdayCn } from '../lib/date'
 import { uid } from '../lib/misc'
+import { BrowserSpeechController } from '../services/tts'
 
 type FilterKind = 'all' | 'on' | 'off'
 type FormKind = 'once' | 'daily' | 'weekly' | 'custom'
@@ -473,6 +480,17 @@ export function ScheduledPage() {
   const [nativeNoticePerm, setNativeNoticePerm] = useState<'granted' | 'denied' | 'default' | 'unsupported'>(nativeSupported ? 'default' : 'unsupported')
   const [exactAlarmPerm, setExactAlarmPerm] = useState<'granted' | 'denied' | 'unsupported'>(nativeSupported ? 'denied' : 'unsupported')
   const globalSpeechEnabled = state.settings.speech?.enabled !== false
+  const previewSpeechRef = useRef<BrowserSpeechController | null>(null)
+  const previewChimeStopRef = useRef<(() => void) | null>(null)
+
+  const stopPreviewAudio = () => {
+    previewChimeStopRef.current?.()
+    previewChimeStopRef.current = null
+    previewSpeechRef.current?.dispose()
+    previewSpeechRef.current = null
+  }
+
+  useEffect(() => () => stopPreviewAudio(), [])
 
   useEffect(() => {
     const refresh = () => setNoticePerm(scheduleNotificationPermission())
@@ -567,13 +585,51 @@ export function ScheduledPage() {
   }
 
   const testReminder = async (task: ScheduleTask) => {
+    // 先在当前点击事件中播放，浏览器才会把它视为用户授权的声音操作。
+    stopPreviewAudio()
+    let previewStarted = false
+    if (canSpeakScheduleReminder(task, globalSpeechEnabled)) {
+      const controller = new BrowserSpeechController({
+        onError: (message) => toast(message, { kind: 'error' }),
+      })
+      previewSpeechRef.current = controller
+      previewStarted = controller.speak(reminderSpeechText(task), {
+        rate: state.settings.speech?.rate ?? 1,
+        voiceId: state.settings.speech?.voiceURI,
+        voiceName: state.settings.speech?.voiceName,
+      })
+    }
+    if (scheduleReminderSound(task) === 'chime') {
+      previewChimeStopRef.current = playReminderChime()
+      previewStarted = true
+    }
+    if (previewStarted) toast('已开始播放测试声音', { kind: 'success' })
+    else if (scheduleVoiceEnabled(task) && !globalSpeechEnabled) toast('该任务已开启语音，但全局声音开关已关闭', { kind: 'error' })
+    else toast('此任务当前选择静音；请先打开任务的喇叭开关或辅助提示音', { kind: 'error' })
     if (nativeSupported) {
       const scheduled = await showNativeScheduleTestNotification(task, state.settings.speech?.enabled !== false)
       toast(scheduled ? '已排入 Android 测试通知，约 1 秒后显示' : 'Android 测试通知未排入，请先开启系统通知权限', {
         kind: scheduled ? 'success' : 'error',
       })
     }
-    requestScheduleTest(task.id)
+    requestScheduleTest(task.id, previewStarted)
+  }
+
+  const toggleGlobalSpeech = () => {
+    const enabled = !globalSpeechEnabled
+    dispatch({
+      type: 'SET_SETTINGS',
+      patch: {
+        speech: {
+          ...state.settings.speech,
+          enabled,
+          rate: state.settings.speech?.rate ?? 1,
+          preferredLang: 'zh-CN',
+        },
+      },
+    })
+    if (!enabled) stopPreviewAudio()
+    toast(enabled ? '已开启全局语音功能' : '已关闭全局语音功能', { kind: 'success' })
   }
 
   const toggleTaskVoice = (task: ScheduleTask) => {
@@ -603,6 +659,16 @@ export function ScheduledPage() {
         <span className="chip chip-green num">启用 {onCount}</span>
         {tasks.length - onCount > 0 && <span className="chip num">暂停 {tasks.length - onCount}</span>}
         <div className="spacer" />
+        <button
+          type="button"
+          className={`btn btn-icon btn-ghost${globalSpeechEnabled ? ' is-active' : ''}`}
+          title={globalSpeechEnabled ? '关闭全局任务声音' : '开启全局任务声音'}
+          aria-label={globalSpeechEnabled ? '关闭全局任务声音' : '开启全局任务声音'}
+          aria-pressed={globalSpeechEnabled}
+          onClick={toggleGlobalSpeech}
+        >
+          <Icon name={globalSpeechEnabled ? 'volume' : 'volumeOff'} size={18} />
+        </button>
         <button className="btn btn-primary" onClick={() => setEditing({ task: null })}>
           <Icon name="plus" size={14} /> 新建任务
         </button>

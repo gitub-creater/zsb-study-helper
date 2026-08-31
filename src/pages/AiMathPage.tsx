@@ -618,6 +618,23 @@ export function AiMathPage() {
     })
   }, [toast])
 
+  /** 必须由点击事件直接触发，避免浏览器把定时器或异步回调当作自动播放拦截。 */
+  const testSpeech = useCallback(() => {
+    const controller = speechRef.current
+    if (!controller) {
+      setSpeech({ messageId: 'speech-preview', playback: 'unsupported', sentence: null, error: '当前设备尚未初始化语音朗读，请使用支持系统朗读的浏览器或应用。' })
+      return
+    }
+    if (speechSettings.enabled === false) updateSpeechSettings({ enabled: true })
+    setSpeech({ messageId: 'speech-preview', playback: 'idle', sentence: null, error: null })
+    const started = controller.speak('你好，这是专升本学习助手的语音播放测试。', {
+      rate: speechSettings.rate,
+      voiceId: speechSettings.voiceURI,
+      voiceName: speechSettings.voiceName,
+    })
+    if (!started) toast('语音测试未能启动，请查看页面提示并检查浏览器声音设置', { kind: 'error' })
+  }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceName, speechSettings.voiceURI, toast, updateSpeechSettings])
+
   const warnNoConfig = useCallback(() => {
     toast('请先在「设置 → AI 服务」配置接口地址、API Key 和模型名', { kind: 'error' })
   }, [toast])
@@ -633,6 +650,8 @@ export function AiMathPage() {
         baseURL: ai.baseURL,
         apiKey: ai.apiKey,
         model: ai.model,
+        transport: ai.transport,
+        proxyURL: ai.proxyURL,
         reasoningEffort: ai.reasoningEffort,
         apiMode: ai.apiMode,
         timeoutMs: ai.timeoutMs,
@@ -816,6 +835,27 @@ export function AiMathPage() {
       onDrop={onDrop}
       onPaste={onPaste}
     >
+      <div className="mathai-voice-bar" role="group" aria-label="AI 讲题声音控制">
+        <span className="mathai-voice-label">
+          <Icon name={speechSettings.enabled === false ? 'volumeOff' : 'volume'} size={16} />
+          AI 讲题声音
+          <small>{speechSettings.enabled === false ? '已关闭' : speechSupported ? '已开启' : '设备不支持'}</small>
+        </span>
+        <div className="spacer" />
+        <button
+          type="button"
+          className={`btn btn-icon btn-ghost${speechSettings.enabled === false ? '' : ' is-active'}`}
+          aria-label={speechSettings.enabled === false ? '开启 AI 讲题声音' : '关闭 AI 讲题声音'}
+          title={speechSettings.enabled === false ? '开启 AI 讲题声音' : '关闭 AI 讲题声音'}
+          aria-pressed={speechSettings.enabled !== false}
+          onClick={() => updateSpeechSettings({ enabled: speechSettings.enabled === false })}
+        >
+          <Icon name={speechSettings.enabled === false ? 'volumeOff' : 'volume'} size={18} />
+        </button>
+        <button type="button" className="btn btn-sm" onClick={testSpeech} disabled={!speechSupported}>
+          <Icon name="play" size={13} /> 测试声音
+        </button>
+      </div>
       {dragging && (
         <div className="mathai-droptip">
           <Icon name="upload" size={22} />

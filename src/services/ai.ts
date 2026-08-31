@@ -3,12 +3,21 @@
 //      浏览器直连可能遇到跨域,可改用 one-api/new-api 等兼容网关地址(选"自定义")
 
 export type AiProviderId = 'doubao' | 'deepseek' | 'qwen' | 'custom'
+export type AiTransport = 'auto' | 'direct' | 'proxy'
+
+/**
+ * GitHub Pages 是纯静态站点，第三方 OpenAI-compatible 服务常常不开放 CORS。
+ * 因此默认提供同项目 Vercel 转发地址；密钥仅随单次请求转发，服务端不保存。
+ */
+export const DEFAULT_AI_PROXY_URL = 'https://shandong-zsb-study-helper.vercel.app/api/ai/proxy'
 
 export interface AiConfig {
   provider: AiProviderId
   baseURL: string
   apiKey: string
   model: string
+  transport?: AiTransport
+  proxyURL?: string
   /** 思考程度:仅用于提示词分级与界面显示,不作为请求参数发送 */
   reasoningEffort?: 'low' | 'medium' | 'high'
   /** 请求协议。默认 chat/completions，Responses API 仅在服务商明确支持时选择。 */
@@ -94,9 +103,11 @@ export async function throwForStatus(res: Response): Promise<never> {
   const text = await res.text().catch(() => '')
   let detail = text.trim()
   try {
-    const data = JSON.parse(text) as { error?: { message?: string; code?: string }; message?: string; detail?: string }
-    detail = data.error?.message || data.message || data.detail || detail
-    if (data.error?.code) detail = `${detail}（${data.error.code}）`
+    const data = JSON.parse(text) as { error?: { message?: string; code?: string } | string; code?: string; message?: string; detail?: string }
+    const errorDetail = typeof data.error === 'string' ? data.error : data.error?.message
+    detail = errorDetail || data.message || data.detail || detail
+    const code = typeof data.error === 'object' ? data.error?.code : data.code
+    if (code) detail = `${detail}（${code}）`
   } catch {
     // 部分中转站返回纯文本，保留原文。
   }
@@ -107,7 +118,7 @@ export async function throwForStatus(res: Response): Promise<never> {
 function mapFetchError(e: unknown): unknown {
   if (e instanceof DOMException && e.name === 'AbortError') throw new Error('请求超时,请稍后重试或检查网络')
   if (e instanceof TypeError) {
-    throw new Error('网络请求失败:可能是浏览器跨域限制。可在设置中改用支持跨域的网关地址(如 one-api)')
+    throw new Error('网络请求失败：请检查网络；若使用网页端，请在设置中选择“应用中转”或“自动”。')
   }
   return e
 }
@@ -161,6 +172,53 @@ function responsesBody(cfg: AiConfig, messages: ChatMessage[], stream: boolean):
   return body
 }
 
+function proxyEndpoint(cfg: AiConfig): string {
+  return (cfg.proxyURL || DEFAULT_AI_PROXY_URL).trim()
+}
+
+function serializableHeaders(headers: Headers): Record<string, string> {
+  const result: Record<string, string> = {}
+  headers.forEach((value, key) => { result[key] = value })
+  return result
+}
+
+/**
+ * 统一发送请求。自动模式只在浏览器拿不到 HTTP 响应（典型为 CORS）时回退到中转，
+ * 不会掩盖上游已经明确返回的 401/404/429 等配置问题。
+ */
+async function sendAiRequest(
+  cfg: AiConfig,
+  mode: 'chat' | 'responses',
+  payload: Record<string, unknown>,
+  signal: AbortSignal,
+): Promise<Response> {
+  const target = aiEndpoint(cfg.baseURL, mode)
+  const headers = requestHeaders(cfg)
+  const direct = () => fetch(target, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+    signal,
+  })
+  const throughProxy = () => fetch(proxyEndpoint(cfg), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target, headers: serializableHeaders(headers), payload }),
+    signal,
+  })
+
+  const transport = cfg.transport ?? 'auto'
+  if (transport === 'proxy') return throughProxy()
+  if (transport === 'direct') return direct()
+  try {
+    return await direct()
+  } catch (error) {
+    // Fetch 在 CORS、DNS、TLS 等场景下只会抛 TypeError，浏览器不会暴露上游状态码。
+    if (error instanceof TypeError) return throughProxy()
+    throw error
+  }
+}
+
 function responseText(data: unknown): string {
   const value = data as {
     choices?: { message?: { content?: string | { text?: string }[] } }[]
@@ -195,12 +253,12 @@ export async function aiChat(cfg: AiConfig, messages: ChatMessage[], timeoutMs =
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? timeoutMs)
   try {
     const mode = cfg.apiMode ?? 'chat'
-    const res = await fetch(aiEndpoint(cfg.baseURL, mode), {
-      method: 'POST',
-      headers: requestHeaders(cfg),
-      body: JSON.stringify(mode === 'responses' ? responsesBody(cfg, messages, false) : chatBody(cfg, messages, false)),
-      signal: controller.signal,
-    })
+    const res = await sendAiRequest(
+      cfg,
+      mode,
+      mode === 'responses' ? responsesBody(cfg, messages, false) : chatBody(cfg, messages, false),
+      controller.signal,
+    )
     if (!res.ok) await throwForStatus(res)
     const out = responseText(await res.json())
     if (!out) throw new Error('服务商返回了空回复')
@@ -234,12 +292,12 @@ export async function aiChatStream(cfg: AiConfig, messages: ChatMessage[], opts:
   try {
     const mode = cfg.apiMode ?? 'chat'
     const stream = cfg.stream !== false
-    const res = await fetch(aiEndpoint(cfg.baseURL, mode), {
-      method: 'POST',
-      headers: requestHeaders(cfg),
-      body: JSON.stringify(mode === 'responses' ? responsesBody(cfg, messages, stream) : chatBody(cfg, messages, stream)),
-      signal: controller.signal,
-    })
+    const res = await sendAiRequest(
+      cfg,
+      mode,
+      mode === 'responses' ? responsesBody(cfg, messages, stream) : chatBody(cfg, messages, stream),
+      controller.signal,
+    )
     if (!res.ok) await throwForStatus(res)
     const contentType = res.headers.get('content-type') ?? ''
     if (!contentType.includes('text/event-stream') || !res.body) {

@@ -325,6 +325,10 @@ export interface AiSettings {
   baseURL: string
   apiKey: string
   model: string
+  /** 请求路径：自动会在浏览器直连被 CORS 拦截时切换到应用中转。 */
+  transport?: 'auto' | 'direct' | 'proxy'
+  /** 自建中转地址；未填写时使用项目的 Vercel 转发服务。 */
+  proxyURL?: string
   reasoningEffort?: 'low' | 'medium' | 'high'
   apiMode?: 'chat' | 'responses'
   timeoutMs?: number

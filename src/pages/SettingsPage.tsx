@@ -11,8 +11,8 @@ import { todayStr, fmtDateTime } from '../lib/date'
 import { ABOUT, compareVersions } from '../lib/about'
 import { loadColleges } from '../lib/colleges'
 import type { College } from '../lib/colleges'
-import { AI_PRESETS, aiTest } from '../services/ai'
-import type { AiConfig, AiProviderId } from '../services/ai'
+import { AI_PRESETS, DEFAULT_AI_PROXY_URL, aiTest } from '../services/ai'
+import type { AiConfig, AiProviderId, AiTransport } from '../services/ai'
 import type { CatalogData, ExamCategory, Elective, State } from '../types'
 
 export function SettingsPage() {
@@ -47,6 +47,8 @@ export function SettingsPage() {
   const [aiBase, setAiBase] = useState(state.settings.ai?.baseURL ?? AI_PRESETS[preset0].baseURL)
   const [aiKey, setAiKey] = useState(state.settings.ai?.apiKey ?? '')
   const [aiModel, setAiModel] = useState(state.settings.ai?.model ?? AI_PRESETS[preset0].model)
+  const [aiTransport, setAiTransport] = useState<AiTransport>(state.settings.ai?.transport ?? 'auto')
+  const [aiProxyURL, setAiProxyURL] = useState(state.settings.ai?.proxyURL ?? DEFAULT_AI_PROXY_URL)
   const [aiEffort, setAiEffort] = useState<'low' | 'medium' | 'high'>(state.settings.ai?.reasoningEffort ?? 'medium')
   const [aiMode, setAiMode] = useState<'chat' | 'responses'>(state.settings.ai?.apiMode ?? 'chat')
   const [aiTimeout, setAiTimeout] = useState(state.settings.ai?.timeoutMs ?? 60000)
@@ -61,6 +63,8 @@ export function SettingsPage() {
     baseURL: aiBase.trim(),
     apiKey: aiKey.trim(),
     model: aiModel.trim(),
+    transport: aiTransport,
+    proxyURL: aiProxyURL.trim(),
     reasoningEffort: aiEffort,
     apiMode: aiMode,
     timeoutMs: aiTimeout,
@@ -76,6 +80,10 @@ export function SettingsPage() {
     const cfg = currentAiCfg()
     if (!cfg.baseURL || !cfg.apiKey || !cfg.model) {
       toast('接口地址 / API Key / 模型名都需要填写', { kind: 'error' })
+      return
+    }
+    if (cfg.transport !== 'direct' && !cfg.proxyURL) {
+      toast('使用自动或应用中转时，需要填写应用中转地址', { kind: 'error' })
       return
     }
     let headers: Record<string, string>
@@ -530,9 +538,26 @@ export function SettingsPage() {
               </select>
             </Field>
             <p className="fs12 muted" style={{ marginTop: -6, marginBottom: 10 }}>{AI_PRESETS[aiProvider].note}</p>
-            <Field label="接口地址(OpenAI 兼容)" hint="跨域失败时改用 one-api 等兼容网关地址">
+            <Field label="接口地址(OpenAI 兼容)" hint="填写中转站给出的 Base URL；可带 /v1，不要填写密钥或模型路径">
               <input className="input" value={aiBase} onChange={(e) => setAiBase(e.target.value)} placeholder="https://…" />
             </Field>
+            <Field label="请求方式" hint="CC Switch、Codex++ 等接口若被浏览器跨域拦截，使用“自动”或“应用中转”">
+              <Segmented
+                small
+                value={aiTransport}
+                onChange={setAiTransport}
+                options={[
+                  { value: 'auto' as const, label: '自动（推荐）' },
+                  { value: 'proxy' as const, label: '应用中转' },
+                  { value: 'direct' as const, label: '浏览器直连' },
+                ]}
+              />
+            </Field>
+            {aiTransport !== 'direct' && (
+              <Field label="应用中转地址" hint="默认地址适用于网页、桌面和手机端；仅转发本次请求，不保存 API Key">
+                <input className="input" value={aiProxyURL} onChange={(e) => setAiProxyURL(e.target.value)} placeholder={DEFAULT_AI_PROXY_URL} />
+              </Field>
+            )}
             <Field label="API Key">
               <input className="input" type="password" value={aiKey} onChange={(e) => setAiKey(e.target.value)} placeholder="sk-…" />
             </Field>
@@ -568,7 +593,7 @@ export function SettingsPage() {
               </div>
               <button className={`switch${aiStream ? ' on' : ''}`} aria-label="启用流式输出" aria-pressed={aiStream} onClick={() => setAiStream((value) => !value)} />
             </div>
-            <Field label="自定义请求头(JSON)" hint="例如 {&quot;X-Channel&quot;:&quot;codex&quot;}；不要把密钥写进源码或分享给他人">
+            <Field label="自定义请求头(JSON)" hint="例如 {&quot;X-Channel&quot;:&quot;codex&quot;}；需要 x-api-key 时在此填写，不要把密钥写进源码或分享给他人">
               <textarea className="input" rows={3} value={aiHeaders} onChange={(e) => setAiHeaders(e.target.value)} placeholder={'{\n  "X-Channel": "study"\n}'} />
             </Field>
             <Field label="思考程度" hint="只影响讲解详细程度与验证强度:高=完整验证流程,低=精炼输出">

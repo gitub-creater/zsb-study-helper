@@ -2232,6 +2232,41 @@ body.rm *::after {
   min-height: 420px;
 }
 
+/* 固定在讲题对话框顶部：即使还没有 AI 回复，也能看见并控制声音。 */
+.mathai-voice-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0 0 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--card);
+}
+
+.mathai-voice-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mathai-voice-label small {
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mathai-voice-bar .btn-icon,
+.page-h > .btn-icon {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 .mathai-list {
   flex: 1;
   overflow-y: auto;
@@ -2897,6 +2932,8 @@ body.rm *::after {
 }
 
 .mathai-speech-head > .btn-icon.is-active,
+.mathai-voice-bar > .btn-icon.is-active,
+.page-h > .btn-icon.is-active,
 .sched-acts > .btn-icon.is-active {
   color: var(--primary-deep);
   background: var(--primary-weak);
@@ -3100,6 +3137,20 @@ body.rm *::after {
 }
 
 @media (max-width: 640px) {
+  .mathai-voice-bar {
+    gap: 6px;
+  }
+
+  .mathai-voice-label small {
+    display: none;
+  }
+
+  .mathai-voice-bar .btn-icon,
+  .page-h > .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .mathai-speech .btn,
   .mathai-speech-options select {
     min-height: 44px;
