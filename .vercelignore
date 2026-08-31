@@ -1,0 +1,11 @@
+node_modules
+dist
+release
+release-codex
+release-codex-verify
+android/.gradle
+android/build
+android/app/build
+*.jks
+.git
+.cache
