@@ -8,6 +8,8 @@ import { Mascot } from '../components/Mascot'
 import { Markdown } from '../components/Markdown'
 import { AI_PRESETS, aiChatStream, AiAbortedError } from '../services/ai'
 import type { AiConfig, AiProviderId } from '../services/ai'
+import { BrowserSpeechController, SPEECH_RATES } from '../services/tts'
+import type { SpeechPlaybackState, SpeechRate, SpeechSentence, SpeechVoiceOption } from '../services/tts'
 import { getSkill } from '../skills'
 import { nav, uid } from '../lib/misc'
 import { getSession } from '../lib/auth'
@@ -19,9 +21,11 @@ import {
   fileToDataUrl,
   IMAGE_ACCEPT,
   IMAGE_MAX_COUNT,
+  toSpeechScript,
   validateImageFile,
 } from '../lib/mathai'
 import type { ChatTurnLike } from '../lib/mathai'
+import type { SpeechSettings } from '../types'
 
 interface ChatMsg {
   id: string
@@ -36,6 +40,20 @@ interface ChatMsg {
 }
 
 const EFFORT_LABEL: Record<string, string> = { low: '低', medium: '中', high: '高' }
+
+interface SpeechUiState {
+  messageId: string | null
+  playback: SpeechPlaybackState
+  sentence: SpeechSentence | null
+  error: string | null
+}
+
+const INITIAL_SPEECH_UI: SpeechUiState = {
+  messageId: null,
+  playback: 'idle',
+  sentence: null,
+  error: null,
+}
 
 function historyKey(): string {
   return `zsb_mathai_v1__${getSession()?.userId ?? 'local'}`
@@ -159,6 +177,149 @@ function TurnDetailModal({
   )
 }
 
+function SpeechControls({
+  messageId,
+  text,
+  supported,
+  voices,
+  settings,
+  speech,
+  onRead,
+  onPause,
+  onResume,
+  onStop,
+  onReplay,
+  onSettingsChange,
+  onRefreshVoices,
+}: {
+  messageId: string
+  text: string
+  supported: boolean
+  voices: SpeechVoiceOption[]
+  settings: SpeechSettings
+  speech: SpeechUiState
+  onRead: () => void
+  onPause: () => void
+  onResume: () => void
+  onStop: () => void
+  onReplay: () => void
+  onSettingsChange: (patch: Partial<SpeechSettings>) => void
+  onRefreshVoices: () => void
+}) {
+  const active = speech.messageId === messageId
+  const playback = active ? speech.playback : 'idle'
+  const speechEnabled = settings.enabled !== false
+  const disabled = !speechEnabled || !supported || !toSpeechScript(text)
+  const hasMandarin = voices.some((voice) => voice.isMandarin)
+
+  return (
+    <section className={`mathai-speech${active ? ' is-active' : ''}`} aria-label="讲解朗读控制">
+      <div className="mathai-speech-head">
+        <span className="mathai-speech-title"><Icon name="volume" size={15} /> 讲解朗读</span>
+        {active && playback !== 'idle' && playback !== 'unsupported' && (
+          <span className={`mathai-speech-state is-${playback}`} aria-live="polite">
+            {playback === 'speaking' ? '正在朗读' : playback === 'paused' ? '已暂停' : '朗读异常'}
+          </span>
+        )}
+      </div>
+
+      <label className="mathai-speech-switch">
+        <input
+          type="checkbox"
+          checked={speechEnabled}
+          onChange={(event) => onSettingsChange({ enabled: event.target.checked })}
+        />
+        <span>启用语音朗读</span>
+      </label>
+
+      <div className="mathai-speech-actions" aria-label="朗读操作">
+        <button type="button" className="btn btn-xs" disabled={disabled} onClick={onRead}>
+          <Icon name="play" size={13} /> 朗读
+        </button>
+        <button type="button" className="btn btn-xs" disabled={disabled || playback !== 'speaking'} onClick={onPause}>
+          <Icon name="pause" size={13} /> 暂停
+        </button>
+        <button type="button" className="btn btn-xs" disabled={disabled || playback !== 'paused'} onClick={onResume}>
+          <Icon name="play" size={13} /> 继续
+        </button>
+        <button type="button" className="btn btn-xs" disabled={disabled || (playback !== 'speaking' && playback !== 'paused')} onClick={onStop}>
+          <Icon name="stop" size={12} /> 停止
+        </button>
+        <button type="button" className="btn btn-xs" disabled={disabled} onClick={onReplay}>
+          <Icon name="refresh" size={13} /> 重新播放
+        </button>
+      </div>
+
+      <div className="mathai-speech-options">
+        <label>
+          <span>语速</span>
+          <select
+            value={String(settings.rate)}
+            disabled={!speechEnabled || !supported}
+            onChange={(event) => onSettingsChange({ rate: Number(event.target.value) as SpeechRate })}
+          >
+            {SPEECH_RATES.map((rate) => <option key={rate} value={rate}>{rate} 倍</option>)}
+          </select>
+        </label>
+        <label className="mathai-speech-voice">
+          <span>声音</span>
+          <select
+            value={settings.voiceURI ?? ''}
+            disabled={!speechEnabled || !supported}
+            onChange={(event) => {
+              const voiceURI = event.target.value || undefined
+              const selected = voices.find((voice) => voice.id === voiceURI)
+              onSettingsChange({ voiceURI, voiceName: selected?.name })
+            }}
+          >
+            <option value="">优先普通话（系统自动）</option>
+            {voices.map((voice) => (
+              <option key={voice.id} value={voice.id}>{voice.name}（{voice.lang}）{voice.isMandarin ? ' · 普通话' : ''}</option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="btn btn-xs btn-icon btn-ghost"
+          aria-label="刷新可用声音"
+          title="刷新可用声音"
+          disabled={!speechEnabled || !supported}
+          onClick={onRefreshVoices}
+        >
+          <Icon name="refresh" size={14} />
+        </button>
+      </div>
+
+      {!speechEnabled && (
+        <p className="mathai-speech-note" role="status">
+          语音朗读已关闭。文字讲解会继续保留；重新开启后即可朗读。
+        </p>
+      )}
+      {speechEnabled && !supported && (
+        <p className="mathai-speech-note" role="status">
+          当前设备不支持语音朗读，文字讲解可继续正常使用。
+        </p>
+      )}
+      {supported && voices.length > 0 && !hasMandarin && (
+        <p className="mathai-speech-note">
+          当前系统未提供普通话音色，将使用所选声音或系统默认声音。
+        </p>
+      )}
+      {active && speech.sentence && playback !== 'idle' && (
+        <output className="mathai-speech-current" aria-live="polite">
+          <span>正在讲解</span>
+          <mark>{speech.sentence.text}</mark>
+        </output>
+      )}
+      {active && speech.error && (
+        <p className="mathai-speech-error" role="alert">
+          <Icon name="close" size={13} /> {speech.error}
+        </p>
+      )}
+    </section>
+  )
+}
+
 function MessageBubble({
   m,
   generating,
@@ -169,6 +330,17 @@ function MessageBubble({
   onDetail,
   quickActions,
   onQuick,
+  speechSupported,
+  speechVoices,
+  speechSettings,
+  speech,
+  onSpeechRead,
+  onSpeechPause,
+  onSpeechResume,
+  onSpeechStop,
+  onSpeechReplay,
+  onSpeechSettingsChange,
+  onRefreshSpeechVoices,
 }: {
   m: ChatMsg
   generating: boolean
@@ -179,6 +351,17 @@ function MessageBubble({
   onDetail: (id: string) => void
   quickActions?: { label: string; prompt: string }[]
   onQuick?: (prompt: string) => void
+  speechSupported: boolean
+  speechVoices: SpeechVoiceOption[]
+  speechSettings: SpeechSettings
+  speech: SpeechUiState
+  onSpeechRead: (m: ChatMsg) => void
+  onSpeechPause: () => void
+  onSpeechResume: () => void
+  onSpeechStop: () => void
+  onSpeechReplay: (m: ChatMsg) => void
+  onSpeechSettingsChange: (patch: Partial<SpeechSettings>) => void
+  onRefreshSpeechVoices: () => void
 }) {
   if (m.role === 'user') {
     return (
@@ -221,7 +404,10 @@ function MessageBubble({
             <i />
           </div>
         ) : (
-          <Markdown text={m.text} />
+          <Markdown
+            text={m.text}
+            activeSpeechSentence={speech.messageId === m.id && speech.playback !== 'idle' ? speech.sentence?.text : null}
+          />
         )}
         {m.stopped && (
           <div className="mathai-note">
@@ -234,20 +420,37 @@ function MessageBubble({
           </div>
         )}
         {m.text && !generating && (
-          <div className="mathai-acts">
-            <button className="btn btn-xs" onClick={() => onDetail(m.id)}>
-              <Icon name="search" size={12} /> 详情
-            </button>
-            <button className="btn btn-xs" onClick={() => onCopy(m)}>
-              <Icon name="copy" size={13} /> 复制答案
-            </button>
-            <button className="btn btn-xs" disabled={busy} onClick={() => onRegenerate(m.id)}>
-              <Icon name="refresh" size={13} /> 重新解析
-            </button>
-            <button className="btn btn-xs" aria-label="删除本题问答" title="删除本题问答(连同题目)" disabled={busy} onClick={() => onDelete(m.id)}>
-              <Icon name="trash" size={12} /> 删除
-            </button>
-          </div>
+          <>
+            <div className="mathai-acts">
+              <button className="btn btn-xs" onClick={() => onDetail(m.id)}>
+                <Icon name="search" size={12} /> 详情
+              </button>
+              <button className="btn btn-xs" onClick={() => onCopy(m)}>
+                <Icon name="copy" size={13} /> 复制答案
+              </button>
+              <button className="btn btn-xs" disabled={busy} onClick={() => onRegenerate(m.id)}>
+                <Icon name="refresh" size={13} /> 重新解析
+              </button>
+              <button className="btn btn-xs" aria-label="删除本题问答" title="删除本题问答(连同题目)" disabled={busy} onClick={() => onDelete(m.id)}>
+                <Icon name="trash" size={12} /> 删除
+              </button>
+            </div>
+            <SpeechControls
+              messageId={m.id}
+              text={m.text}
+              supported={speechSupported}
+              voices={speechVoices}
+              settings={speechSettings}
+              speech={speech}
+              onRead={() => onSpeechRead(m)}
+              onPause={onSpeechPause}
+              onResume={onSpeechResume}
+              onStop={onSpeechStop}
+              onReplay={() => onSpeechReplay(m)}
+              onSettingsChange={onSpeechSettingsChange}
+              onRefreshVoices={onRefreshSpeechVoices}
+            />
+          </>
         )}
         {quickActions && !busy && (
           <div className="mathai-quick">
@@ -264,7 +467,7 @@ function MessageBubble({
 }
 
 export function AiMathPage() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const toast = useToast()
   const [, confirm] = useConfirm()
   const skill = getSkill('math')
@@ -274,6 +477,10 @@ export function AiMathPage() {
   const presetId = (ai?.provider as AiProviderId) ?? 'custom'
   const presetName = AI_PRESETS[presetId]?.name ?? ai?.provider ?? '自定义'
   const configured = !!(ai?.baseURL && ai?.apiKey && ai?.model)
+  const savedSpeech = state.settings.speech
+  const savedRate = savedSpeech?.rate
+  const speechRate: SpeechRate = SPEECH_RATES.includes(savedRate as SpeechRate) ? savedRate as SpeechRate : 1
+  const speechSettings: SpeechSettings = { ...savedSpeech, enabled: savedSpeech?.enabled !== false, rate: speechRate, preferredLang: 'zh-CN' }
 
   const [msgs, setMsgs] = useState<ChatMsg[]>(loadHistory)
   const [input, setInput] = useState('')
@@ -285,6 +492,10 @@ export function AiMathPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
+  const speechRef = useRef<BrowserSpeechController | null>(null)
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const [speechVoices, setSpeechVoices] = useState<SpeechVoiceOption[]>([])
+  const [speech, setSpeech] = useState<SpeechUiState>(INITIAL_SPEECH_UI)
 
   useEffect(() => {
     saveHistory(msgs)
@@ -294,6 +505,87 @@ export function AiMathPage() {
     const el = listRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [msgs])
+
+  useEffect(() => {
+    const controller = new BrowserSpeechController({
+      onStateChange: (playback) => setSpeech((prev) => ({ ...prev, playback })),
+      onSentenceChange: (sentence) => setSpeech((prev) => ({ ...prev, sentence })),
+      onVoicesChange: setSpeechVoices,
+      onError: (error) => setSpeech((prev) => ({ ...prev, error })),
+    })
+    speechRef.current = controller
+    setSpeechSupported(controller.supported)
+    setSpeechVoices(controller.refreshVoices())
+    return () => {
+      if (speechRef.current === controller) speechRef.current = null
+      controller.dispose()
+    }
+  }, [])
+
+  const stopSpeech = useCallback(() => {
+    speechRef.current?.stop()
+    setSpeech((prev) => ({ ...prev, playback: 'idle', sentence: null, error: null }))
+  }, [])
+
+  const updateSpeechSettings = useCallback((patch: Partial<SpeechSettings>) => {
+    if (patch.enabled === false) stopSpeech()
+    dispatch({
+      type: 'SET_SETTINGS',
+      patch: {
+        speech: { ...speechSettings, ...patch, preferredLang: 'zh-CN' },
+      },
+    })
+  }, [dispatch, speechSettings, stopSpeech])
+
+  const startSpeech = useCallback((message: ChatMsg) => {
+    if (speechSettings.enabled === false) {
+      setSpeech({
+        messageId: message.id,
+        playback: 'idle',
+        sentence: null,
+        error: '语音朗读当前已关闭。请先开启“启用语音朗读”后再播放，文字讲解仍可正常阅读。',
+      })
+      return
+    }
+    const script = toSpeechScript(message.text)
+    setSpeech({ messageId: message.id, playback: 'idle', sentence: null, error: null })
+    const controller = speechRef.current
+    if (!controller) {
+      setSpeech({
+        messageId: message.id,
+        playback: 'unsupported',
+        sentence: null,
+        error: '当前设备尚未初始化语音朗读，文字讲解可继续正常使用。',
+      })
+      return
+    }
+    controller.speak(script, {
+      rate: speechSettings.rate,
+      voiceId: speechSettings.voiceURI,
+      voiceName: speechSettings.voiceName,
+    })
+  }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceURI, speechSettings.voiceName])
+
+  // 从设置页关闭总开关时，也要立刻停止当前讲解。
+  useEffect(() => {
+    if (speechSettings.enabled === false) stopSpeech()
+  }, [speechSettings.enabled, stopSpeech])
+
+  const pauseSpeech = useCallback(() => {
+    if (speechRef.current?.pause()) setSpeech((prev) => ({ ...prev, playback: 'paused' }))
+  }, [])
+
+  const resumeSpeech = useCallback(() => {
+    if (speechRef.current?.resume()) setSpeech((prev) => ({ ...prev, playback: 'speaking' }))
+  }, [])
+
+  const refreshSpeechVoices = useCallback(() => {
+    const voices = speechRef.current?.refreshVoices() ?? []
+    setSpeechVoices(voices)
+    toast(voices.length ? `已刷新 ${voices.length} 个可用声音` : '当前系统尚未返回可用声音，朗读时将尝试使用系统默认声音', {
+      kind: voices.length ? 'success' : 'error',
+    })
+  }, [toast])
 
   const warnNoConfig = useCallback(() => {
     toast('请先在「设置 → AI 服务」配置接口地址、API Key 和模型名', { kind: 'error' })
@@ -357,6 +649,7 @@ export function AiMathPage() {
     if (busy) return
     const idx = msgs.findIndex((m) => m.id === aid)
     if (idx < 0) return
+    stopSpeech()
     void runTurn(msgs.slice(0, idx))
   }
 
@@ -414,7 +707,10 @@ export function AiMathPage() {
       danger: true,
       confirmText: '清空',
     })
-    if (ok) setMsgs([])
+    if (ok) {
+      stopSpeech()
+      setMsgs([])
+    }
   }
 
   const copyAnswer = async (m: ChatMsg) => {
@@ -430,6 +726,7 @@ export function AiMathPage() {
     }
     const ids = new Set(deleteTurnIds(msgs, msgId))
     if (!ids.size) return
+    if (speech.messageId && ids.has(speech.messageId)) stopSpeech()
     const at = msgs.findIndex((m) => ids.has(m.id))
     const removed = msgs.filter((m) => ids.has(m.id))
     setMsgs(msgs.filter((m) => !ids.has(m.id)))
@@ -512,6 +809,17 @@ export function AiMathPage() {
               onDetail={setDetailId}
               quickActions={m.id === lastId && m.role === 'assistant' && !m.error ? skill.quickActions : undefined}
               onQuick={useQuick}
+              speechSupported={speechSupported}
+              speechVoices={speechVoices}
+              speechSettings={speechSettings}
+              speech={speech}
+              onSpeechRead={startSpeech}
+              onSpeechPause={pauseSpeech}
+              onSpeechResume={resumeSpeech}
+              onSpeechStop={stopSpeech}
+              onSpeechReplay={startSpeech}
+              onSpeechSettingsChange={updateSpeechSettings}
+              onRefreshSpeechVoices={refreshSpeechVoices}
             />
           ))
         )}

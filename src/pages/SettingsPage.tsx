@@ -322,6 +322,37 @@ export function SettingsPage() {
 
           <div className="card">
             <div className="card-h">
+              <span className="icon-chip" style={{ background: 'var(--primary-weak)', color: 'var(--primary-deep)' }}>
+                <Icon name="volume" size={15} />
+              </span>
+              <b>语音朗读</b>
+            </div>
+            <div className="setting-row">
+              <div className="info grow">
+                <b>启用语音朗读</b>
+                <span>可随时打开或关闭。关闭会立刻停止正在播放的讲题和任务播报，文字内容不会受影响。</span>
+              </div>
+              <button
+                className={`switch${state.settings.speech?.enabled !== false ? ' on' : ''}`}
+                aria-label="启用语音朗读"
+                aria-pressed={state.settings.speech?.enabled !== false}
+                onClick={() => dispatch({
+                  type: 'SET_SETTINGS',
+                  patch: {
+                    speech: {
+                      ...(state.settings.speech ?? { rate: 1, preferredLang: 'zh-CN' }),
+                      enabled: state.settings.speech?.enabled === false,
+                      preferredLang: 'zh-CN',
+                    },
+                  },
+                })}
+              />
+            </div>
+            <p className="fs12 muted mt8">语速和音色可在「AI 数字讲题」的讲解下方调整，并会自动保存在当前账号；已安排任务仍可单独开启或关闭播报。</p>
+          </div>
+
+          <div className="card">
+            <div className="card-h">
               <span className="icon-chip" style={{ background: 'var(--yellow-weak)', color: 'var(--yellow-deep)' }}>
                 <Icon name="zap" size={15} />
               </span>
@@ -457,7 +488,7 @@ export function SettingsPage() {
               </div>
             </div>
             <p className="fs13 mb8">
-              接入豆包 / DeepSeek / 千问后,实操大题中的「人工核对项」会由大模型自动判分;「AI 数学讲题」页面可拍照或输入题目获得分步解析。密钥仅保存在本机浏览器。
+              接入豆包 / DeepSeek / 千问后，可在「AI 数学讲题」页面拍照或输入题目获得分步解析。实操大题会先按题目中的客观核对项判定，版式、动画等仍须按评分标准人工复核。密钥仅保存在当前设备，不会上传到云端。
             </p>
             <Field label="服务商">
               <select

@@ -1,0 +1,295 @@
+{
+  "generatedAt": "2026-08-31T00:00:00.000Z",
+  "questionCount": 24,
+  "fileCount": 48,
+  "files": [
+    {
+      "file": "office-materials/v3/Q01_Word_会议通知规范排版_学生材料.docx",
+      "bytes": 10938,
+      "sha256": "e253e97859138d99b763534361ec7136d6be468e444629671044cfbd5fc01494",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q01_Word_会议通知规范排版_参考答案.docx",
+      "bytes": 11315,
+      "sha256": "3c40dc616fd15665c7b1ecbd5e72f3796c549d68898c113dcb94dd6781bd0143",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q02_Word_实训报告样式与目录_学生材料.docx",
+      "bytes": 10858,
+      "sha256": "af05a20be0488c133e57ff2c5bd1572fec8fe6c9acc00fe4b5722a9bbca34ddb",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q02_Word_实训报告样式与目录_参考答案.docx",
+      "bytes": 11188,
+      "sha256": "63ff5fa51ccd9fc2181ee5dce572c9ffddfa371082b7ca59650558c454f53d69",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q03_Word_招生计划表制作与计算_学生材料.docx",
+      "bytes": 11038,
+      "sha256": "07fa7a982697ab1faeece71abf1f9976dff53710db3b2f066b625153e524b831",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q03_Word_招生计划表制作与计算_参考答案.docx",
+      "bytes": 11383,
+      "sha256": "44fc2da76358d792d19de714a29a03d8d4e42774c6a35956e2711540ba8bc982",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q04_Word_校园新闻图文混排_学生材料.docx",
+      "bytes": 10861,
+      "sha256": "5a232410b10d83c45219043df446932c170a769d646773efd03c6687a1a9a6fa",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q04_Word_校园新闻图文混排_参考答案.docx",
+      "bytes": 11180,
+      "sha256": "92f3f4c9157fbdd418083fffa9965dbd80fd8d5a6ef895b02a62c0620eb74705",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q05_Word_奖学金通知邮件合并_学生材料.docx",
+      "bytes": 10782,
+      "sha256": "0277231fcfd741128d51b84b9f97fe343db514343355b814c356ca78dfac78d6",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q05_Word_奖学金通知邮件合并_参考答案.docx",
+      "bytes": 11096,
+      "sha256": "6ad5ccdbeca74584f464f1b2e8da2e9df973cfacde90db3e67548c78f3a9259c",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q06_Word_实验报告题注与交叉引用_学生材料.docx",
+      "bytes": 10732,
+      "sha256": "4ab41a8dedd33e43cf7a4d3697de37696310acd9d8a434873e4247b51113c9b0",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q06_Word_实验报告题注与交叉引用_参考答案.docx",
+      "bytes": 11014,
+      "sha256": "496aebf5468b3731dc51869de247035fc8df6b2442a18a506bcccec5a01e0125",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q07_Word_分节页眉页码设置_学生材料.docx",
+      "bytes": 10752,
+      "sha256": "935c1d8dbaa882aca363e08ff33bce6faf904b7163d8926205db9ebb44e19c5f",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q07_Word_分节页眉页码设置_参考答案.docx",
+      "bytes": 11046,
+      "sha256": "67d048bda0e16c698c943ab2b975cf5bf59fcf6f36fb7100e710de3c2ec82823",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q08_Word_协同修订与批注核对_学生材料.docx",
+      "bytes": 10762,
+      "sha256": "1c9da88cb95c6e610fc4c8fabaad875504885460b74072b8542413a936d6c827",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q08_Word_协同修订与批注核对_参考答案.docx",
+      "bytes": 11086,
+      "sha256": "5aa116857e4be6026b56c515012e4515952de09b327aede6362318bfb45ad050",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q09_Excel_社团报名数据整理_学生材料.xlsx",
+      "bytes": 11252,
+      "sha256": "5f27c7903d61a8227dcc9e4333560da0e58a746b2c2cd9385b5290ebb9591306",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q09_Excel_社团报名数据整理_参考答案.xlsx",
+      "bytes": 11693,
+      "sha256": "b4392709880f0060edf062f05166eeb0664269710eeb23b83539329b27ab1b4d",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q10_Excel_成绩统计绝对引用_学生材料.xlsx",
+      "bytes": 11247,
+      "sha256": "386a32f13c842d8032cb70dd9787f02940fa6291836b953541e614baa78786ee",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q10_Excel_成绩统计绝对引用_参考答案.xlsx",
+      "bytes": 12300,
+      "sha256": "3b12fb715c1e3b88d96700e866f83cc1cb1dcffd8632bac5c1099c173edf8f86",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q11_Excel_课程成绩条件判定_学生材料.xlsx",
+      "bytes": 11214,
+      "sha256": "b7293d7fb8892ff4176b6c3838ae883b7278d724b18268a77bf0bd55558213f1",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q11_Excel_课程成绩条件判定_参考答案.xlsx",
+      "bytes": 11542,
+      "sha256": "c1825c7161fde77af7baf75a0b1ef26aae29a203cf0776e5a479bdcf041c927a",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q12_Excel_活动报名排序筛选_学生材料.xlsx",
+      "bytes": 11505,
+      "sha256": "86bcb27d6759818269d388be837c4e5381dc0339b704fd0432b593bdb7dab83d",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q12_Excel_活动报名排序筛选_参考答案.xlsx",
+      "bytes": 12018,
+      "sha256": "5e2949afbcdf41e132a7bf1bc74b71755aa19bb30434b5f555863b862573e666",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q13_Excel_销售明细分类汇总_学生材料.xlsx",
+      "bytes": 11498,
+      "sha256": "f16978a736b8086d750aa99ef54e036596285a746aacc62b60b473725473c19f",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q13_Excel_销售明细分类汇总_参考答案.xlsx",
+      "bytes": 13731,
+      "sha256": "d30a56ac79647c8333583371fcd7824817313cb91bfae28d7f9dc29fbf1d4d7d",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q14_Excel_项目经费数据透视表_学生材料.xlsx",
+      "bytes": 11025,
+      "sha256": "c0fab893a16fab7e8f736c7ff6f77952c8b5a28aa798e79e2af779e5d265b11c",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q14_Excel_项目经费数据透视表_参考答案.xlsx",
+      "bytes": 13905,
+      "sha256": "f2044139d618803c8ee56a8e70ed2b615e11f52029439b58889fe122afed2d2c",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q15_Excel_月度成绩图表展示_学生材料.xlsx",
+      "bytes": 10883,
+      "sha256": "d6c6f0a3f8799ad2fbae92d9c202ce75c45efeea1f8061555d518490262c8223",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q15_Excel_月度成绩图表展示_参考答案.xlsx",
+      "bytes": 14672,
+      "sha256": "8cdaea99d2f0cd0a9fcc91b7c748e5527daa732d915aae01a9cbd49a6f8b4c96",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q16_Excel_考场座次表页面打印_学生材料.xlsx",
+      "bytes": 12642,
+      "sha256": "8aba070e7201b2edccfe8971202d4ebde7dd3037a5fde1db2126ebbcf6355f62",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q16_Excel_考场座次表页面打印_参考答案.xlsx",
+      "bytes": 12441,
+      "sha256": "483f51126c4635b8270e75e295e1657e5156c2cc74f877216232240a44005dc7",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q17_PPT_校园开放日演示文稿_学生材料.pptx",
+      "bytes": 24654,
+      "sha256": "96b8b4d9d0ea9992856852c03a8aa95a482ee304fefd218a2849cee31785c35b",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q17_PPT_校园开放日演示文稿_参考答案.pptx",
+      "bytes": 27863,
+      "sha256": "e5c4b8d7713158915a07a1abf644cc6b62d4d16dd7fbb8175a683df1882536c8",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q18_PPT_实训课件母版统一_学生材料.pptx",
+      "bytes": 21533,
+      "sha256": "626762d9ff7f6bd7f0df0845d5ebd798d9aa0384e131b531d97444fe05ff4aed",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q18_PPT_实训课件母版统一_参考答案.pptx",
+      "bytes": 27504,
+      "sha256": "9af83ea2c30e07bcc81b8a9bfd2118ab102c2628e037d4f7d64c2984cac04103",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q19_PPT_学习流程 SmartArt 图示_学生材料.pptx",
+      "bytes": 15390,
+      "sha256": "db237f0ccd195ce540c351da57a49ad7db472f61753a4d517a7a1c33dbedc85d",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q19_PPT_学习流程 SmartArt 图示_参考答案.pptx",
+      "bytes": 18617,
+      "sha256": "fc1bcc13a808a750c61331c461275d75ecc832dc2914ace155accaf4e7d7582e",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q20_PPT_课程目标对象动画_学生材料.pptx",
+      "bytes": 15424,
+      "sha256": "99faab0c215d1d70aeb6b553225236583c1c4e16cbbab75f2b8335840d0b5ff3",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q20_PPT_课程目标对象动画_参考答案.pptx",
+      "bytes": 18602,
+      "sha256": "cfafb2c241c8dfed20429d4cdec13ef32478bf8775bcb084fbef0458ec62291e",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q21_PPT_资源导航超链接页面_学生材料.pptx",
+      "bytes": 21515,
+      "sha256": "f18ae6cd7f230c5d2eae1a117ee806aad27e3725b82fd83fdd3e77e62335cda1",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q21_PPT_资源导航超链接页面_参考答案.pptx",
+      "bytes": 25301,
+      "sha256": "dc8a7130ef7917c52fe3147eb5c0c2c7f86c8a67806017b177fb4c4cbe6c842b",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q22_PPT_课程结构切换与放映_学生材料.pptx",
+      "bytes": 24539,
+      "sha256": "6684842429ee53e2ab77c121ba4f25ee6cf3d9f19588f278938f49b263a18736",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q22_PPT_课程结构切换与放映_参考答案.pptx",
+      "bytes": 27964,
+      "sha256": "bcb78750254d5ac789db3b4401dd8771b50a56b806448ed18dbe6a9ea895bd97",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q23_PPT_答辩讲稿与备注页_学生材料.pptx",
+      "bytes": 24580,
+      "sha256": "e90806e46135fa63eaecd72d2cfb938fba631d4a0129f63703f9bced316c9628",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q23_PPT_答辩讲稿与备注页_参考答案.pptx",
+      "bytes": 28305,
+      "sha256": "fc35cd70e96d6f94962530200e98996f5ba68d6b5d6c10e6b1457e8f6aa88e8c",
+      "answer": true
+    },
+    {
+      "file": "office-materials/v3/Q24_PPT_图表数据与版式优化_学生材料.pptx",
+      "bytes": 15402,
+      "sha256": "0887f6e63069d7bbaa5e52b488f585f09965a1e95faf2dd7c1dae9b647ac1395",
+      "answer": false
+    },
+    {
+      "file": "office-materials/v3/Q24_PPT_图表数据与版式优化_参考答案.pptx",
+      "bytes": 26354,
+      "sha256": "a501379bd6e30c07b612e5d570d6d80194126d0dde3d4dd3c9530d129e0de316",
+      "answer": true
+    }
+  ]
+}

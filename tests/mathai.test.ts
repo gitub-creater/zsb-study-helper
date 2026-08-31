@@ -4,6 +4,7 @@ import {
   buildRequestMessages,
   deleteTurnIds,
   extractFinalAnswer,
+  toSpeechScript,
   validateImageFile,
 } from '../src/lib/mathai'
 import { MATH_SKILL } from '../src/skills/math'
@@ -55,6 +56,17 @@ describe('最终答案提取', () => {
 
   it('支持加粗标题写法', () => {
     expect(extractFinalAnswer('过程略\n**最终答案**\nx = 1')).toBe('x = 1')
+  })
+})
+
+describe('讲解朗读文字稿', () => {
+  it('去除基础 Markdown 外壳但保留题目、公式和步骤内容', () => {
+    const script = toSpeechScript('## 详细步骤\n- 计算 **x** 的值：$x=2$\n[参考](https://example.com)')
+    expect(script).toContain('详细步骤')
+    expect(script).toContain('计算 x 的值：x=2')
+    expect(script).toContain('参考')
+    expect(script).not.toContain('##')
+    expect(script).not.toContain('**')
   })
 })
 

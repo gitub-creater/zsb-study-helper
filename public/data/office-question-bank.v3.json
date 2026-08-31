@@ -1,0 +1,2130 @@
+{
+  "meta": {
+    "name": "山东专升本计算机 Office 实操大题（原创材料型）",
+    "version": 3,
+    "updatedAt": "2026-08-31",
+    "sourceBasis": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求（计算机部分：Word 2016、Excel 2016、PowerPoint 2016）",
+    "sourceUrl": "https://www.sdzk.cn/Floadup/file/20251129/6389999945835892448300421.pdf",
+    "sourceSha256": "BD8650968562B9A06CB6FCA32A99D0525BC252F9BE1E80C1531F8A40E015CBCE",
+    "note": "共24题：Word、Excel、PPT各8题。全部为原创同类型题；每题有学生材料和参考答案可编辑文件。"
+  },
+  "questions": [
+    {
+      "id": "office-q01",
+      "order": 1,
+      "title": "会议通知规范排版",
+      "software": "word",
+      "category": "文档编辑与字符段落格式",
+      "difficulty": "基础",
+      "knowledgePoints": [
+        "Word 2016 文本编辑",
+        "字符格式",
+        "段落格式",
+        "查找替换"
+      ],
+      "prompt": "根据学生材料中的会议通知草稿，完成标题、正文、落款和日期的规范排版；把文中所有“计院”替换为“计算机学院”，并保留通知正文的完整信息。",
+      "materials": [
+        "学生材料含会议通知草稿、活动安排和落款信息。",
+        "材料中“计院”共出现 3 次，需使用查找和替换功能统一修改。"
+      ],
+      "taskSteps": [
+        "设置标题为二号、加粗、居中；正文为小四号并设置首行缩进。",
+        "使用查找和替换将“计院”全部替换为“计算机学院”。",
+        "将落款右对齐，日期置于落款下一行；保存为指定文件名。"
+      ],
+      "referenceAnswer": [
+        "标题使用居中且加粗，正文保持段落层级清楚。",
+        "Ctrl+H 执行全部替换后，应提示替换 3 处。",
+        "落款和日期在页面右下方形成两行结构。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "标题与正文格式",
+          "points": 4,
+          "criterion": "标题居中加粗，正文大小和缩进符合要求"
+        },
+        {
+          "item": "查找替换",
+          "points": 3,
+          "criterion": "“计院”3处均替换为“计算机学院”"
+        },
+        {
+          "item": "落款与保存",
+          "points": 3,
+          "criterion": "落款右对齐、日期位置正确且文件可打开"
+        }
+      ],
+      "commonMistakes": [
+        "只手动修改一处文字，遗漏其他“计院”。",
+        "将正文整段居中，破坏通知版式。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q01_Word_会议通知规范排版_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q01_Word_会议通知规范排版_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "批量修改“计院”应优先使用哪个快捷键？",
+          "type": "single",
+          "answer": "B",
+          "explanation": "“替换”快捷键是 Ctrl+H。",
+          "options": [
+            "Ctrl+F",
+            "Ctrl+H",
+            "Ctrl+G",
+            "Ctrl+P"
+          ]
+        },
+        {
+          "id": "c2",
+          "prompt": "本题材料中“计院”应替换为哪个完整名称？",
+          "type": "fill",
+          "answer": "计算机学院",
+          "explanation": "统一替换为“计算机学院”。"
+        }
+      ]
+    },
+    {
+      "id": "office-q02",
+      "order": 2,
+      "title": "实训报告样式与目录",
+      "software": "word",
+      "category": "长文档排版",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Word 2016 样式",
+        "多级列表",
+        "目录",
+        "分页与分节"
+      ],
+      "prompt": "将学生材料整理为《Excel 数据分析实训报告》的长文档框架，应用标题样式、设置多级编号，并在封面后插入自动目录。",
+      "materials": [
+        "学生材料提供报告封面信息、三级章节标题和两段正文。",
+        "材料中的章节标题尚未应用任何样式。"
+      ],
+      "taskSteps": [
+        "封面单独成页，报告名称居中显示。",
+        "对一级、二级、三级标题应用对应标题样式并设置编号。",
+        "在封面后分页插入自动目录，更新后能显示章节页码。"
+      ],
+      "referenceAnswer": [
+        "标题样式应使用 Word 内置“标题 1/2/3”，而不是只手动设置字体。",
+        "自动目录插入后可通过“更新目录”刷新页码。",
+        "封面与目录、正文之间使用分页符保持结构。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "封面与分页",
+          "points": 2,
+          "criterion": "封面独立成页"
+        },
+        {
+          "item": "标题样式和编号",
+          "points": 5,
+          "criterion": "三级标题层级清晰且编号连续"
+        },
+        {
+          "item": "自动目录",
+          "points": 3,
+          "criterion": "目录可更新并含页码"
+        }
+      ],
+      "commonMistakes": [
+        "只改变字号却没有套用标题样式，导致目录无法生成。",
+        "用空行挤出新页，后续编辑时版式错乱。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q02_Word_实训报告样式与目录_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q02_Word_实训报告样式与目录_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "自动目录依赖哪类设置？",
+          "type": "single",
+          "answer": "A",
+          "explanation": "目录会读取标题样式层级。",
+          "options": [
+            "标题样式",
+            "艺术字",
+            "文本框",
+            "批注"
+          ]
+        },
+        {
+          "id": "c2",
+          "prompt": "插入新内容导致页码变化后，应使用什么操作？",
+          "type": "fill",
+          "answer": "更新目录|更新",
+          "explanation": "通过“更新目录”刷新页码。"
+        }
+      ]
+    },
+    {
+      "id": "office-q03",
+      "order": 3,
+      "title": "招生计划表制作与计算",
+      "software": "word",
+      "category": "表格与数据处理",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Word 2016 表格",
+        "单元格合并",
+        "表格对齐",
+        "公式"
+      ],
+      "prompt": "根据材料制作“专业招生计划汇总表”，完成表头合并、表格对齐和总计划数计算，并让表格在页面中居中。",
+      "materials": [
+        "学生材料含 4 个专业的招生计划数据和表格草稿。",
+        "表格草稿没有合并表头，也没有总计行。"
+      ],
+      "taskSteps": [
+        "按材料要求合并第一行表头，设置列标题。",
+        "插入总计行，用表格公式或计算结果填入总计划数。",
+        "表格整体居中，表头文字居中，数据列对齐一致。"
+      ],
+      "referenceAnswer": [
+        "第一行作为汇总表头，第二行显示“专业名称、普通计划、建档立卡、合计”。",
+        "总计划数为 120，需与各专业合计相符。",
+        "表格属性中设置居中，不能只用空格移动。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "表头结构",
+          "points": 3,
+          "criterion": "合并和列标题正确"
+        },
+        {
+          "item": "数据与总计",
+          "points": 4,
+          "criterion": "数据完整，总计划为120"
+        },
+        {
+          "item": "表格版式",
+          "points": 3,
+          "criterion": "居中、对齐、边框清晰"
+        }
+      ],
+      "commonMistakes": [
+        "使用空格调整表格位置。",
+        "合计行漏算建档立卡计划。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q03_Word_招生计划表制作与计算_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q03_Word_招生计划表制作与计算_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题各专业计划的总计应为多少？",
+          "type": "fill",
+          "answer": "120",
+          "explanation": "四个专业计划相加为120。"
+        },
+        {
+          "id": "c2",
+          "prompt": "在 Word 中让整个表格居中，应优先设置什么？",
+          "type": "single",
+          "answer": "C",
+          "explanation": "应在表格属性中设置对齐方式。",
+          "options": [
+            "段落首行缩进",
+            "空格",
+            "表格属性对齐方式",
+            "字体颜色"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "office-q04",
+      "order": 4,
+      "title": "校园新闻图文混排",
+      "software": "word",
+      "category": "图文混排与对象编辑",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Word 2016 图片",
+        "文字环绕",
+        "形状",
+        "文本框"
+      ],
+      "prompt": "将校园新闻材料排版为一页简报：插入图片占位框、设置四周型文字环绕，并用文本框突出活动时间和地点。",
+      "materials": [
+        "学生材料含新闻正文、图片说明和活动信息。",
+        "图片可使用材料中的“活动现场图片占位”文字框替代，重点考查对象布局。"
+      ],
+      "taskSteps": [
+        "在正文右侧插入图片或图片占位框，设置四周型环绕。",
+        "添加图片题注“图1 训练营活动现场”。",
+        "使用文本框突出活动时间和地点，避免遮挡正文。"
+      ],
+      "referenceAnswer": [
+        "图片环绕方式为四周型或紧密型，正文可围绕对象流动。",
+        "题注应与图片建立对应关系。",
+        "文本框应放在正文下方或空白区域，确保可读性。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "图片与环绕",
+          "points": 4,
+          "criterion": "图片/占位框位置合理且文字环绕正确"
+        },
+        {
+          "item": "题注",
+          "points": 2,
+          "criterion": "题注内容完整"
+        },
+        {
+          "item": "文本框布局",
+          "points": 4,
+          "criterion": "活动信息突出且不遮挡正文"
+        }
+      ],
+      "commonMistakes": [
+        "保持“嵌入型”导致无法自由排版。",
+        "用多个空格挤出图片位置。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q04_Word_校园新闻图文混排_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q04_Word_校园新闻图文混排_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "让正文围绕图片排版，应设置哪一类功能？",
+          "type": "single",
+          "answer": "B",
+          "explanation": "应在图片布局选项中设置文字环绕。",
+          "options": [
+            "页眉页脚",
+            "文字环绕",
+            "拼写检查",
+            "邮件合并"
+          ]
+        },
+        {
+          "id": "c2",
+          "prompt": "本题图片题注应以哪个编号开头？",
+          "type": "fill",
+          "answer": "图1|图 1",
+          "explanation": "题注为“图1 训练营活动现场”。"
+        }
+      ]
+    },
+    {
+      "id": "office-q05",
+      "order": 5,
+      "title": "奖学金通知邮件合并",
+      "software": "word",
+      "category": "邮件合并与批量文档",
+      "difficulty": "综合",
+      "knowledgePoints": [
+        "Word 2016 邮件合并",
+        "数据源",
+        "合并域",
+        "批量输出"
+      ],
+      "prompt": "使用学生材料中的获奖名单，创建奖学金获奖通知模板，插入姓名、班级、奖项等合并域，并完成批量合并预览。",
+      "materials": [
+        "学生材料含通知正文模板和 5 名获奖学生数据。",
+        "数据源字段包括姓名、班级、奖项、金额。"
+      ],
+      "taskSteps": [
+        "将获奖名单整理为可用数据源。",
+        "在通知模板中插入四个合并域。",
+        "预览记录并完成合并，确保每位学生收到对应信息。"
+      ],
+      "referenceAnswer": [
+        "合并域应插入在姓名、班级、奖项、金额对应位置。",
+        "预览时应出现不同学生的数据，而不是字段名称。",
+        "批量合并前保留原始模板文件。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "数据源",
+          "points": 3,
+          "criterion": "字段和记录完整"
+        },
+        {
+          "item": "合并域",
+          "points": 4,
+          "criterion": "四个字段位置正确"
+        },
+        {
+          "item": "预览和输出",
+          "points": 3,
+          "criterion": "至少完成预览并核对一条记录"
+        }
+      ],
+      "commonMistakes": [
+        "直接手动复制五份通知。",
+        "将字段名称手打在正文中而未插入合并域。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q05_Word_奖学金通知邮件合并_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q05_Word_奖学金通知邮件合并_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "邮件合并时，姓名等可变内容应插入为什么？",
+          "type": "fill",
+          "answer": "合并域",
+          "explanation": "可变内容应使用合并域。"
+        },
+        {
+          "id": "c2",
+          "prompt": "预览邮件合并记录的目的是什么？",
+          "type": "single",
+          "answer": "D",
+          "explanation": "用于核对每条记录是否正确带入。",
+          "options": [
+            "修改字体",
+            "删除数据源",
+            "压缩图片",
+            "核对字段带入结果"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "office-q06",
+      "order": 6,
+      "title": "实验报告题注与交叉引用",
+      "software": "word",
+      "category": "文档引用与审阅",
+      "difficulty": "综合",
+      "knowledgePoints": [
+        "Word 2016 题注",
+        "交叉引用",
+        "编号",
+        "引用更新"
+      ],
+      "prompt": "为实验报告中的两张图和一张表插入题注，在正文中使用交叉引用说明“见图1、表1”，并验证编号可自动更新。",
+      "materials": [
+        "学生材料含实验现象描述、图形占位和数据表。",
+        "当前文中“见下图”“见下表”为普通文本。"
+      ],
+      "taskSteps": [
+        "为两个图形和一个表格分别插入自动题注。",
+        "将正文中的普通引用改为交叉引用。",
+        "新增一个图后更新域，观察编号变化。"
+      ],
+      "referenceAnswer": [
+        "题注应使用“插入题注”，而非手动键入编号。",
+        "交叉引用可以随题注编号变化自动更新。",
+        "图、表编号分别从1开始。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "题注",
+          "points": 4,
+          "criterion": "图1、图2、表1题注完整"
+        },
+        {
+          "item": "交叉引用",
+          "points": 4,
+          "criterion": "正文引用可跳转且能更新"
+        },
+        {
+          "item": "编号验证",
+          "points": 2,
+          "criterion": "完成一次更新验证"
+        }
+      ],
+      "commonMistakes": [
+        "手动输入“图1”，后续插图后编号不能更新。",
+        "图和表使用同一个编号序列。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q06_Word_实验报告题注与交叉引用_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q06_Word_实验报告题注与交叉引用_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "要让编号随插图自动变化，应使用什么功能？",
+          "type": "single",
+          "answer": "A",
+          "explanation": "应使用“题注”。",
+          "options": [
+            "插入题注",
+            "文本框",
+            "页码",
+            "批注"
+          ]
+        },
+        {
+          "id": "c2",
+          "prompt": "正文中引用“图1”且能自动更新，应使用什么？",
+          "type": "fill",
+          "answer": "交叉引用",
+          "explanation": "使用交叉引用关联题注。"
+        }
+      ]
+    },
+    {
+      "id": "office-q07",
+      "order": 7,
+      "title": "分节页眉页码设置",
+      "software": "word",
+      "category": "页面布局",
+      "difficulty": "综合",
+      "knowledgePoints": [
+        "Word 2016 分节符",
+        "页眉页脚",
+        "页码",
+        "页面设置"
+      ],
+      "prompt": "将毕业设计材料设置为封面无页码、目录使用罗马数字、正文从第1页开始阿拉伯数字，并在正文页眉显示“计算机应用实训”。",
+      "materials": [
+        "学生材料含封面、目录占位和正文三部分文字。",
+        "当前所有内容处于同一节。"
+      ],
+      "taskSteps": [
+        "在封面后、目录后插入分节符。",
+        "取消正文与前一节链接，分别设置页码格式。",
+        "正文页眉显示指定文字，封面不显示页码。"
+      ],
+      "referenceAnswer": [
+        "需至少划分封面、目录、正文三个节。",
+        "目录页码格式可设为 i、ii，正文从1开始。",
+        "页眉页脚“链接到前一节”应按需要取消。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "分节",
+          "points": 3,
+          "criterion": "分节符位置正确"
+        },
+        {
+          "item": "页码",
+          "points": 4,
+          "criterion": "三段页码规则符合要求"
+        },
+        {
+          "item": "页眉",
+          "points": 3,
+          "criterion": "仅正文显示指定页眉"
+        }
+      ],
+      "commonMistakes": [
+        "用分页符代替分节符，导致页码格式无法独立。",
+        "未取消“链接到前一节”。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q07_Word_分节页眉页码设置_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q07_Word_分节页眉页码设置_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "需要让目录与正文使用不同页码格式，应插入什么？",
+          "type": "fill",
+          "answer": "分节符|分节",
+          "explanation": "不同页码规则依赖分节。"
+        },
+        {
+          "id": "c2",
+          "prompt": "取消与上一节相同的页眉页脚，应关闭哪个选项？",
+          "type": "single",
+          "answer": "C",
+          "explanation": "关闭“链接到前一节”。",
+          "options": [
+            "显示标尺",
+            "网格线",
+            "链接到前一节",
+            "阅读模式"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "office-q08",
+      "order": 8,
+      "title": "协同修订与批注核对",
+      "software": "word",
+      "category": "文档协同编辑",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Word 2016 修订",
+        "批注",
+        "比较",
+        "接受修订"
+      ],
+      "prompt": "对课程安排文档开启修订，修改两处时间并添加一条批注；随后接受第一处修订、保留第二处修订以便教师复核。",
+      "materials": [
+        "学生材料含两处过期时间和一处需要说明的课程安排。",
+        "需在不丢失修改痕迹的前提下完成编辑。"
+      ],
+      "taskSteps": [
+        "开启修订后修改指定时间。",
+        "对“机房预约”段落添加说明性批注。",
+        "接受第一处修订并保留第二处修订记录。"
+      ],
+      "referenceAnswer": [
+        "修订开启后，修改会显示为插入/删除标记。",
+        "批注不应直接写入正文。",
+        "接受或拒绝应针对指定修订，不能一次全部接受。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "修订记录",
+          "points": 4,
+          "criterion": "两处修改均留下可追踪痕迹"
+        },
+        {
+          "item": "批注",
+          "points": 2,
+          "criterion": "批注位置和内容合理"
+        },
+        {
+          "item": "选择性接受",
+          "points": 4,
+          "criterion": "仅第一处修订被接受"
+        }
+      ],
+      "commonMistakes": [
+        "直接修改后再尝试恢复修订记录。",
+        "点击“接受所有更改”导致第二处痕迹丢失。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q08_Word_协同修订与批注核对_学生材料.docx",
+      "answerFileUrl": "office-materials/v3/Q08_Word_协同修订与批注核对_参考答案.docx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "保留文字修改痕迹应开启哪项功能？",
+          "type": "fill",
+          "answer": "修订",
+          "explanation": "应在“审阅”中开启修订。"
+        },
+        {
+          "id": "c2",
+          "prompt": "本题要求接受几处修订？",
+          "type": "fill",
+          "answer": "1|一",
+          "explanation": "只接受第一处修订。"
+        }
+      ]
+    },
+    {
+      "id": "office-q09",
+      "order": 9,
+      "title": "社团报名数据整理",
+      "software": "excel",
+      "category": "工作表与数据编辑",
+      "difficulty": "基础",
+      "knowledgePoints": [
+        "Excel 2016 工作簿",
+        "单元格格式",
+        "数据输入",
+        "填充"
+      ],
+      "prompt": "整理学生材料中的社团报名原始数据，补全序号、设置日期和手机号显示格式，并冻结首行以便查看表头。",
+      "materials": [
+        "学生材料含 12 条社团报名数据，字段包括姓名、班级、报名日期、手机号。",
+        "日期和手机号列当前格式不统一。"
+      ],
+      "taskSteps": [
+        "补全连续序号。",
+        "将报名日期设置为 yyyy-mm-dd 格式。",
+        "手机号以文本或自定义格式完整显示，冻结首行。"
+      ],
+      "referenceAnswer": [
+        "序号应从1连续到12。",
+        "日期统一为 yyyy-mm-dd。",
+        "冻结首行后向下滚动仍可见表头。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "序号与数据完整性",
+          "points": 3,
+          "criterion": "连续且不漏行"
+        },
+        {
+          "item": "格式",
+          "points": 4,
+          "criterion": "日期、手机号格式统一"
+        },
+        {
+          "item": "视图",
+          "points": 3,
+          "criterion": "首行冻结有效"
+        }
+      ],
+      "commonMistakes": [
+        "手机号被显示为科学计数法。",
+        "冻结的是第一列而非首行。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q09_Excel_社团报名数据整理_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q09_Excel_社团报名数据整理_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题报名记录共有多少条？",
+          "type": "fill",
+          "answer": "12",
+          "explanation": "原始数据为12条。"
+        },
+        {
+          "id": "c2",
+          "prompt": "向下滚动时保留表头，应使用什么功能？",
+          "type": "fill",
+          "answer": "冻结窗格|冻结首行",
+          "explanation": "使用“冻结窗格/冻结首行”。"
+        }
+      ]
+    },
+    {
+      "id": "office-q10",
+      "order": 10,
+      "title": "成绩统计绝对引用",
+      "software": "excel",
+      "category": "公式与单元格引用",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Excel 2016 公式",
+        "相对引用",
+        "绝对引用",
+        "填充柄"
+      ],
+      "prompt": "计算学生总评成绩：平时成绩占30%，期末成绩占70%。权重存放在固定单元格中，要求公式向下填充后权重引用不变。",
+      "materials": [
+        "学生材料含10名学生的平时和期末成绩，以及权重单元格。",
+        "总评列为空。"
+      ],
+      "taskSteps": [
+        "在首行总评单元格写入计算公式。",
+        "对权重单元格使用绝对引用。",
+        "向下填充并保留一位小数。"
+      ],
+      "referenceAnswer": [
+        "示例公式：=B2*$H$2+C2*$H$3。",
+        "B2/C2为相对引用，权重H2/H3为绝对引用。",
+        "填充后每一行都对应本行成绩。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "公式正确",
+          "points": 4,
+          "criterion": "首行公式逻辑正确"
+        },
+        {
+          "item": "绝对引用",
+          "points": 3,
+          "criterion": "权重引用带$符号"
+        },
+        {
+          "item": "填充与格式",
+          "points": 3,
+          "criterion": "10行结果完整且一位小数"
+        }
+      ],
+      "commonMistakes": [
+        "未锁定权重，向下填充后引用区域下移。",
+        "把30%写成30参与计算。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q10_Excel_成绩统计绝对引用_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q10_Excel_成绩统计绝对引用_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "固定引用 H2 的正确写法是？",
+          "type": "single",
+          "answer": "C",
+          "explanation": "绝对引用使用 $H$2。",
+          "options": [
+            "H2",
+            "H$2",
+            "$H$2",
+            "$H2"
+          ]
+        },
+        {
+          "id": "c2",
+          "prompt": "总评中期末成绩权重是多少？",
+          "type": "fill",
+          "answer": "70%|0.7",
+          "explanation": "期末成绩权重为70%。"
+        }
+      ]
+    },
+    {
+      "id": "office-q11",
+      "order": 11,
+      "title": "课程成绩条件判定",
+      "software": "excel",
+      "category": "函数应用",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Excel 2016 IF 函数",
+        "COUNTIF",
+        "条件格式"
+      ],
+      "prompt": "根据成绩表在“结果”列显示“合格/需补考”，并统计需补考人数；对不合格成绩使用条件格式突出显示。",
+      "materials": [
+        "学生材料含12名学生的计算机基础成绩。",
+        "合格线为60分。"
+      ],
+      "taskSteps": [
+        "使用 IF 函数判定每名学生。",
+        "使用 COUNTIF 统计“需补考”人数。",
+        "为低于60分的成绩设置醒目条件格式。"
+      ],
+      "referenceAnswer": [
+        "结果列公式：=IF(C2>=60,\"合格\",\"需补考\")。",
+        "统计公式可为 =COUNTIF(D2:D13,\"需补考\")。",
+        "条件格式规则基于单元格值小于60。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "IF 公式",
+          "points": 4,
+          "criterion": "每行判定正确"
+        },
+        {
+          "item": "人数统计",
+          "points": 3,
+          "criterion": "统计范围和条件正确"
+        },
+        {
+          "item": "条件格式",
+          "points": 3,
+          "criterion": "不合格成绩突出显示"
+        }
+      ],
+      "commonMistakes": [
+        "IF 文本参数遗漏英文双引号。",
+        "COUNTIF 范围包含统计结果单元格。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q11_Excel_课程成绩条件判定_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q11_Excel_课程成绩条件判定_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "成绩为60分时，本题结果应显示什么？",
+          "type": "fill",
+          "answer": "合格",
+          "explanation": "60分及以上为合格。"
+        },
+        {
+          "id": "c2",
+          "prompt": "统计“需补考”人数应使用哪个函数？",
+          "type": "fill",
+          "answer": "COUNTIF",
+          "explanation": "COUNTIF 用于按条件计数。"
+        }
+      ]
+    },
+    {
+      "id": "office-q12",
+      "order": 12,
+      "title": "活动报名排序筛选",
+      "software": "excel",
+      "category": "数据处理",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Excel 2016 排序",
+        "筛选",
+        "自定义排序",
+        "数据验证"
+      ],
+      "prompt": "对活动报名表按学院、报名日期排序，筛选出“计算机学院”且状态为“已确认”的学生，并为状态列设置下拉选项。",
+      "materials": [
+        "学生材料含15条报名记录，包含学院、报名日期、状态等字段。",
+        "状态值包含“待确认、已确认、取消”。"
+      ],
+      "taskSteps": [
+        "先按学院升序，再按报名日期升序排序。",
+        "使用自动筛选显示符合双条件的记录。",
+        "为状态列设置数据验证下拉列表。"
+      ],
+      "referenceAnswer": [
+        "多关键字排序需在排序对话框中添加层级。",
+        "筛选条件同时为“计算机学院”和“已确认”。",
+        "数据验证来源可输入“待确认,已确认,取消”。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "多关键字排序",
+          "points": 3,
+          "criterion": "学院、日期顺序正确"
+        },
+        {
+          "item": "筛选结果",
+          "points": 4,
+          "criterion": "双条件准确"
+        },
+        {
+          "item": "数据验证",
+          "points": 3,
+          "criterion": "状态列有可用下拉选项"
+        }
+      ],
+      "commonMistakes": [
+        "只使用单列排序。",
+        "手动删除不符合条件的行。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q12_Excel_活动报名排序筛选_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q12_Excel_活动报名排序筛选_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题筛选需要同时满足几项条件？",
+          "type": "fill",
+          "answer": "2|二",
+          "explanation": "学院和状态为两项条件。"
+        },
+        {
+          "id": "c2",
+          "prompt": "为状态列提供固定可选值，应使用什么功能？",
+          "type": "fill",
+          "answer": "数据验证",
+          "explanation": "通过数据验证创建下拉列表。"
+        }
+      ]
+    },
+    {
+      "id": "office-q13",
+      "order": 13,
+      "title": "销售明细分类汇总",
+      "software": "excel",
+      "category": "数据汇总",
+      "difficulty": "综合",
+      "knowledgePoints": [
+        "Excel 2016 分类汇总",
+        "排序",
+        "SUM 函数",
+        "分级显示"
+      ],
+      "prompt": "按商品类别整理销售明细，先排序再执行分类汇总，分别计算每类销售额与总销售额。",
+      "materials": [
+        "学生材料含3个商品类别、18条销售记录。",
+        "每条记录包含类别、商品、数量、单价和销售额。"
+      ],
+      "taskSteps": [
+        "按“类别”列排序。",
+        "以类别为分类字段，对销售额求和。",
+        "检查分级显示中各类别小计和总计。"
+      ],
+      "referenceAnswer": [
+        "分类汇总前必须按分类字段排序。",
+        "汇总方式为求和，汇总项为销售额。",
+        "可使用左侧分级按钮查看明细或小计。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "排序准备",
+          "points": 2,
+          "criterion": "先按类别排序"
+        },
+        {
+          "item": "分类汇总",
+          "points": 5,
+          "criterion": "类别小计和总计正确"
+        },
+        {
+          "item": "分级显示",
+          "points": 3,
+          "criterion": "可切换小计/明细视图"
+        }
+      ],
+      "commonMistakes": [
+        "未排序直接分类汇总，导致同类记录被拆分。",
+        "对数量而非销售额求和。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q13_Excel_销售明细分类汇总_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q13_Excel_销售明细分类汇总_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "执行分类汇总前必须先做什么？",
+          "type": "fill",
+          "answer": "排序",
+          "explanation": "需按分类字段排序。"
+        },
+        {
+          "id": "c2",
+          "prompt": "本题分类汇总的汇总方式是？",
+          "type": "single",
+          "answer": "A",
+          "explanation": "销售额使用求和。",
+          "options": [
+            "求和",
+            "计数",
+            "平均值",
+            "最大值"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "office-q14",
+      "order": 14,
+      "title": "项目经费数据透视表",
+      "software": "excel",
+      "category": "数据透视表",
+      "difficulty": "综合",
+      "knowledgePoints": [
+        "Excel 2016 数据透视表",
+        "字段布局",
+        "汇总方式",
+        "筛选"
+      ],
+      "prompt": "根据项目经费明细创建数据透视表：行字段为项目类别，列字段为季度，值字段为金额求和，并筛选“已结项”项目。",
+      "materials": [
+        "学生材料含项目类别、季度、金额、状态四个字段。",
+        "原始数据共16条，状态包括“进行中、已结项”。"
+      ],
+      "taskSteps": [
+        "选择完整数据区域创建数据透视表。",
+        "拖放类别、季度、金额、状态字段到指定区域。",
+        "设置状态筛选为“已结项”，核对汇总结果。"
+      ],
+      "referenceAnswer": [
+        "金额字段汇总方式为“求和”，不是“计数”。",
+        "状态字段放入筛选区域。",
+        "数据源变化后可使用“刷新”更新透视表。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "数据透视表创建",
+          "points": 3,
+          "criterion": "源数据区域正确"
+        },
+        {
+          "item": "字段布局",
+          "points": 5,
+          "criterion": "行/列/值/筛选字段正确"
+        },
+        {
+          "item": "状态筛选",
+          "points": 2,
+          "criterion": "仅保留已结项项目"
+        }
+      ],
+      "commonMistakes": [
+        "把金额放入行标签而非值区域。",
+        "数据区域遗漏标题行。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q14_Excel_项目经费数据透视表_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q14_Excel_项目经费数据透视表_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "金额字段在数据透视表中应采用哪种汇总方式？",
+          "type": "fill",
+          "answer": "求和",
+          "explanation": "金额要做求和汇总。"
+        },
+        {
+          "id": "c2",
+          "prompt": "本题“状态”字段应放在哪个区域？",
+          "type": "fill",
+          "answer": "筛选|筛选区域",
+          "explanation": "状态用于筛选已结项项目。"
+        }
+      ]
+    },
+    {
+      "id": "office-q15",
+      "order": 15,
+      "title": "月度成绩图表展示",
+      "software": "excel",
+      "category": "图表",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Excel 2016 图表",
+        "数据源",
+        "图表标题",
+        "坐标轴"
+      ],
+      "prompt": "根据月度成绩统计数据创建簇状柱形图，设置图表标题、数据标签和坐标轴标题，并将图表放置在“图表展示”工作表。",
+      "materials": [
+        "学生材料含4个月的平均分和及格率数据。",
+        "图表展示工作表为空。"
+      ],
+      "taskSteps": [
+        "选择月份、平均分、及格率数据并创建图表。",
+        "设置标题为“月度成绩分析”。",
+        "添加数据标签与横、纵坐标轴标题。"
+      ],
+      "referenceAnswer": [
+        "图表类型可使用簇状柱形图，数据源应含标题行。",
+        "数据标签用于直接显示数值。",
+        "图表应放置在指定工作表且不遮挡数据。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "图表类型与数据源",
+          "points": 4,
+          "criterion": "类型和数据区域正确"
+        },
+        {
+          "item": "标题与标签",
+          "points": 3,
+          "criterion": "标题、数据标签完整"
+        },
+        {
+          "item": "图表布局",
+          "points": 3,
+          "criterion": "放置在图表展示表且布局清楚"
+        }
+      ],
+      "commonMistakes": [
+        "只选数值列，遗漏月份分类标签。",
+        "把图表做成静态截图。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q15_Excel_月度成绩图表展示_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q15_Excel_月度成绩图表展示_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题要求使用哪种图表类型？",
+          "type": "fill",
+          "answer": "簇状柱形图|柱形图",
+          "explanation": "使用簇状柱形图展示月度对比。"
+        },
+        {
+          "id": "c2",
+          "prompt": "图表标题应为？",
+          "type": "fill",
+          "answer": "月度成绩分析",
+          "explanation": "标题指定为“月度成绩分析”。"
+        }
+      ]
+    },
+    {
+      "id": "office-q16",
+      "order": 16,
+      "title": "考场座次表页面打印",
+      "software": "excel",
+      "category": "页面布局与打印",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "Excel 2016 页面布局",
+        "打印区域",
+        "分页",
+        "页眉页脚"
+      ],
+      "prompt": "将考场座次表设置为横向打印、每页重复标题行，并设置打印区域和页码页脚，使每页可独立阅读。",
+      "materials": [
+        "学生材料含40名考生座次数据，表格较宽。",
+        "需要按A4横向打印。"
+      ],
+      "taskSteps": [
+        "设置页面方向为横向，并调整页边距。",
+        "设置打印区域，必要时缩放为一页宽。",
+        "设置顶端标题行和页脚页码。"
+      ],
+      "referenceAnswer": [
+        "宽表适合横向，打印区域不应含空白列。",
+        "顶端标题行使每页重复显示字段名称。",
+        "页脚可插入“第 &P 页，共 &N 页”。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "页面设置",
+          "points": 3,
+          "criterion": "横向、页边距合适"
+        },
+        {
+          "item": "打印区域与标题",
+          "points": 4,
+          "criterion": "区域和重复标题行正确"
+        },
+        {
+          "item": "页脚与预览",
+          "points": 3,
+          "criterion": "页码有效且预览可读"
+        }
+      ],
+      "commonMistakes": [
+        "只在普通视图调整列宽，未检查打印预览。",
+        "把标题行也缩放得不可读。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q16_Excel_考场座次表页面打印_学生材料.xlsx",
+      "answerFileUrl": "office-materials/v3/Q16_Excel_考场座次表页面打印_参考答案.xlsx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "宽表打印本题应设置为哪种方向？",
+          "type": "fill",
+          "answer": "横向",
+          "explanation": "要求A4横向打印。"
+        },
+        {
+          "id": "c2",
+          "prompt": "每页重复表头应设置什么？",
+          "type": "fill",
+          "answer": "顶端标题行|打印标题",
+          "explanation": "设置顶端标题行或打印标题。"
+        }
+      ]
+    },
+    {
+      "id": "office-q17",
+      "order": 17,
+      "title": "校园开放日演示文稿",
+      "software": "ppt",
+      "category": "幻灯片创建与版式",
+      "difficulty": "基础",
+      "knowledgePoints": [
+        "PowerPoint 2016 新建演示文稿",
+        "版式",
+        "主题",
+        "幻灯片管理"
+      ],
+      "prompt": "根据材料创建4页“校园开放日”演示文稿，选择统一主题，使用合适版式，并按要求调整幻灯片顺序。",
+      "materials": [
+        "学生材料提供封面、学院概况、实训环境、咨询方式四页文字。",
+        "初始 PPT 已提供4页文本草稿。"
+      ],
+      "taskSteps": [
+        "为4页应用统一主题。",
+        "封面使用标题幻灯片版式，其余页面选用合适内容版式。",
+        "调整顺序为封面、学院概况、实训环境、咨询方式。"
+      ],
+      "referenceAnswer": [
+        "主题应全篇统一，不要求使用特定主题名称。",
+        "封面与内容页版式不同，结构清楚。",
+        "使用缩略图窗格可拖动调整顺序。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "主题与版式",
+          "points": 4,
+          "criterion": "统一且版式合适"
+        },
+        {
+          "item": "页面内容",
+          "points": 3,
+          "criterion": "四页内容完整"
+        },
+        {
+          "item": "顺序",
+          "points": 3,
+          "criterion": "顺序符合要求"
+        }
+      ],
+      "commonMistakes": [
+        "每页使用不同主题。",
+        "用复制粘贴而非调整幻灯片顺序。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q17_PPT_校园开放日演示文稿_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q17_PPT_校园开放日演示文稿_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题演示文稿共需完成多少页？",
+          "type": "fill",
+          "answer": "4|四",
+          "explanation": "共4页。"
+        },
+        {
+          "id": "c2",
+          "prompt": "封面页通常适用哪种版式？",
+          "type": "fill",
+          "answer": "标题幻灯片|标题",
+          "explanation": "封面使用标题幻灯片版式。"
+        }
+      ]
+    },
+    {
+      "id": "office-q18",
+      "order": 18,
+      "title": "实训课件母版统一",
+      "software": "ppt",
+      "category": "母版与版式",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "PowerPoint 2016 幻灯片母版",
+        "页眉页脚",
+        "统一字体",
+        "占位符"
+      ],
+      "prompt": "为“Office 实训课件”设置统一母版：统一标题字体和颜色，添加页脚信息与页码，并使已有内容页继承该版式。",
+      "materials": [
+        "学生材料含3页内容幻灯片，字体和页脚不统一。",
+        "要求页脚显示“计算机应用实训”。"
+      ],
+      "taskSteps": [
+        "进入幻灯片母版，修改标题字体和主题色。",
+        "在母版中配置页脚与页码。",
+        "关闭母版视图后检查三页内容是否统一。"
+      ],
+      "referenceAnswer": [
+        "母版修改会影响使用该版式的页面。",
+        "页脚文字为“计算机应用实训”。",
+        "页码应显示在内容页而非仅手动输入。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "母版修改",
+          "points": 4,
+          "criterion": "标题字体/色彩统一"
+        },
+        {
+          "item": "页脚与页码",
+          "points": 3,
+          "criterion": "内容正确且显示"
+        },
+        {
+          "item": "继承检查",
+          "points": 3,
+          "criterion": "至少3页样式一致"
+        }
+      ],
+      "commonMistakes": [
+        "逐页修改而没有进入母版。",
+        "在普通视图手打页码。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q18_PPT_实训课件母版统一_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q18_PPT_实训课件母版统一_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "统一多页字体和页脚最适合使用什么？",
+          "type": "fill",
+          "answer": "幻灯片母版|母版",
+          "explanation": "应使用幻灯片母版。"
+        },
+        {
+          "id": "c2",
+          "prompt": "本题页脚文字是什么？",
+          "type": "fill",
+          "answer": "计算机应用实训",
+          "explanation": "页脚指定为“计算机应用实训”。"
+        }
+      ]
+    },
+    {
+      "id": "office-q19",
+      "order": 19,
+      "title": "学习流程 SmartArt 图示",
+      "software": "ppt",
+      "category": "对象与 SmartArt",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "PowerPoint 2016 SmartArt",
+        "形状",
+        "对齐",
+        "组合"
+      ],
+      "prompt": "将“诊断—计划—练习—复盘”四个步骤制作为流程型 SmartArt 图形，并添加一处强调形状说明“循环改进”。",
+      "materials": [
+        "学生材料含4个流程步骤及其简短说明。",
+        "初始 PPT 中只有普通文本列表。"
+      ],
+      "taskSteps": [
+        "选择流程类 SmartArt，录入4个步骤。",
+        "统一调整文字大小和图形颜色。",
+        "添加强调形状，说明流程可循环改进。"
+      ],
+      "referenceAnswer": [
+        "SmartArt 应使用流程结构而非项目符号列表。",
+        "4步顺序不能颠倒。",
+        "形状应与流程图对齐且不遮挡文字。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "SmartArt 流程",
+          "points": 5,
+          "criterion": "4个步骤和顺序正确"
+        },
+        {
+          "item": "样式",
+          "points": 2,
+          "criterion": "色彩与文字统一"
+        },
+        {
+          "item": "强调形状",
+          "points": 3,
+          "criterion": "内容、位置清楚"
+        }
+      ],
+      "commonMistakes": [
+        "插入普通图片代替 SmartArt，后续不可编辑。",
+        "把“复盘”放在“练习”前。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q19_PPT_学习流程 SmartArt 图示_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q19_PPT_学习流程 SmartArt 图示_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题流程的第4步是什么？",
+          "type": "fill",
+          "answer": "复盘",
+          "explanation": "第4步为复盘。"
+        },
+        {
+          "id": "c2",
+          "prompt": "将层级文字转为流程图，应使用哪类对象？",
+          "type": "fill",
+          "answer": "SmartArt",
+          "explanation": "使用流程类 SmartArt。"
+        }
+      ]
+    },
+    {
+      "id": "office-q20",
+      "order": 20,
+      "title": "课程目标对象动画",
+      "software": "ppt",
+      "category": "动画效果",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "PowerPoint 2016 动画",
+        "动画窗格",
+        "开始方式",
+        "顺序"
+      ],
+      "prompt": "为课程目标页的标题和三条目标设置进入动画：标题先出现，三条目标按顺序依次出现；使用动画窗格检查顺序。",
+      "materials": [
+        "学生材料含一个标题和三条课程目标。",
+        "要求动画不超过4个对象，避免过度装饰。"
+      ],
+      "taskSteps": [
+        "给标题设置一个进入动画。",
+        "给三条目标设置进入动画，按单击或之后依次显示。",
+        "在动画窗格中调整顺序为标题、目标1、目标2、目标3。"
+      ],
+      "referenceAnswer": [
+        "对象动画在“动画”选项卡设置。",
+        "标题必须排在第1个动画。",
+        "动画窗格是核对顺序的依据。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "动画对象",
+          "points": 3,
+          "criterion": "标题和三条目标均有动画"
+        },
+        {
+          "item": "顺序",
+          "points": 4,
+          "criterion": "按指定次序播放"
+        },
+        {
+          "item": "动画窗格",
+          "points": 3,
+          "criterion": "可见且顺序正确"
+        }
+      ],
+      "commonMistakes": [
+        "在“切换”选项卡找对象动画。",
+        "所有对象设置同时出现。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q20_PPT_课程目标对象动画_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q20_PPT_课程目标对象动画_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "页内标题和文字的进入效果在哪个选项卡设置？",
+          "type": "fill",
+          "answer": "动画",
+          "explanation": "对象动画在“动画”选项卡。"
+        },
+        {
+          "id": "c2",
+          "prompt": "本题第1个播放动画的对象是？",
+          "type": "fill",
+          "answer": "标题",
+          "explanation": "标题先出现。"
+        }
+      ]
+    },
+    {
+      "id": "office-q21",
+      "order": 21,
+      "title": "资源导航超链接页面",
+      "software": "ppt",
+      "category": "超链接与多媒体",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "PowerPoint 2016 超链接",
+        "动作",
+        "对象编辑",
+        "媒体占位"
+      ],
+      "prompt": "制作“学习资源导航”页面，为三个资源按钮分别添加指向指定幻灯片、官方网站和本地视频占位说明的链接/动作。",
+      "materials": [
+        "学生材料含“题库练习、官方考试信息、操作演示”三个按钮文字。",
+        "可用文本框或形状作为按钮。"
+      ],
+      "taskSteps": [
+        "将“题库练习”链接到第3页。",
+        "将“官方考试信息”链接到官方公告页。",
+        "为“操作演示”添加视频/媒体占位说明，并设置明显按钮样式。"
+      ],
+      "referenceAnswer": [
+        "内部链接可使用“本文档中的位置”。",
+        "官方网站应使用明确的 https 链接。",
+        "媒体占位需要说明资源位置，不要求嵌入第三方版权视频。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "内部链接",
+          "points": 3,
+          "criterion": "题库练习跳转第3页"
+        },
+        {
+          "item": "外部链接",
+          "points": 3,
+          "criterion": "官方链接正确"
+        },
+        {
+          "item": "按钮与媒体说明",
+          "points": 4,
+          "criterion": "三个对象清楚可操作"
+        }
+      ],
+      "commonMistakes": [
+        "把网址仅作为普通文本。",
+        "外部链接到非官方页面却标称官方。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q21_PPT_资源导航超链接页面_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q21_PPT_资源导航超链接页面_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "PowerPoint 中跳转到本演示文稿其他页应选择哪类链接？",
+          "type": "fill",
+          "answer": "本文档中的位置|本文档",
+          "explanation": "使用“本文档中的位置”。"
+        },
+        {
+          "id": "c2",
+          "prompt": "官方考试信息应链接到哪个机构？",
+          "type": "fill",
+          "answer": "山东省教育招生考试院",
+          "explanation": "来源为山东省教育招生考试院。"
+        }
+      ]
+    },
+    {
+      "id": "office-q22",
+      "order": 22,
+      "title": "课程结构切换与放映",
+      "software": "ppt",
+      "category": "切换与放映设置",
+      "difficulty": "进阶",
+      "knowledgePoints": [
+        "PowerPoint 2016 切换",
+        "放映设置",
+        "排练计时",
+        "自定义放映"
+      ],
+      "prompt": "为课程结构演示文稿设置统一的“推入”切换效果，设置从头开始放映，并对第2页设置自动换片时间。",
+      "materials": [
+        "学生材料含4页课程结构内容。",
+        "要求切换效果全篇一致，第2页在5秒后自动换片。"
+      ],
+      "taskSteps": [
+        "选择合适的切换效果并应用到全部幻灯片。",
+        "仅第2页设置5秒后自动换片。",
+        "使用 F5 从头放映验证效果。"
+      ],
+      "referenceAnswer": [
+        "切换作用于幻灯片之间，不是对象动画。",
+        "“全部应用”后可单独调整第2页时间。",
+        "F5 从头放映，Shift+F5 从当前页放映。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "统一切换",
+          "points": 3,
+          "criterion": "4页均有统一切换"
+        },
+        {
+          "item": "自动换片",
+          "points": 4,
+          "criterion": "仅第2页为5秒自动"
+        },
+        {
+          "item": "放映验证",
+          "points": 3,
+          "criterion": "从头放映可验证"
+        }
+      ],
+      "commonMistakes": [
+        "把“推入”设置在动画中。",
+        "点击全部应用后忘记单独设置第2页。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q22_PPT_课程结构切换与放映_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q22_PPT_课程结构切换与放映_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "幻灯片与幻灯片之间的效果属于什么？",
+          "type": "fill",
+          "answer": "切换|切换效果",
+          "explanation": "页间效果是切换。"
+        },
+        {
+          "id": "c2",
+          "prompt": "从头开始放映的快捷键是？",
+          "type": "fill",
+          "answer": "F5",
+          "explanation": "F5 从头放映。"
+        }
+      ]
+    },
+    {
+      "id": "office-q23",
+      "order": 23,
+      "title": "答辩讲稿与备注页",
+      "software": "ppt",
+      "category": "演示文稿输出",
+      "difficulty": "基础",
+      "knowledgePoints": [
+        "PowerPoint 2016 备注",
+        "讲义",
+        "打印设置",
+        "演示者视图"
+      ],
+      "prompt": "为项目答辩演示文稿的三页内容添加演讲者备注，并设置打印讲义每页6张幻灯片，保留页码和页眉信息。",
+      "materials": [
+        "学生材料含项目背景、实现方案、成果总结三页内容。",
+        "每页需添加不超过60字的讲解提示。"
+      ],
+      "taskSteps": [
+        "分别在三页备注窗格输入讲解提示。",
+        "设置打印讲义为每页6张幻灯片。",
+        "在打印预览中检查页码与页面布局。"
+      ],
+      "referenceAnswer": [
+        "备注仅供演讲者使用，不应显示在普通放映页面。",
+        "讲义打印可选每页6张幻灯片。",
+        "打印预览用于检查页码和布局。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "备注",
+          "points": 4,
+          "criterion": "三页均有简洁讲解提示"
+        },
+        {
+          "item": "讲义设置",
+          "points": 3,
+          "criterion": "每页6张幻灯片"
+        },
+        {
+          "item": "打印预览",
+          "points": 3,
+          "criterion": "页码和版式可读"
+        }
+      ],
+      "commonMistakes": [
+        "把讲解提示直接写到幻灯片正文。",
+        "选择“全页幻灯片”而非讲义。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q23_PPT_答辩讲稿与备注页_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q23_PPT_答辩讲稿与备注页_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "讲解提示应写入哪个区域？",
+          "type": "fill",
+          "answer": "备注|备注窗格",
+          "explanation": "写入备注窗格。"
+        },
+        {
+          "id": "c2",
+          "prompt": "本题讲义每页包含多少张幻灯片？",
+          "type": "fill",
+          "answer": "6|六",
+          "explanation": "要求每页6张。"
+        }
+      ]
+    },
+    {
+      "id": "office-q24",
+      "order": 24,
+      "title": "图表数据与版式优化",
+      "software": "ppt",
+      "category": "图表与对象格式",
+      "difficulty": "综合",
+      "knowledgePoints": [
+        "PowerPoint 2016 图表",
+        "数据编辑",
+        "对象对齐",
+        "选择窗格"
+      ],
+      "prompt": "根据材料插入柱形图展示三类学习完成率，调整图表数据、标题和图例，并对齐标题、图表和结论文本框。",
+      "materials": [
+        "学生材料提供“视频学习、题库练习、错题复习”的完成率数据。",
+        "初始 PPT 含空白图表区域和结论文本。"
+      ],
+      "taskSteps": [
+        "插入柱形图并录入三类完成率。",
+        "设置图表标题为“学习完成率对比”，保留图例。",
+        "使用对齐功能使页面对象边缘整齐。"
+      ],
+      "referenceAnswer": [
+        "图表数据为视频学习78%、题库练习86%、错题复习72%。",
+        "对象对齐应使用对齐命令，而不是拖拽目测。",
+        "图表和结论文本框不重叠。"
+      ],
+      "scoringRubric": [
+        {
+          "item": "图表数据",
+          "points": 4,
+          "criterion": "三类数据正确"
+        },
+        {
+          "item": "图表元素",
+          "points": 3,
+          "criterion": "标题和图例完整"
+        },
+        {
+          "item": "对象对齐",
+          "points": 3,
+          "criterion": "布局整齐不重叠"
+        }
+      ],
+      "commonMistakes": [
+        "把数据做成图片后粘贴。",
+        "只靠鼠标拖动导致对象不齐。"
+      ],
+      "sourceType": "原创同类型题",
+      "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+      "sourceOrganization": "山东省教育招生考试院",
+      "sourceYear": 2026,
+      "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+      "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+      "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。",
+      "source": {
+        "sourceType": "原创同类型题",
+        "sourceTitle": "山东省2026年普通高等教育专科升本科招生考试公共基础课考试要求",
+        "sourceOrganization": "山东省教育招生考试院",
+        "sourceYear": 2026,
+        "sourceUrl": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7081",
+        "license": "题目与材料为本项目原创；官方考试要求仅作为公开依据链接引用。",
+        "copyrightNote": "未复制、转载或公开发布历年真题及培训机构原题；按官方列出的 Word 2016、Excel 2016、PowerPoint 2016 能力范围创作。"
+      },
+      "studentFileUrl": "office-materials/v3/Q24_PPT_图表数据与版式优化_学生材料.pptx",
+      "answerFileUrl": "office-materials/v3/Q24_PPT_图表数据与版式优化_参考答案.pptx",
+      "createdAt": "2026-08-31T00:00:00.000Z",
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "checks": [
+        {
+          "id": "c1",
+          "prompt": "本题完成率最高的是哪一类？",
+          "type": "fill",
+          "answer": "题库练习",
+          "explanation": "题库练习为86%。"
+        },
+        {
+          "id": "c2",
+          "prompt": "让多个对象边缘整齐，应使用什么命令？",
+          "type": "fill",
+          "answer": "对齐",
+          "explanation": "使用“对齐”命令。"
+        }
+      ]
+    }
+  ]
+}

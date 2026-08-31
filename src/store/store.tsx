@@ -2,7 +2,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useReducer, useRef } from 'react'
 import type { Dispatch, ReactNode } from 'react'
 import type {
-  Attempt, CatalogData, Chapter, KnowledgePoint, KPStats, OfficeResultRecord, PracticeMode, Profile, Question, SeedData,
+  Attempt, CatalogData, Chapter, KnowledgePoint, KPStats, OfficeResultRecord, OfficeSubmission, PracticeMode, Profile, Question, SeedData,
   ScheduleTask, Session, SessionSummary, Settings, State, Subject, Task, WrongReason,
 } from '../types'
 import { XP_RULES, pushXpLog } from '../lib/xp'
@@ -12,9 +12,9 @@ import { uid } from '../lib/misc'
 import { computeKpMastery, difficultyWeight, nextStatus } from '../lib/mastery'
 import { entryOnCorrectReview, entryOnEarlyCorrect, entryOnWrong } from '../lib/spaced'
 import { generateTasks } from '../lib/plan'
-import { MAX_FIRED_KEYS, MAX_HISTORY, nextOccurrence, parseStamp, withNextRun } from '../lib/schedule'
+import { MAX_FIRED_KEYS, MAX_HISTORY, nextOccurrence, normalizeScheduleTask, parseStamp, skipStaleScheduleOccurrence, withNextRun } from '../lib/schedule'
 import { getSession } from '../lib/auth'
-import { downloadCloudState, uploadCloudState } from '../services/cloud'
+import { downloadCloudState, retainLocalAiApiKey, uploadCloudState } from '../services/cloud'
 
 const STORAGE_KEY = 'zsb_helper_v1'
 
@@ -41,13 +41,92 @@ export function emptyState(): State {
     favorites: [],
     questionNotes: {},
     allDoneBonus: [],
-    settings: { intervals: [1, 3, 7, 14, 30], dailyPracticeXpCap: 120, reduceMotion: false, mascotEnabled: true },
+    settings: {
+      intervals: [1, 3, 7, 14, 30],
+      dailyPracticeXpCap: 120,
+      reduceMotion: false,
+      mascotEnabled: true,
+      speech: { enabled: true, rate: 1, preferredLang: 'zh-CN' },
+    },
     seedLoaded: false,
     hiddenHot: [],
     officeResults: {},
+    officeSubmissions: {},
+    officeBankVersion: 3,
+    legacyOfficeResults: {},
     english: { checkedDates: [], mastered: [] },
     qaLog: [],
     schedules: [],
+  }
+}
+
+/**
+ * 统一升级本地与云端的旧快照。升级过程只补充字段、保留旧成绩，绝不删除用户数据。
+ * 旧版提醒在升级后默认不播报，避免用户在没有明确授权时被突然的语音打扰。
+ */
+export function normalizeState(input: Partial<State> | State | null | undefined): State {
+  const base = emptyState()
+  const parsed = input ?? {}
+  const parsedSettings: Partial<Settings> = parsed.settings ?? {}
+  const schedules = Array.isArray(parsed.schedules)
+    ? parsed.schedules.map((raw) => {
+        const repeat = raw.repeat ?? raw.repeatRule ?? { kind: 'once' as const }
+        const enabled = raw.enabled ?? raw.status !== 'paused'
+        const date = raw.date ?? raw.remindAt?.slice(0, 10) ?? todayStr()
+        const time = raw.time ?? raw.remindAt?.slice(11, 16) ?? '09:00'
+        const name = raw.name ?? raw.title ?? '未命名任务'
+        const note = raw.note ?? raw.content ?? ''
+        return normalizeScheduleTask({
+          ...raw,
+          name,
+          note,
+          date,
+          time,
+          repeat,
+          timezone: 'Asia/Shanghai' as const,
+          title: raw.title ?? name,
+          content: raw.content ?? note,
+          remindAt: raw.remindAt ?? `${date}T${time}`,
+          repeatRule: raw.repeatRule ?? repeat,
+          advanceMinutes: raw.advanceMinutes ?? raw.remindBefore ?? 0,
+          voiceEnabled: raw.voiceEnabled ?? false,
+          notificationEnabled: raw.notificationEnabled ?? true,
+          // 旧版从未有声音功能，迁移时保持静音，避免升级后出现意外播报或提示音。
+          reminderSound: raw.reminderSound ?? 'silent',
+          status: raw.status ?? (enabled ? 'active' : 'paused'),
+          remindBefore: raw.remindBefore ?? raw.advanceMinutes ?? 0,
+          afterDone: raw.afterDone ?? 'continue',
+          enabled,
+          createdAt: raw.createdAt ?? new Date(0).toISOString(),
+          updatedAt: raw.updatedAt ?? raw.createdAt ?? new Date(0).toISOString(),
+          nextRunAt: raw.nextRunAt ?? null,
+          firedKeys: raw.firedKeys ?? [],
+          history: raw.history ?? [],
+        } satisfies ScheduleTask)
+      })
+    : []
+
+  const oldOfficeResults = parsed.officeResults ?? {}
+  return {
+    ...base,
+    ...parsed,
+    settings: {
+      ...base.settings,
+      ...parsedSettings,
+      speech: {
+        enabled: parsedSettings.speech?.enabled ?? base.settings.speech?.enabled ?? true,
+        rate: parsedSettings.speech?.rate ?? base.settings.speech?.rate ?? 1,
+        preferredLang: 'zh-CN',
+        voiceURI: parsedSettings.speech?.voiceURI ?? base.settings.speech?.voiceURI,
+        voiceName: parsedSettings.speech?.voiceName ?? base.settings.speech?.voiceName,
+      },
+    },
+    streak: { ...base.streak, ...(parsed.streak ?? {}) },
+    schedules,
+    officeResults: oldOfficeResults,
+    officeSubmissions: parsed.officeSubmissions ?? {},
+    officeBankVersion: parsed.officeBankVersion ?? base.officeBankVersion,
+    legacyOfficeResults: parsed.legacyOfficeResults ?? oldOfficeResults,
   }
 }
 
@@ -60,13 +139,7 @@ function load(storageKey: string): State {
     const raw = localStorage.getItem(storageKey)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<State>
-      const base = emptyState()
-      return {
-        ...base,
-        ...parsed,
-        settings: { ...base.settings, ...(parsed.settings ?? {}) },
-        streak: { ...base.streak, ...(parsed.streak ?? {}) },
-      }
+      return normalizeState(parsed)
     }
   } catch {
     // 数据损坏时回到初始状态
@@ -160,6 +233,7 @@ export type Action =
   | { type: 'SET_UPDATE_CHECKED'; t: number }
   | { type: 'SET_APP_UPDATE_CHECKED'; t: number }
   | { type: 'RECORD_OFFICE_RESULT'; taskId: string; result: OfficeResultRecord }
+  | { type: 'RECORD_OFFICE_SUBMISSION'; submission: OfficeSubmission }
   | { type: 'REMOVE_QUESTIONS_FORCE'; ids: string[] }
   | { type: 'REVIEW_QUESTIONS'; ids: string[]; pass: boolean }
   | { type: 'LOG'; text: string }
@@ -174,13 +248,14 @@ export type Action =
   | { type: 'SCHEDULE_NOTIFIED'; id: string; key: string }
   | { type: 'SCHEDULE_DONE'; id: string; key: string }
   | { type: 'SCHEDULE_SNOOZE'; id: string; key: string; until: string }
+  | { type: 'SCHEDULE_SKIP_STALE'; id: string; now: string }
 
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'HYDRATE':
-      return action.state
+      return normalizeState(action.state)
     case 'IMPORT_STATE':
-      return { ...emptyState(), ...action.state }
+      return normalizeState(action.state)
     case 'RESET':
       return emptyState()
 
@@ -646,6 +721,16 @@ export function reducer(state: State, action: Action): State {
         officeResults: { ...(state.officeResults ?? {}), [action.taskId]: action.result },
       }
 
+    case 'RECORD_OFFICE_SUBMISSION':
+      return {
+        ...state,
+        officeSubmissions: {
+          ...(state.officeSubmissions ?? {}),
+          [action.submission.questionId]: action.submission,
+        },
+        officeBankVersion: 3,
+      }
+
     /** 一次性数据修复:强制清除不符合山东专升本考纲的遗留题 */
     case 'REMOVE_QUESTIONS_FORCE': {
       const ids = new Set(action.ids)
@@ -785,6 +870,18 @@ export function reducer(state: State, action: Action): State {
         ),
       }
 
+    // 应用长时间未运行时，不逐条补弹历史发生时刻；推进到下一条仍未错过的计划。
+    case 'SCHEDULE_SKIP_STALE': {
+      const now = new Date(action.now)
+      if (Number.isNaN(now.getTime())) return state
+      return {
+        ...state,
+        schedules: (state.schedules ?? []).map((t) =>
+          t.id === action.id ? { ...skipStaleScheduleOccurrence(t, now), updatedAt: now.toISOString() } : t
+        ),
+      }
+    }
+
     default:
       return state
   }
@@ -839,7 +936,11 @@ export function StoreProvider({
     setCloudReady(false)
     downloadCloudState({ token, apiUrl }).then(async (remoteState) => {
       if (cancelled) return
-      if (remoteState) dispatch({ type: 'HYDRATE', state: remoteState })
+      if (remoteState) {
+        // downloadCloudState 已无条件清理旧云端快照中的 API Key；本机已有密钥始终优先。
+        const stateWithLocalSecret = retainLocalAiApiKey(remoteState, stateRef.current)
+        dispatch({ type: 'HYDRATE', state: stateWithLocalSecret })
+      }
       else await uploadCloudState({ token, apiUrl }, stateRef.current)
       if (!cancelled) setCloudReady(true)
     }).catch(() => {

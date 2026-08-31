@@ -20,6 +20,40 @@ export type CloudLoginResult =
 const API_URL_KEY = 'zsb_cloud_api_url_v1'
 const DEFAULT_CLOUD_API_URL = 'https://shandong-zsb-study-helper.vercel.app'
 
+/**
+ * AI 服务密钥是设备私密配置，不能随着学习快照跨设备传播。
+ * 这个函数同时处理新旧云端数据：旧快照即使历史上意外保存过密钥，
+ * 下载到客户端后也只会得到一个空值副本。
+ */
+export function removeAiApiKeyFromCloudState(state: State | null): State | null {
+  const ai = state?.settings?.ai
+  if (!state || !ai) return state
+  return {
+    ...state,
+    settings: {
+      ...state.settings,
+      ai: { ...ai, apiKey: '' },
+    },
+  }
+}
+
+/**
+ * 云端状态只能带学习数据。本机已保存的密钥优先，且不依赖远端是否干净，
+ * 以防旧版本写入的密钥在升级过渡期间重新覆盖当前设备。
+ */
+export function retainLocalAiApiKey(remoteState: State, localState: State): State {
+  const localAi = localState.settings?.ai
+  if (!localAi?.apiKey) return remoteState
+  const remoteAi = remoteState.settings?.ai
+  return {
+    ...remoteState,
+    settings: {
+      ...remoteState.settings,
+      ai: { ...(remoteAi ?? localAi), apiKey: localAi.apiKey },
+    },
+  }
+}
+
 function normalizeUrl(value: string): string {
   return value.trim().replace(/\/+$/, '')
 }
@@ -134,7 +168,7 @@ export async function downloadCloudState(session: CloudSession): Promise<State |
     const { data } = await request<{ state: State | null }>('/api/state', {
       headers: { Authorization: `Bearer ${session.token}` },
     }, session.apiUrl)
-    return data.state
+    return removeAiApiKeyFromCloudState(data.state)
   } catch {
     return null
   }
@@ -142,10 +176,12 @@ export async function downloadCloudState(session: CloudSession): Promise<State |
 
 export async function uploadCloudState(session: CloudSession, state: State): Promise<boolean> {
   try {
+    // AI 密钥属于设备私密配置。学习数据可以云同步，但密钥绝不离开当前设备。
+    const cloudState = removeAiApiKeyFromCloudState(state)!
     await request('/api/state', {
       method: 'PUT',
       headers: { Authorization: `Bearer ${session.token}` },
-      body: JSON.stringify({ state }),
+      body: JSON.stringify({ state: cloudState }),
     }, session.apiUrl)
     return true
   } catch {

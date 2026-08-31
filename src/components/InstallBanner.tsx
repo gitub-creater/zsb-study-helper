@@ -106,13 +106,12 @@ export function InstallBanner() {
 
   return (
     <aside
+      className="install-banner"
       aria-label={title}
       style={{
-        position: 'fixed',
-        right: 16,
-        bottom: 16,
-        zIndex: 100,
         width: 'min(420px, calc(100vw - 32px))',
+        alignSelf: 'flex-end',
+        margin: '0 16px 16px',
         padding: 14,
         background: '#fff',
         border: '1px solid #DCE7F5',
@@ -126,10 +125,10 @@ export function InstallBanner() {
         onClick={dismiss}
         style={{
           position: 'absolute',
-          top: 6,
-          right: 6,
-          width: 36,
-          height: 36,
+          top: 4,
+          right: 4,
+          width: 44,
+          height: 44,
           display: 'grid',
           placeItems: 'center',
           border: 0,

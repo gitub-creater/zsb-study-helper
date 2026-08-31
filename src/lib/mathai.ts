@@ -127,6 +127,25 @@ export function extractFinalAnswer(text: string): string {
   return out || text.trim()
 }
 
+/**
+ * 将 AI 的基础 Markdown 转为适合系统朗读的文字稿。
+ * 不改变屏幕上的原始讲解；公式内容保留，让用户仍能听到变量和数字。
+ */
+export function toSpeechScript(text: string): string {
+  return text
+    .replace(/```[^\n]*\n?([\s\S]*?)(?:```|$)/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s*#{1,6}\s+/gm, '')
+    .replace(/^\s*(?:[-*+] |\d+[.、)]\s+)/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\$\$([\s\S]+?)\$\$/g, '$1')
+    .replace(/\$([^$\n]+)\$/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 /** 复制文本到剪贴板;非安全上下文回退 execCommand */
 export async function copyText(text: string): Promise<boolean> {
   try {

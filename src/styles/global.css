@@ -2600,6 +2600,92 @@ body.rm *::after {
   }
 }
 
+/* 移动端安装提示位于首页内容流中，不遮挡学习内容。 */
+.install-banner {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .install-banner {
+    align-self: stretch !important;
+    width: auto !important;
+    margin: 0 8px calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* 移动端交互控件保留紧凑视觉，但扩大可点击区域至无障碍建议尺寸。 */
+@media (max-width: 640px) {
+  .btn,
+  .btn-sm,
+  .btn-xs {
+    min-height: 44px;
+  }
+
+  .btn-icon {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .seg {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .seg button,
+  .seg-sm button {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  .wd-chip {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  /* 开关轨道仍保持 40x22 的视觉比例，按钮本身提供 44x44 命中区。 */
+  .switch {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    background: transparent;
+    border-radius: 22px;
+  }
+
+  .switch::before {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 22px;
+    left: 2px;
+    top: 11px;
+    border-radius: 11px;
+    background: #d5dee9;
+    transition: background 0.15s;
+  }
+
+  .switch.on {
+    background: transparent;
+  }
+
+  .switch.on::before {
+    background: var(--primary);
+  }
+
+  .switch::after {
+    top: 13px;
+    left: 4px;
+  }
+
+  .switch.on::after {
+    left: 24px;
+  }
+}
+
 /* ---------- 已安排任务(定时提醒) ---------- */
 .sched-row {
   display: flex;
@@ -2781,6 +2867,228 @@ body.rm *::after {
 
 .mathai-detail-a + .mathai-detail-a {
   margin-top: 14px;
+}
+
+/* ---------- AI 讲题朗读（设备原生 SpeechSynthesis） ---------- */
+.mathai-speech {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--line);
+  color: var(--ink-2);
+}
+
+.mathai-speech.is-active {
+  border-top-color: var(--primary-soft);
+}
+
+.mathai-speech-head,
+.mathai-speech-actions,
+.mathai-speech-options {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mathai-speech-head {
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.mathai-speech-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mathai-speech-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--primary-weak);
+  color: var(--primary-deep);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mathai-speech-state.is-paused {
+  background: var(--yellow-weak);
+  color: var(--yellow-deep);
+}
+
+.mathai-speech-state.is-error {
+  background: var(--coral-weak);
+  color: var(--coral-deep);
+}
+
+.mathai-speech-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mathai-speech-switch input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.mathai-speech-actions {
+  margin-bottom: 8px;
+}
+
+.mathai-speech .btn {
+  min-height: 34px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.mathai-speech .btn:focus-visible,
+.mathai-speech select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.mathai-speech-options {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.mathai-speech-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.mathai-speech-options select {
+  min-height: 34px;
+  max-width: 176px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 7px;
+}
+
+.mathai-speech-options .mathai-speech-voice {
+  flex: 1 1 170px;
+}
+
+.mathai-speech-options .mathai-speech-voice select {
+  flex: 1;
+}
+
+.mathai-speech-note,
+.mathai-speech-error,
+.mathai-speech-current {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.mathai-speech-note {
+  color: var(--ink-2);
+}
+
+.mathai-speech-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  background: var(--coral-weak);
+  color: var(--coral-deep);
+}
+
+.mathai-speech-current {
+  display: grid;
+  gap: 4px;
+  padding: 7px 9px;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--primary-weak);
+  color: var(--ink);
+}
+
+.mathai-speech-current > span {
+  color: var(--primary-deep);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mathai-speech-current mark {
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+}
+
+/* 朗读时同步标出 AI 正文的当前句，跨 Markdown 节点时整段高亮。 */
+.md-speech-active {
+  border-radius: 4px;
+  background: var(--primary-weak);
+  box-shadow: inset 3px 0 0 var(--primary);
+  padding-left: 7px;
+  padding-right: 4px;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.md-speech-mark {
+  border-radius: 3px;
+  background: var(--primary-soft);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .mathai-speech .btn,
+  .mathai-speech-options select {
+    min-height: 44px;
+  }
+
+  .mathai-speech-actions {
+    gap: 8px;
+  }
+
+  .mathai-speech-switch {
+    min-height: 44px;
+  }
+
+  .mathai-speech-options {
+    align-items: stretch;
+  }
+
+  .mathai-speech-options label {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .mathai-speech-options select {
+    max-width: min(70vw, 230px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mathai-speech .btn,
+  .md-speech-active {
+    transition: none;
+  }
 }
 
 /* ---------- 任务详情界面 ---------- */

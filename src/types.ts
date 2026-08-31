@@ -315,6 +315,20 @@ export interface Settings {
   updateManifestUrl?: string
   /** AI 判题/讲题服务配置(豆包/DeepSeek/千问/自定义 OpenAI 兼容),密钥仅存本机;思考程度只影响讲解深度 */
   ai?: { provider: string; baseURL: string; apiKey: string; model: string; reasoningEffort?: 'low' | 'medium' | 'high' }
+  /** AI 讲题朗读偏好:使用设备原生语音,不随项目打包第三方语音文件 */
+  speech?: SpeechSettings
+}
+
+export type SpeechRate = 0.75 | 1 | 1.25 | 1.5
+
+/** 浏览器/系统原生语音的可持久化偏好。voiceURI 是设备提供的稳定标识,失效时自动回退。 */
+export interface SpeechSettings {
+  /** 用户可随时关闭讲题朗读；关闭后保留完整文字讲解。 */
+  enabled?: boolean
+  rate: SpeechRate
+  voiceURI?: string
+  voiceName?: string
+  preferredLang: 'zh-CN'
 }
 
 export interface OfficeResultRecord {
@@ -322,6 +336,94 @@ export interface OfficeResultRecord {
   earned: number
   total: number
   at: string
+}
+
+// ---------- 实操大题(Office 可编辑材料) ----------
+
+export type OfficeSoftware = 'word' | 'excel' | 'ppt'
+export type OfficeDifficulty = '基础' | '进阶' | '综合'
+export type OfficeCheckType = 'single' | 'multiple' | 'fill'
+
+export interface OfficeCheckItem {
+  id: string
+  prompt: string
+  type: OfficeCheckType
+  options?: string[]
+  /** 单选/多选使用 A/B/C;填空允许以 | 分隔等价答案 */
+  answer: string
+  explanation: string
+}
+
+export interface OfficeScoringItem {
+  item: string
+  points: number
+  criterion: string
+}
+
+export interface OfficeSource {
+  sourceType: '原创同类型题' | '根据公开资料改编' | '授权题目'
+  sourceTitle: string
+  sourceOrganization: string
+  sourceYear: number
+  sourceUrl: string
+  license: string
+  copyrightNote: string
+}
+
+/** 静态题库中的实操大题;材料文件由 scripts/generate-office-materials.mjs 确定性生成。 */
+export interface OfficeQuestion {
+  id: string
+  order: number
+  title: string
+  software: OfficeSoftware
+  category: string
+  difficulty: OfficeDifficulty
+  knowledgePoints: string[]
+  prompt: string
+  materials: string[]
+  taskSteps: string[]
+  referenceAnswer: string[]
+  scoringRubric: OfficeScoringItem[]
+  commonMistakes: string[]
+  sourceType: OfficeSource['sourceType']
+  sourceTitle: string
+  sourceOrganization: string
+  sourceYear: number
+  sourceUrl: string
+  license: string
+  copyrightNote: string
+  source: OfficeSource
+  studentFileUrl: string
+  answerFileUrl: string
+  createdAt: string
+  updatedAt: string
+  checks: OfficeCheckItem[]
+}
+
+export interface OfficeQuestionBank {
+  meta: {
+    name: string
+    version: number
+    updatedAt: string
+    sourceBasis: string
+    sourceUrl: string
+    sourceSha256: string
+    note: string
+  }
+  questions: OfficeQuestion[]
+}
+
+/** 学生先完成客观检查并获得判定,才可在学生模式中查看答案/评分标准。 */
+export interface OfficeSubmission {
+  questionId: string
+  answers: Record<string, string>
+  correctCount: number
+  totalChecks: number
+  score: number
+  totalScore: number
+  status: 'correct' | 'incorrect' | 'needsReview'
+  submittedAt: string
+  answerUnlockedAt: string
 }
 
 export interface XpLogEntry {
@@ -367,6 +469,12 @@ export interface State {
   lastAppUpdateCheck?: number
   /** 实操大题最近一次判题结果 */
   officeResults?: Record<string, OfficeResultRecord>
+  /** 新版材料型实操题的学生提交记录;刷新、重开和云同步后仍保留 */
+  officeSubmissions?: Record<string, OfficeSubmission>
+  /** 已应用的材料型实操题库版本;仅用于迁移与回滚判断 */
+  officeBankVersion?: number
+  /** 升级时保留旧笔试型实操成绩,不与新版材料题混淆 */
+  legacyOfficeResults?: Record<string, OfficeResultRecord>
   /** 英语打卡:打卡日期与已掌握单词 */
   english?: { checkedDates: string[]; mastered: string[] }
   /** 更新日志(导入/审核/迁移等事件) */
@@ -382,6 +490,8 @@ export type ScheduleRepeat =
   | { kind: 'once' }
   | { kind: 'daily' }
   | { kind: 'weekly'; weekdays: number[] }
+  /** 自定义每 N 天一次,N>=2 */
+  | { kind: 'custom'; intervalDays: number }
 
 /** 一次执行的记录 */
 export interface ScheduleRun {
@@ -403,6 +513,23 @@ export interface ScheduleTask {
   /** 仅一次=执行日期;重复任务=起始日期(YYYY-MM-DD) */
   date: string
   repeat: ScheduleRepeat
+  /** 固定为北京时间;旧任务升级后默认补齐 */
+  timezone?: 'Asia/Shanghai'
+  /** 用户要求的数据结构字段,与 name/note/time/date/repeat/remindBefore 保持一一对应 */
+  title?: string
+  content?: string
+  /** ISO 风格的北京时间墙上时刻 YYYY-MM-DDTHH:MM */
+  remindAt?: string
+  repeatRule?: ScheduleRepeat
+  advanceMinutes?: number
+  /** 浏览器原生朗读提醒;默认 false,防止旧任务升级后突然发声 */
+  voiceEnabled?: boolean
+  /** 允许系统通知;默认 true */
+  notificationEnabled?: boolean
+  /** 提醒声音:语音播报 / 简短提示音 / 静音 */
+  reminderSound?: 'voice' | 'chime' | 'silent'
+  /** active/paused/completed,与 enabled 保持兼容 */
+  status?: 'active' | 'paused' | 'completed'
   /** 结束日期(YYYY-MM-DD,含当天),仅重复任务可设 */
   endDate?: string
   /** 提前提醒分钟数,0=准时 */

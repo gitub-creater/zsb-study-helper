@@ -4,6 +4,7 @@
 import React, { useMemo } from 'react'
 import katex from 'katex'
 import { Tex } from './Tex'
+import { toSpeechScript } from '../lib/mathai'
 
 function DisplayTex({ tex }: { tex: string }) {
   const html = useMemo(() => {
@@ -19,7 +20,32 @@ function DisplayTex({ tex }: { tex: string }) {
 
 const INLINE_RE = /(\$[^$\n]+\$|\*\*[^*\n]+\*\*|`[^`\n]+`)/g
 
-function Inline({ text }: { text: string }) {
+function normalizeSpeechMatch(value: string): string {
+  return value.replace(/\s+/g, '').trim()
+}
+
+function containsActiveSentence(value: string, activeSpeechSentence?: string | null): boolean {
+  const target = normalizeSpeechMatch(activeSpeechSentence ?? '')
+  return !!target && normalizeSpeechMatch(toSpeechScript(value)).includes(target)
+}
+
+function PlainText({ text, activeSpeechSentence }: { text: string; activeSpeechSentence?: string | null }) {
+  const target = activeSpeechSentence?.trim()
+  if (!target || !text.includes(target)) return <>{text}</>
+  const parts = text.split(target)
+  return (
+    <>
+      {parts.map((part, index) => (
+        <React.Fragment key={`${part}-${index}`}>
+          {index > 0 && <mark className="md-speech-mark">{target}</mark>}
+          {part}
+        </React.Fragment>
+      ))}
+    </>
+  )
+}
+
+function Inline({ text, activeSpeechSentence }: { text: string; activeSpeechSentence?: string | null }) {
   const parts = text.split(INLINE_RE)
   return (
     <>
@@ -29,18 +55,18 @@ function Inline({ text }: { text: string }) {
         if (p.length > 4 && p.startsWith('**') && p.endsWith('**')) {
           return (
             <b key={i}>
-              <Inline text={p.slice(2, -2)} />
+              <Inline text={p.slice(2, -2)} activeSpeechSentence={activeSpeechSentence} />
             </b>
           )
         }
         if (p.length > 2 && p.startsWith('`') && p.endsWith('`')) {
           return (
             <code key={i} className="md-code">
-              {p.slice(1, -1)}
+              <PlainText text={p.slice(1, -1)} activeSpeechSentence={activeSpeechSentence} />
             </code>
           )
         }
-        return <React.Fragment key={i}>{p}</React.Fragment>
+        return <React.Fragment key={i}><PlainText text={p} activeSpeechSentence={activeSpeechSentence} /></React.Fragment>
       })}
     </>
   )
@@ -146,38 +172,57 @@ function parseBlocks(src: string): Block[] {
   return blocks
 }
 
-export function Markdown({ text }: { text: string }) {
+function blockText(block: Block): string {
+  switch (block.kind) {
+    case 'code': return block.code
+    case 'math': return block.tex
+    case 'h': return block.text
+    case 'ul':
+    case 'ol': return block.items.join('\n')
+    default: return block.lines.join('\n')
+  }
+}
+
+/**
+ * 朗读时在原始讲解正文中标出当前句。Markdown 有时会把一句话拆成多个内联节点，
+ * 这时会高亮整段作为稳定兜底，避免用户找不到正在朗读的位置。
+ */
+export function Markdown({ text, activeSpeechSentence }: { text: string; activeSpeechSentence?: string | null }) {
   const blocks = useMemo(() => parseBlocks(text), [text])
   return (
     <div className="md">
       {blocks.map((b, i) => {
+        const active = containsActiveSentence(blockText(b), activeSpeechSentence)
+        const activeClass = active ? ' md-speech-active' : ''
         switch (b.kind) {
           case 'code':
             return (
-              <pre key={i} className="md-pre">
-                <code>{b.code}</code>
+              <pre key={i} className={`md-pre${activeClass}`}>
+                <code><PlainText text={b.code} activeSpeechSentence={activeSpeechSentence} /></code>
               </pre>
             )
           case 'math':
-            return <DisplayTex key={i} tex={b.tex} />
+            return <span key={i} className={active ? 'md-speech-active' : undefined}><DisplayTex tex={b.tex} /></span>
           case 'hr':
             return <hr key={i} className="md-hr" />
           case 'quote':
             return (
-              <blockquote key={i} className="md-quote">
-                <Inline text={b.lines.join('\n')} />
+              <blockquote key={i} className={`md-quote${activeClass}`}>
+                <Inline text={b.lines.join('\n')} activeSpeechSentence={activeSpeechSentence} />
               </blockquote>
             )
           case 'h': {
-            const cls = `md-h md-h${b.level}`
-            if (b.level <= 2) return <h3 key={i} className={cls}><Inline text={b.text} /></h3>
-            return <h4 key={i} className={cls}><Inline text={b.text} /></h4>
+            const cls = `md-h md-h${b.level}${activeClass}`
+            if (b.level <= 2) return <h3 key={i} className={cls}><Inline text={b.text} activeSpeechSentence={activeSpeechSentence} /></h3>
+            return <h4 key={i} className={cls}><Inline text={b.text} activeSpeechSentence={activeSpeechSentence} /></h4>
           }
           case 'ul':
             return (
               <ul key={i} className="md-ul">
                 {b.items.map((it, j) => (
-                  <li key={j}><Inline text={it} /></li>
+                  <li key={j} className={containsActiveSentence(it, activeSpeechSentence) ? 'md-speech-active' : undefined}>
+                    <Inline text={it} activeSpeechSentence={activeSpeechSentence} />
+                  </li>
                 ))}
               </ul>
             )
@@ -185,14 +230,16 @@ export function Markdown({ text }: { text: string }) {
             return (
               <ol key={i} className="md-ol">
                 {b.items.map((it, j) => (
-                  <li key={j}><Inline text={it} /></li>
+                  <li key={j} className={containsActiveSentence(it, activeSpeechSentence) ? 'md-speech-active' : undefined}>
+                    <Inline text={it} activeSpeechSentence={activeSpeechSentence} />
+                  </li>
                 ))}
               </ol>
             )
           default:
             return (
-              <p key={i} className="md-p">
-                <Inline text={b.lines.join('\n')} />
+              <p key={i} className={`md-p${activeClass}`}>
+                <Inline text={b.lines.join('\n')} activeSpeechSentence={activeSpeechSentence} />
               </p>
             )
         }

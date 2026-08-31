@@ -161,6 +161,7 @@ function Shell({ route, children }: { route: string; children: ReactNode }) {
           </div>
         </header>
         <main className="main">{children}</main>
+        {route === 'today' && <InstallBanner />}
       </div>
       <BottomNav route={route} onMore={() => setMoreOpen(true)} />
       <Modal open={moreOpen} title="更多功能" onClose={() => setMoreOpen(false)} width={360}>
@@ -269,7 +270,6 @@ export default function App() {
           <Router />
           {/* 全局调度器:任何页面都能收到到点提醒 */}
           <ScheduleAlerts />
-          <InstallBanner />
         </ToastProvider>
       </StoreProvider>
     </ErrorBoundary>
