@@ -1,7 +1,7 @@
 // AI 办公文档：材料输入 -> OpenAI-compatible 结构化整理 -> 可编辑 Office 文件。
 import React, { useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { Chip, EmptyState, Field, Segmented, useToast } from '../components/ui'
+import { Chip, Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { aiChat } from '../services/ai'
 import type { AiConfig } from '../services/ai'
@@ -96,25 +96,15 @@ export function AiOfficePage() {
     }
   }
 
-  if (!configured) {
-    return (
-      <div>
-        <div className="page-h"><h2>AI 办公文档</h2><Chip tone="yellow">需要配置 AI</Chip></div>
-        <div className="card">
-          <EmptyState mood="think" title="先连接 AI 服务" desc="在设置中填写官方接口或 OpenAI 兼容中转地址，之后即可把材料整理成 Word、Excel 或 PowerPoint。" action={<button className="btn btn-primary" onClick={() => { window.location.hash = '#/settings' }}><Icon name="settings" size={15} /> 打开 AI 设置</button>} />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div>
       <div className="page-h">
         <h2>AI 办公文档</h2>
-        <Chip tone="blue">材料转可编辑文件</Chip>
+        <Chip tone={configured ? 'green' : 'yellow'}>{configured ? 'AI 已连接' : '需要配置 AI'}</Chip>
         <span className="spacer" />
         {sourceName && <span className="fs12 muted">来源：{sourceName}</span>}
       </div>
+      {!configured && <div className="card sched-notice"><Icon name="settings" size={16} /><span>材料输入会保留；请先在设置中配置 AI 服务，完成后再生成。</span><button className="btn btn-sm" onClick={() => { window.location.hash = '#/settings' }}>打开 AI 设置</button></div>}
       <div className="ai-office-grid">
         <section className="card" aria-labelledby="ai-office-input-title">
           <div className="card-h"><span className="icon-chip"><Icon name="upload" size={15} /></span><b id="ai-office-input-title">输入材料</b></div>
@@ -131,7 +121,7 @@ export function AiOfficePage() {
           <div className="card-h"><span className="icon-chip" style={{ background: 'var(--yellow-weak)', color: 'var(--yellow-deep)' }}><Icon name="edit" size={15} /></span><b id="ai-office-output-title">输出设置</b></div>
           <Field label="文件格式"><Segmented value={format} onChange={setFormat} options={FORMAT_OPTIONS} /></Field>
           <div className="explain-box fs13" style={{ lineHeight: 1.7 }}>生成的文件可用 Microsoft Office 或 WPS 继续编辑。长材料会自动分段摘要，接口失败时不会清空输入。</div>
-          <button type="button" className="btn btn-primary w100 mt12" disabled={busy || !material.trim()} onClick={() => void generate()}><Icon name={busy ? 'clock' : 'sparkle'} size={15} /> {busy ? '生成中…' : '生成 Office 文档'}</button>
+          <button type="button" className="btn btn-primary w100 mt12" disabled={busy || !material.trim() || !configured} onClick={() => void generate()}><Icon name={busy ? 'clock' : 'sparkle'} size={15} /> {busy ? '生成中…' : '生成 Office 文档'}</button>
           {progress && <p className="fs12 muted mt8" role="status">{progress}</p>}
           {error && <div className="mathai-note error mt8" role="alert"><Icon name="close" size={13} /> {error}</div>}
         </section>
