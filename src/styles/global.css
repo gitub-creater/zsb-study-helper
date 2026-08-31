@@ -2222,3 +2222,530 @@ body.rm *::after {
 .fs12 { font-size: 12px; }
 .fs13 { font-size: 13px; }
 .w100 { width: 100%; }
+
+/* ---------- AI 数学讲题 ---------- */
+.mathai {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 74px);
+  min-height: 420px;
+}
+
+.mathai-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 2px 14px;
+}
+
+.mathai-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mathai-row.user {
+  justify-content: flex-end;
+}
+
+.mathai-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-weak);
+  color: var(--primary-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  margin-top: 2px;
+}
+
+.mathai-bubble {
+  max-width: min(760px, 88%);
+  padding: 10px 14px;
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.mathai-bubble.user {
+  background: var(--primary-weak);
+  border-color: var(--primary-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mathai-msgimgs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.mathai-msgimgs img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+}
+
+.mathai-utext {
+  font-size: 14px;
+}
+
+.mathai-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+}
+
+.mathai-note.error {
+  color: var(--coral-deep);
+  background: var(--coral-weak);
+  border-color: transparent;
+}
+
+.mathai-typing {
+  display: inline-flex;
+  gap: 5px;
+  padding: 6px 2px;
+}
+
+.mathai-typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.5;
+  animation: mathai-blink 1.2s infinite;
+}
+
+.mathai-typing i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.mathai-typing i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes mathai-blink {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.mathai-acts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+.mathai-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.mathai-empty {
+  text-align: center;
+  padding: 44px 12px 12px;
+}
+
+.mathai-empty h3 {
+  margin-top: 10px;
+}
+
+.mathai-empty p {
+  color: var(--ink-2);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.mathai-composer {
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 8px;
+}
+
+.mathai-inputrow {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.mathai-input {
+  flex: 1;
+  resize: none;
+  min-height: 38px;
+  max-height: 140px;
+  line-height: 1.5;
+}
+
+.mathai-thumbs {
+  display: flex;
+  gap: 10px;
+  padding: 2px 2px 10px;
+  flex-wrap: wrap;
+}
+
+.mathai-thumb {
+  position: relative;
+}
+
+.mathai-thumb img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+}
+
+.mathai-thumb-x {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ink-2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mathai-thumb-x:hover {
+  background: var(--coral-deep);
+}
+
+.mathai-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 4px 1px;
+}
+
+.mathai-status {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  max-width: 72%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mathai-status:hover {
+  border-color: var(--primary);
+  color: var(--primary-deep);
+}
+
+.mathai-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex: none;
+}
+
+.mathai-dot.on {
+  background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-weak);
+}
+
+.mathai-droptip {
+  position: absolute;
+  inset: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(231, 242, 255, 0.93);
+  border: 2px dashed var(--primary);
+  border-radius: var(--r);
+  color: var(--primary-deep);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Markdown 渲染(AI 回复) */
+.md {
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.md-p {
+  margin: 0 0 8px;
+}
+
+.md-p:last-child {
+  margin-bottom: 0;
+}
+
+.md-h {
+  margin: 10px 0 6px;
+  color: var(--ink);
+}
+
+.md-h1,
+.md-h2 {
+  font-size: 15px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+
+.md-h3,
+.md-h4 {
+  font-size: 14px;
+}
+
+.md-ul,
+.md-ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.md-ul li,
+.md-ol li {
+  margin: 2px 0;
+}
+
+.md-pre {
+  background: #f6f9fd;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 6px 0;
+}
+
+.md-code {
+  background: var(--primary-weak);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12.5px;
+}
+
+.md-quote {
+  border-left: 3px solid var(--primary-soft);
+  margin: 6px 0;
+  padding: 2px 10px;
+  color: var(--ink-2);
+}
+
+.md-hr {
+  border: none;
+  border-top: 1px dashed var(--line-strong);
+  margin: 10px 0;
+}
+
+.tex-block {
+  display: block;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.btn-xs {
+  height: 24px;
+  padding: 0 9px;
+  font-size: 12px;
+  gap: 4px;
+}
+
+@media (max-width: 760px) {
+  .mathai {
+    height: calc(100dvh - 132px);
+    min-height: 380px;
+  }
+  .mathai-bubble {
+    max-width: 94%;
+  }
+  .mathai-msgimgs img {
+    width: 96px;
+    height: 76px;
+  }
+  .mathai-foot .fs12 {
+    display: none;
+  }
+}
+
+/* ---------- 已安排任务(定时提醒) ---------- */
+.sched-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+.sched-row.paused {
+  opacity: 0.6;
+}
+.sched-when {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 74px;
+  padding-right: 12px;
+  border-right: 1px dashed var(--line);
+}
+.sched-time {
+  font-size: 21px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.sched-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.sched-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.sched-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.sched-chips .chip {
+  white-space: nowrap;
+}
+.sched-acts {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.sched-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  background: var(--yellow-weak);
+  border-color: transparent;
+  color: var(--yellow-deep);
+  font-size: 13px;
+}
+.sched-notice .btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.sched-alert {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.sched-alert-name {
+  font-size: 18px;
+  font-weight: 800;
+}
+.sched-hist {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 13px;
+}
+.sched-hist span:last-child {
+  margin-left: auto;
+}
+.wd-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wd-chip {
+  width: 38px;
+  height: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.wd-chip.on {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-deep, #1c6dd0);
+  font-weight: 700;
+}
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.form-row > .field {
+  flex: 1;
+  min-width: 180px;
+}
+
+@media (max-width: 640px) {
+  .sched-row {
+    flex-wrap: wrap;
+  }
+  .sched-when {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px dashed var(--line);
+    width: 100%;
+    padding: 0 0 8px;
+    justify-content: flex-start;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .sched-acts {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px dashed var(--line);
+    padding-top: 8px;
+  }
+  .sched-main {
+    flex-basis: 100%;
+  }
+}

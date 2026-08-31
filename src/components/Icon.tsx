@@ -40,9 +40,15 @@ const P: Record<string, string[]> = {
   target: ['M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z', 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z', 'M12 12h.01'],
   eye: ['M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
   timer: ['M10 2h4', 'M12 8v5l3 2', 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z'],
+  chat: ['M4.5 4.5h15v11h-10l-5 4v-15z'],
+  math: ['M17 5H7l5.5 7L7 19h10'],
+  send: ['M20 4 4 11l6 2.6L12.6 20 20 4z', 'M10 13.6 20 4'],
+  copy: ['M9 9h10v10H9z', 'M15 9V5H5v10h4'],
+  image: ['M4 5h16v14H4z', 'M9 11a1.8 1.8 0 1 0 0-3.6A1.8 1.8 0 0 0 9 11z', 'M6 17.5l4-4.5 3 3 2.5-2.5L20 17.5'],
+  stop: ['M7.5 7.5h9v9h-9z'],
 }
 
-const FILLED = new Set(['play', 'pause', 'sparkle'])
+const FILLED = new Set(['play', 'pause', 'sparkle', 'stop'])
 
 export type IconName = keyof typeof P
 

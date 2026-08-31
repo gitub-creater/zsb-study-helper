@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useReducer, u
 import type { Dispatch, ReactNode } from 'react'
 import type {
   Attempt, CatalogData, Chapter, KnowledgePoint, KPStats, OfficeResultRecord, PracticeMode, Profile, Question, SeedData,
-  Session, SessionSummary, Settings, State, Subject, Task, WrongReason,
+  ScheduleTask, Session, SessionSummary, Settings, State, Subject, Task, WrongReason,
 } from '../types'
 import { XP_RULES, pushXpLog } from '../lib/xp'
 import { CATALOG_VERSION } from '../lib/seed'
@@ -12,6 +12,7 @@ import { uid } from '../lib/misc'
 import { computeKpMastery, difficultyWeight, nextStatus } from '../lib/mastery'
 import { entryOnCorrectReview, entryOnEarlyCorrect, entryOnWrong } from '../lib/spaced'
 import { generateTasks } from '../lib/plan'
+import { MAX_FIRED_KEYS, MAX_HISTORY, nextOccurrence, parseStamp, withNextRun } from '../lib/schedule'
 import { getSession } from '../lib/auth'
 import { downloadCloudState, uploadCloudState } from '../services/cloud'
 
@@ -46,6 +47,7 @@ export function emptyState(): State {
     officeResults: {},
     english: { checkedDates: [], mastered: [] },
     qaLog: [],
+    schedules: [],
   }
 }
 
@@ -165,6 +167,13 @@ export type Action =
   | { type: 'CHECKIN'; date: string; count: number }
   | { type: 'IMPORT_STATE'; state: State }
   | { type: 'RESET' }
+  | { type: 'SCHEDULE_ADD'; task: ScheduleTask }
+  | { type: 'SCHEDULE_UPDATE'; id: string; patch: Partial<ScheduleTask> }
+  | { type: 'SCHEDULE_TOGGLE'; id: string }
+  | { type: 'SCHEDULE_DELETE'; id: string }
+  | { type: 'SCHEDULE_NOTIFIED'; id: string; key: string }
+  | { type: 'SCHEDULE_DONE'; id: string; key: string }
+  | { type: 'SCHEDULE_SNOOZE'; id: string; key: string; until: string }
 
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -700,6 +709,82 @@ export function reducer(state: State, action: Action): State {
       }
     }
 
+    // ---------- 已安排任务(定时提醒) ----------
+    case 'SCHEDULE_ADD':
+      return { ...state, schedules: [...(state.schedules ?? []), action.task] }
+
+    case 'SCHEDULE_UPDATE': {
+      const now = new Date()
+      return {
+        ...state,
+        schedules: (state.schedules ?? []).map((t) =>
+          t.id === action.id ? withNextRun({ ...t, ...action.patch, updatedAt: now.toISOString() }, now) : t
+        ),
+      }
+    }
+
+    case 'SCHEDULE_TOGGLE': {
+      const now = new Date()
+      return {
+        ...state,
+        schedules: (state.schedules ?? []).map((t) => {
+          if (t.id !== action.id) return t
+          return withNextRun({ ...t, enabled: !t.enabled, snoozed: undefined, updatedAt: now.toISOString() }, now)
+        }),
+      }
+    }
+
+    case 'SCHEDULE_DELETE':
+      return { ...state, schedules: (state.schedules ?? []).filter((t) => t.id !== action.id) }
+
+    /** 提醒已展示并处理:登记防重复 key、写入历史、推进到下一次(同一 key 幂等,重启不会重复记) */
+    case 'SCHEDULE_NOTIFIED': {
+      const nowIso = new Date().toISOString()
+      return {
+        ...state,
+        schedules: (state.schedules ?? []).map((t) => {
+          if (t.id !== action.id) return t
+          const first = !t.firedKeys.includes(action.key)
+          const firedKeys = first ? [...t.firedKeys, action.key].slice(-MAX_FIRED_KEYS) : t.firedKeys
+          const history = first
+            ? [{ at: action.key, handledAt: nowIso, status: 'notified' as const }, ...t.history].slice(0, MAX_HISTORY)
+            : t.history
+          const nextRunAt = t.nextRunAt === action.key ? nextOccurrence(t, parseStamp(action.key), true) : t.nextRunAt
+          return { ...t, firedKeys, history, nextRunAt, snoozed: undefined }
+        }),
+      }
+    }
+
+    /** 标记完成:登记 key、历史记为已完成;按"完成后"设置决定是否暂停 */
+    case 'SCHEDULE_DONE': {
+      const nowIso = new Date().toISOString()
+      return {
+        ...state,
+        schedules: (state.schedules ?? []).map((t) => {
+          if (t.id !== action.id) return t
+          const first = !t.firedKeys.includes(action.key)
+          const firedKeys = first ? [...t.firedKeys, action.key].slice(-MAX_FIRED_KEYS) : t.firedKeys
+          const idx = t.history.findIndex((h) => h.at === action.key)
+          const history = (
+            idx >= 0
+              ? t.history.map((h, i) => (i === idx ? { ...h, status: 'done' as const, handledAt: nowIso } : h))
+              : [{ at: action.key, handledAt: nowIso, status: 'done' as const }, ...t.history]
+          ).slice(0, MAX_HISTORY)
+          const nextRunAt = t.nextRunAt === action.key ? nextOccurrence(t, parseStamp(action.key), true) : t.nextRunAt
+          const enabled = t.afterDone === 'pause' ? false : t.enabled
+          return { ...t, firedKeys, history, nextRunAt: enabled ? nextRunAt : null, snoozed: undefined, enabled }
+        }),
+      }
+    }
+
+    case 'SCHEDULE_SNOOZE':
+      return {
+        ...state,
+        schedules: (state.schedules ?? []).map((t) =>
+          t.id === action.id ? { ...t, snoozed: { key: action.key, until: action.until } } : t
+        ),
+      }
+
     default:
       return state
   }
@@ -722,6 +807,7 @@ const UNDO_LABELS: Partial<Record<Action['type'], string>> = {
   DELETE_CHAPTER: '已删除章节(含其知识点/题目)',
   DELETE_KP: '已删除知识点(含其题目)',
   DELETE_QUESTION: '已删除题目',
+  SCHEDULE_DELETE: '已删除安排的任务',
 }
 
 export function StoreProvider({

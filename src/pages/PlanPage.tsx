@@ -33,6 +33,9 @@ export function PlanPage() {
         <span className="chip chip-blue num">{fmtDate(date)} {weekdayCn(date)}</span>
         <span className="chip num">距考试 {Math.max(0, daysLeft)} 天</span>
         <div className="spacer" />
+        <a className="btn" href="#/scheduled">
+          <Icon name="timer" size={14} /> 已安排任务
+        </a>
         <button
           className="btn"
           onClick={async () => {

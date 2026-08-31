@@ -313,8 +313,8 @@ export interface Settings {
   updateSourceUrl?: string
   /** 软件版本清单 URL(可为空;JSON 格式 {version, notes, url}) */
   updateManifestUrl?: string
-  /** AI 判题服务配置(豆包/DeepSeek/千问/自定义 OpenAI 兼容),密钥仅存本机 */
-  ai?: { provider: string; baseURL: string; apiKey: string; model: string }
+  /** AI 判题/讲题服务配置(豆包/DeepSeek/千问/自定义 OpenAI 兼容),密钥仅存本机;思考程度只影响讲解深度 */
+  ai?: { provider: string; baseURL: string; apiKey: string; model: string; reasoningEffort?: 'low' | 'medium' | 'high' }
 }
 
 export interface OfficeResultRecord {
@@ -371,6 +371,56 @@ export interface State {
   english?: { checkedDates: string[]; mastered: string[] }
   /** 更新日志(导入/审核/迁移等事件) */
   qaLog?: { t: number; text: string }[]
+  /** 已安排任务(定时提醒) */
+  schedules?: ScheduleTask[]
+}
+
+// ---------- 已安排任务(定时提醒,类似"日程提醒") ----------
+
+/** 重复规则:仅一次 / 每天 / 每周指定星期(0=周日 … 6=周六) */
+export type ScheduleRepeat =
+  | { kind: 'once' }
+  | { kind: 'daily' }
+  | { kind: 'weekly'; weekdays: number[] }
+
+/** 一次执行的记录 */
+export interface ScheduleRun {
+  /** 计划发生时刻(本地 YYYY-MM-DDTHH:MM,即防重复 key) */
+  at: string
+  /** 实际提醒/处理时间(ISO) */
+  handledAt?: string
+  status: 'notified' | 'done'
+}
+
+export interface ScheduleTask {
+  id: string
+  /** 任务名称,如"背诵英语词汇" */
+  name: string
+  /** 学习内容/描述 */
+  note: string
+  /** 执行时间 HH:MM */
+  time: string
+  /** 仅一次=执行日期;重复任务=起始日期(YYYY-MM-DD) */
+  date: string
+  repeat: ScheduleRepeat
+  /** 结束日期(YYYY-MM-DD,含当天),仅重复任务可设 */
+  endDate?: string
+  /** 提前提醒分钟数,0=准时 */
+  remindBefore: number
+  /** 每次提醒"标记完成"后:继续下一次 / 暂停任务 */
+  afterDone: 'continue' | 'pause'
+  /** 启用中 / 已暂停 */
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+  /** 下次执行时刻(本地 YYYY-MM-DDTHH:MM);null=暂无(已暂停/已结束) */
+  nextRunAt: string | null
+  /** 已提醒过的发生时刻 key(确定性,防重复刷新/重启后重复提醒) */
+  firedKeys: string[]
+  /** 稍后提醒:到 until(ISO)再弹一次 */
+  snoozed?: { key: string; until: string }
+  /** 执行记录(最新在前,最多 50 条) */
+  history: ScheduleRun[]
 }
 
 /** 内容包结构(public/data/catalog*.json,与代码分离,可随大纲年度更新) */

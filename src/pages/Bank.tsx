@@ -318,7 +318,7 @@ export function Bank() {
     }
     const cfg = state.settings.ai
     if (!cfg || !cfg.apiKey) {
-      toast('请先在「设置 → AI 判题服务」配置大模型', { kind: 'error' })
+      toast('请先在「设置 → AI 服务」配置大模型', { kind: 'error' })
       return
     }
     setAiBusy(true)

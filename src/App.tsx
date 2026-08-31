@@ -23,6 +23,7 @@ import { SourcesPage } from './pages/SourcesPage'
 import { RankWindow } from './pages/RankWindow'
 import { OfficePage } from './pages/OfficePage'
 import { EnglishPage } from './pages/EnglishPage'
+import { AiMathPage } from './pages/AiMathPage'
 import { AVATAR_INFO, applyTheme } from './lib/theme'
 import { levelInfo } from './lib/xp'
 import { nav } from './lib/misc'
@@ -30,6 +31,8 @@ import { clearSession, dataKey, getSession } from './lib/auth'
 import { LoginGate } from './pages/LoginPage'
 import { Splash } from './components/Splash'
 import { InstallBanner } from './components/InstallBanner'
+import { ScheduledPage } from './pages/ScheduledPage'
+import { ScheduleAlerts } from './components/ScheduleAlerts'
 
 interface NavItem {
   key: string
@@ -42,12 +45,14 @@ const NAV: NavItem[] = [
   { key: 'today', label: '今日学习', icon: 'home' },
   { key: 'map', label: '知识校园', icon: 'map' },
   { key: 'bank', label: '题库', icon: 'book' },
+  { key: 'aimath', label: 'AI 数学讲题', icon: 'math' },
   { key: 'office', label: '实操大题', icon: 'edit' },
   { key: 'english', label: '英语打卡', icon: 'mic' },
   { key: 'sources', label: '考试资料', icon: 'cap' },
   { key: 'hot', label: '热门题', icon: 'fire' },
   { key: 'wrong', label: '错题本', icon: 'wrongbook' },
   { key: 'plan', label: '学习计划', icon: 'calendar' },
+  { key: 'scheduled', label: '已安排任务', icon: 'timer' },
   { key: 'stats', label: '数据分析', icon: 'chart' },
   { key: 'profile', label: '个人角色', icon: 'user' },
   { key: 'settings', label: '设置', icon: 'settings' },
@@ -129,7 +134,7 @@ function BottomNav({ route, onMore }: { route: string; onMore: () => void }) {
           )}
         </a>
       ))}
-      <button type="button" className={['map', 'hot', 'stats', 'profile', 'settings'].includes(route) ? 'on' : ''} onClick={onMore}>
+      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings'].includes(route) ? 'on' : ''} onClick={onMore}>
         <Icon name="dots" size={20} />
         更多
       </button>
@@ -225,12 +230,14 @@ function Router() {
     today: <Today />,
     map: <MapPage />,
     bank: <Bank />,
+    aimath: <AiMathPage />,
     office: <OfficePage />,
     english: <EnglishPage />,
     sources: <SourcesPage />,
     hot: <HotPage />,
     wrong: <WrongBook />,
     plan: <PlanPage />,
+    scheduled: <ScheduledPage />,
     stats: <StatsPage />,
     profile: <ProfilePage />,
     settings: <SettingsPage />,
@@ -260,6 +267,8 @@ export default function App() {
       <StoreProvider key={session.userId} storageKey={dataKey(session.userId)}>
         <ToastProvider>
           <Router />
+          {/* 全局调度器:任何页面都能收到到点提醒 */}
+          <ScheduleAlerts />
           <InstallBanner />
         </ToastProvider>
       </StoreProvider>

@@ -47,6 +47,7 @@ export function SettingsPage() {
   const [aiBase, setAiBase] = useState(state.settings.ai?.baseURL ?? AI_PRESETS[preset0].baseURL)
   const [aiKey, setAiKey] = useState(state.settings.ai?.apiKey ?? '')
   const [aiModel, setAiModel] = useState(state.settings.ai?.model ?? AI_PRESETS[preset0].model)
+  const [aiEffort, setAiEffort] = useState<'low' | 'medium' | 'high'>(state.settings.ai?.reasoningEffort ?? 'medium')
   const [aiTesting, setAiTesting] = useState(false)
 
   const currentAiCfg = (): AiConfig => ({
@@ -54,6 +55,7 @@ export function SettingsPage() {
     baseURL: aiBase.trim(),
     apiKey: aiKey.trim(),
     model: aiModel.trim(),
+    reasoningEffort: aiEffort,
   })
 
   const saveAi = () => {
@@ -62,8 +64,8 @@ export function SettingsPage() {
       toast('接口地址 / API Key / 模型名都需要填写', { kind: 'error' })
       return
     }
-    dispatch({ type: 'SET_SETTINGS', patch: { ai: cfg } })
-    toast('AI 判题服务已保存(密钥仅存本机)', { kind: 'success' })
+    dispatch({ type: 'SET_SETTINGS', patch: { ai: { ...cfg, reasoningEffort: aiEffort } } })
+    toast('AI 服务配置已保存(密钥仅存本机)', { kind: 'success' })
   }
 
   const testAi = async () => {
@@ -447,7 +449,7 @@ export function SettingsPage() {
               <span className="icon-chip" style={{ background: 'var(--coral-weak)', color: 'var(--coral-deep)' }}>
                 <Icon name="sparkle" size={15} />
               </span>
-              <b>AI 判题服务</b>
+              <b>AI 服务(判题 / 数学讲题)</b>
               <div className="right">
                 <Chip tone={state.settings.ai?.apiKey ? 'green' : 'gray'}>
                   {state.settings.ai?.apiKey ? '已配置' : '未配置'}
@@ -455,7 +457,7 @@ export function SettingsPage() {
               </div>
             </div>
             <p className="fs13 mb8">
-              接入豆包 / DeepSeek / 千问后,实操大题中的「人工核对项」会由大模型自动判分并给出改进建议;密钥仅保存在本机浏览器。
+              接入豆包 / DeepSeek / 千问后,实操大题中的「人工核对项」会由大模型自动判分;「AI 数学讲题」页面可拍照或输入题目获得分步解析。密钥仅保存在本机浏览器。
             </p>
             <Field label="服务商">
               <select
@@ -482,6 +484,17 @@ export function SettingsPage() {
             </Field>
             <Field label="模型名">
               <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)} placeholder="如 deepseek-chat / qwen-plus" />
+            </Field>
+            <Field label="思考程度" hint="只影响讲解详细程度与验证强度:高=完整验证流程,低=精炼输出">
+              <Segmented
+                value={aiEffort}
+                onChange={(v) => setAiEffort(v)}
+                options={[
+                  { value: 'low' as const, label: '低' },
+                  { value: 'medium' as const, label: '中' },
+                  { value: 'high' as const, label: '高' },
+                ]}
+              />
             </Field>
             <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
               <button className="btn" disabled={aiTesting} onClick={testAi}>
