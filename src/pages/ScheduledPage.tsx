@@ -268,7 +268,7 @@ function ScheduleForm({
         <div className="setting-row" style={{ paddingTop: 0 }}>
           <div className="info grow">
             <b>{voiceEnabled ? (globalSpeechEnabled ? '已开启' : '已开启（全局语音已关闭）') : '已关闭'}</b>
-            <span>{globalSpeechEnabled ? '到点时使用设备原生语音播报任务名称和内容，可随时关闭。' : '此任务的开关会保留；需要在“设置”重新开启全局语音功能后才会播报。'}</span>
+            <span>{globalSpeechEnabled ? '到点时优先使用普通话自然音色播报任务名称和内容，可随时关闭。' : '此任务的开关会保留；需要在“设置”重新开启全局语音功能后才会播报。'}</span>
           </div>
           <button
             type="button"

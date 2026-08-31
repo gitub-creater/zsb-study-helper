@@ -33,7 +33,7 @@ function isPrivateHost(hostname: string): boolean {
 }
 
 /** 导出以便覆盖 SSRF 防护和标准 OpenAI 端点的测试。 */
-export function validateAiProxyTarget(target: unknown): string | null {
+function validateHttpsUpstreamTarget(target: unknown, paths: string[], pathHint: string): string | null {
   if (typeof target !== 'string' || !target.trim()) return '缺少上游接口地址'
   let url: URL
   try {
@@ -43,13 +43,22 @@ export function validateAiProxyTarget(target: unknown): string | null {
   }
   if (url.protocol !== 'https:') return '应用中转只允许 HTTPS 上游地址'
   if (url.username || url.password || isPrivateHost(url.hostname)) return '上游接口地址不允许使用本机或内网地址'
-  if (!url.pathname.endsWith('/chat/completions') && !url.pathname.endsWith('/responses')) {
-    return '上游地址必须指向 /chat/completions 或 /responses'
+  if (!paths.some((path) => url.pathname.endsWith(path))) {
+    return `上游地址必须指向 ${pathHint}`
   }
   return null
 }
 
-function proxyHeaders(value: unknown): Record<string, string> {
+export function validateAiProxyTarget(target: unknown): string | null {
+  return validateHttpsUpstreamTarget(target, ['/chat/completions', '/responses'], '/chat/completions 或 /responses')
+}
+
+/** 模型目录使用同一套 HTTPS、内网和凭据校验，但只允许 GET /models。 */
+export function validateAiModelsTarget(target: unknown): string | null {
+  return validateHttpsUpstreamTarget(target, ['/models'], '/models')
+}
+
+export function proxyHeaders(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return { 'Content-Type': 'application/json' }
   const result: Record<string, string> = {}
   for (const [rawName, rawValue] of Object.entries(value)) {

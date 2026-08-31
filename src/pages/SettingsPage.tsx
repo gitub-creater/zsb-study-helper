@@ -11,8 +11,8 @@ import { todayStr, fmtDateTime } from '../lib/date'
 import { ABOUT, compareVersions } from '../lib/about'
 import { loadColleges } from '../lib/colleges'
 import type { College } from '../lib/colleges'
-import { AI_PRESETS, DEFAULT_AI_PROXY_URL, aiTest } from '../services/ai'
-import type { AiConfig, AiProviderId, AiTransport } from '../services/ai'
+import { AI_PRESETS, DEFAULT_AI_PROXY_URL, aiModels as fetchAiModels, aiTest } from '../services/ai'
+import type { AiConfig, AiModelOption, AiProviderId, AiTransport } from '../services/ai'
 import type { CatalogData, ExamCategory, Elective, State } from '../types'
 
 export function SettingsPage() {
@@ -48,7 +48,20 @@ export function SettingsPage() {
   const [aiKey, setAiKey] = useState(state.settings.ai?.apiKey ?? '')
   const [aiModel, setAiModel] = useState(state.settings.ai?.model ?? AI_PRESETS[preset0].model)
   const [aiTransport, setAiTransport] = useState<AiTransport>(state.settings.ai?.transport ?? 'auto')
-  const [aiProxyURL, setAiProxyURL] = useState(state.settings.ai?.proxyURL ?? DEFAULT_AI_PROXY_URL)
+  // 本地 Vercel 预览包含同一份 Serverless API，优先走当前入口，避免模型目录仍命中旧线上版本。
+  const defaultAiProxyURL = typeof window !== 'undefined' && (() => {
+    const host = window.location.hostname
+    const localHost = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(host)
+    const privateIpv4 = /^(10|192\.168|172\.(?:1[6-9]|2\d|3[0-1]))\./.test(host)
+    return localHost || privateIpv4
+  })()
+    ? `${window.location.origin}/api/ai/proxy`
+    : DEFAULT_AI_PROXY_URL
+  const savedAiProxyURL = state.settings.ai?.proxyURL?.trim()
+  const initialAiProxyURL = defaultAiProxyURL !== DEFAULT_AI_PROXY_URL && savedAiProxyURL === DEFAULT_AI_PROXY_URL
+    ? defaultAiProxyURL
+    : savedAiProxyURL || defaultAiProxyURL
+  const [aiProxyURL, setAiProxyURL] = useState(initialAiProxyURL)
   const [aiEffort, setAiEffort] = useState<'low' | 'medium' | 'high'>(state.settings.ai?.reasoningEffort ?? 'medium')
   const [aiMode, setAiMode] = useState<'chat' | 'responses'>(state.settings.ai?.apiMode ?? 'chat')
   const [aiTimeout, setAiTimeout] = useState(state.settings.ai?.timeoutMs ?? 60000)
@@ -57,6 +70,8 @@ export function SettingsPage() {
   const [aiMaxTokens, setAiMaxTokens] = useState(state.settings.ai?.maxTokens ?? 2048)
   const [aiHeaders, setAiHeaders] = useState(() => JSON.stringify(state.settings.ai?.customHeaders ?? {}, null, 2))
   const [aiTesting, setAiTesting] = useState(false)
+  const [availableModels, setAvailableModels] = useState<AiModelOption[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
 
   const currentAiCfg = (): AiConfig => ({
     provider: aiProvider,
@@ -108,6 +123,26 @@ export function SettingsPage() {
       toast(e instanceof Error ? e.message : '连接失败', { kind: 'error' })
     } finally {
       setAiTesting(false)
+    }
+  }
+
+  const loadModels = async () => {
+    const cfg = currentAiCfg()
+    if (!cfg.baseURL || !cfg.apiKey) {
+      toast('读取模型列表需要先填写接口地址和 API Key', { kind: 'error' })
+      return
+    }
+    setLoadingModels(true)
+    try {
+      const models = await fetchAiModels(cfg)
+      setAvailableModels(models)
+      if (!aiModel.trim() && models[0]) setAiModel(models[0].id)
+      toast(`已从上游读取 ${models.length} 个模型`, { kind: 'success' })
+    } catch (e) {
+      setAvailableModels([])
+      toast(e instanceof Error ? e.message : '读取模型列表失败', { kind: 'error' })
+    } finally {
+      setLoadingModels(false)
     }
   }
 
@@ -530,6 +565,7 @@ export function SettingsPage() {
                   setAiProvider(id)
                   setAiBase(AI_PRESETS[id].baseURL)
                   setAiModel(AI_PRESETS[id].model)
+                  setAvailableModels([])
                 }}
               >
                 {(Object.keys(AI_PRESETS) as AiProviderId[]).map((id) => (
@@ -538,8 +574,8 @@ export function SettingsPage() {
               </select>
             </Field>
             <p className="fs12 muted" style={{ marginTop: -6, marginBottom: 10 }}>{AI_PRESETS[aiProvider].note}</p>
-            <Field label="接口地址(OpenAI 兼容)" hint="填写中转站给出的 Base URL；可带 /v1，不要填写密钥或模型路径">
-              <input className="input" value={aiBase} onChange={(e) => setAiBase(e.target.value)} placeholder="https://…" />
+            <Field label="接口地址(OpenAI 兼容)" hint="填写服务商给出的 Base URL，例如 https://api.example.com 或带 /v1 的地址；不要填写密钥或模型路径">
+              <input className="input" value={aiBase} onChange={(e) => { setAiBase(e.target.value); setAvailableModels([]) }} placeholder="https://…" />
             </Field>
             <Field label="请求方式" hint="CC Switch、Codex++ 等接口若被浏览器跨域拦截，使用“自动”或“应用中转”">
               <Segmented
@@ -559,19 +595,48 @@ export function SettingsPage() {
               </Field>
             )}
             <Field label="API Key">
-              <input className="input" type="password" value={aiKey} onChange={(e) => setAiKey(e.target.value)} placeholder="sk-…" />
+              <input className="input" type="password" value={aiKey} onChange={(e) => { setAiKey(e.target.value); setAvailableModels([]) }} placeholder="sk-…" />
             </Field>
             <Field label="模型名">
-              <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)} placeholder="如 deepseek-chat / qwen-plus" />
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  className="input grow"
+                  value={aiModel}
+                  onChange={(e) => setAiModel(e.target.value)}
+                  placeholder="如 deepseek-chat / qwen-plus"
+                  aria-describedby="upstream-ai-models-hint"
+                />
+                <button className="btn" type="button" disabled={loadingModels} onClick={loadModels}>
+                  <Icon name="refresh" size={14} /> {loadingModels ? '读取中…' : '读取模型'}
+                </button>
+              </div>
+              {availableModels.length > 0 && (
+                <select
+                  className="input mt8"
+                  value={availableModels.some((model) => model.id === aiModel) ? aiModel : ''}
+                  onChange={(e) => setAiModel(e.target.value)}
+                  aria-label="选择已读取的上游模型"
+                >
+                  <option value="">从已读取模型中选择…</option>
+                  {availableModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name === model.id ? model.id : `${model.name}（${model.id}）`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <span id="upstream-ai-models-hint" className="fs12 muted">
+                {availableModels.length ? `已读取 ${availableModels.length} 个上游模型，可在下方菜单选择；也可以手动填写模型名。` : '点击“读取模型”从当前上游的 GET /models 获取列表。'}
+              </span>
             </Field>
-            <Field label="接口协议" hint="大多数中转站使用 Chat Completions；仅在服务商说明支持时选择 Responses">
+            <Field label="接口协议" hint="大多数中转站使用 Chat Completions；Codex++ 常用 Responses API，请按服务商说明选择">
               <Segmented
                 small
                 value={aiMode}
                 onChange={setAiMode}
                 options={[
                   { value: 'chat' as const, label: '对话补全接口' },
-                  { value: 'responses' as const, label: '响应接口' },
+                  { value: 'responses' as const, label: 'Responses API' },
                 ]}
               />
             </Field>

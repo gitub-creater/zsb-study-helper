@@ -315,7 +315,7 @@ export interface Settings {
   updateManifestUrl?: string
   /** AI 判题/讲题服务配置(豆包/DeepSeek/千问/自定义 OpenAI 兼容),密钥仅存本机;思考程度只影响讲解深度 */
   ai?: AiSettings
-  /** AI 讲题朗读偏好:使用设备原生语音,不随项目打包第三方语音文件 */
+  /** AI 讲题朗读偏好:优先使用系统提供的普通话自然音色 */
   speech?: SpeechSettings
 }
 
@@ -340,7 +340,7 @@ export interface AiSettings {
 
 export type SpeechRate = 0.75 | 1 | 1.25 | 1.5
 
-/** 浏览器/系统原生语音的可持久化偏好。voiceURI 是设备提供的稳定标识,失效时自动回退。 */
+/** 浏览器语音的可持久化偏好。voiceURI 是设备提供的稳定标识,失效时自动回退到自然音色。 */
 export interface SpeechSettings {
   /** 用户可随时关闭讲题朗读；关闭后保留完整文字讲解。 */
   enabled?: boolean

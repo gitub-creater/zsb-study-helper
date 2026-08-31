@@ -214,7 +214,7 @@ function SpeechControls({
   const playback = active ? speech.playback : 'idle'
   const speechEnabled = settings.enabled !== false
   const disabled = !speechEnabled || !supported || !toSpeechScript(text)
-  const hasMandarin = voices.some((voice) => voice.isMandarin)
+  const hasNatural = voices.some((voice) => voice.isNatural)
 
   return (
     <section className={`mathai-speech${active ? ' is-active' : ''}`} aria-label="讲解朗读控制">
@@ -286,9 +286,9 @@ function SpeechControls({
               onSettingsChange({ voiceURI, voiceName: selected?.name })
             }}
           >
-            <option value="">优先普通话（系统自动）</option>
+            <option value="">优先自然音色（系统自动）</option>
             {voices.map((voice) => (
-              <option key={voice.id} value={voice.id}>{voice.name}（{voice.lang}）{voice.isMandarin ? ' · 普通话' : ''}</option>
+              <option key={voice.id} value={voice.id}>{voice.name}（{voice.lang}）{voice.isNatural ? ' · 自然音色' : voice.isMandarin ? ' · 普通话' : ''}</option>
             ))}
           </select>
         </label>
@@ -320,9 +320,9 @@ function SpeechControls({
       {speechEnabled && supported && permission === 'denied' && (
         <p className="mathai-speech-note" role="alert">语音播放被设备或浏览器拦截。请打开浏览器地址栏的网站设置，允许声音/媒体播放后返回重试；文字讲解不受影响。</p>
       )}
-      {supported && voices.length > 0 && !hasMandarin && (
+      {supported && voices.length > 0 && !hasNatural && (
         <p className="mathai-speech-note">
-          当前系统未提供普通话音色，将使用所选声音或系统默认声音。
+          当前设备未发现自然音色，将优先使用普通话音色；可在系统语音设置中安装中文在线/自然音色后刷新。
         </p>
       )}
       {active && speech.sentence && playback !== 'idle' && (

@@ -1,4 +1,4 @@
-// 浏览器原生语音朗读。仅使用 Web Speech API，不下载或内置任何第三方声音包。
+// 统一的讲解朗读控制。使用 Web Speech API，并优先选择系统提供的普通话自然音色。
 // 语音内容由传入的文字稿生成，浏览器不支持时调用方应继续提供文字讲解。
 
 export const SPEECH_RATES = [0.75, 1, 1.25, 1.5] as const
@@ -12,6 +12,8 @@ export interface SpeechVoiceOption {
   name: string
   lang: string
   isMandarin: boolean
+  /** 系统标注为 Online/Natural 或常见中文神经音色，优先级高于普通 SAPI 音色。 */
+  isNatural: boolean
   isDefault: boolean
 }
 
@@ -71,12 +73,35 @@ function isMandarinLanguage(lang: string): boolean {
     || normalized.startsWith('cmn')
 }
 
+// Edge/Chromium 在不同系统上返回的名称略有差异；这些是常见的中文神经音色命名。
+// 未匹配到时仍保留普通话声音作为兜底，避免把朗读功能绑定到某一家浏览器。
+const NATURAL_VOICE_PATTERNS = [
+  /natural/i,
+  /online/i,
+  /neural/i,
+  /xiaoxiao/i,
+  /xiaoyi/i,
+  /yunxi/i,
+  /yunjian/i,
+  /yunyang/i,
+  /yunxia/i,
+  /yunye/i,
+  /晓晓|晓伊|云希|云健|云扬|云夏|云野/,
+]
+
+function isNaturalMandarinVoice(voice: Pick<SpeechSynthesisVoice, 'name' | 'voiceURI' | 'lang' | 'localService'>): boolean {
+  if (!isMandarinLanguage(voice.lang)) return false
+  if (voice.localService === false) return true
+  const label = `${voice.name} ${voice.voiceURI}`
+  return NATURAL_VOICE_PATTERNS.some((pattern) => pattern.test(label))
+}
+
 /** 持久化时使用的声音标识。voiceURI 缺失时退回名称和语言。 */
 export function speechVoiceId(voice: Pick<SpeechSynthesisVoice, 'voiceURI' | 'name' | 'lang'>): string {
   return voice.voiceURI || `${voice.lang}::${voice.name}`
 }
 
-/** 可用声音按普通话、其他中文、系统默认、其余语言排序。 */
+/** 可用声音按普通话自然音色、其他普通话、中文、系统默认、其余语言排序。 */
 export function listSpeechVoices(voices: SpeechSynthesisVoice[]): SpeechVoiceOption[] {
   return voices
     .map((voice) => ({
@@ -84,15 +109,18 @@ export function listSpeechVoices(voices: SpeechSynthesisVoice[]): SpeechVoiceOpt
       name: voice.name,
       lang: voice.lang || '未知语言',
       isMandarin: isMandarinLanguage(voice.lang),
+      isNatural: isNaturalMandarinVoice(voice),
       isDefault: voice.default,
     }))
     .sort((a, b) => {
-      const rank = (voice: SpeechVoiceOption) => (voice.isMandarin ? 0 : voice.lang.toLowerCase().startsWith('zh') ? 1 : voice.isDefault ? 2 : 3)
+      const rank = (voice: SpeechVoiceOption) => (
+        voice.isNatural ? 0 : voice.isMandarin ? 1 : voice.lang.toLowerCase().startsWith('zh') ? 2 : voice.isDefault ? 3 : 4
+      )
       return rank(a) - rank(b) || a.name.localeCompare(b.name, 'zh-CN')
     })
 }
 
-/** 优先用户指定音色；不存在时优先普通话、其他中文，再交给系统默认。 */
+/** 优先用户指定音色；不存在时优先普通话自然音色，再回退到其他中文/系统默认。 */
 export function resolveSpeechVoice(voices: SpeechSynthesisVoice[], selectedId?: string, selectedName?: string): SpeechSynthesisVoice | undefined {
   if (selectedId) {
     const selected = voices.find((voice) => speechVoiceId(voice) === selectedId)
@@ -102,7 +130,8 @@ export function resolveSpeechVoice(voices: SpeechSynthesisVoice[], selectedId?: 
     const selected = voices.find((voice) => voice.name === selectedName)
     if (selected) return selected
   }
-  return voices.find((voice) => isMandarinLanguage(voice.lang))
+  return voices.find((voice) => isNaturalMandarinVoice(voice))
+    ?? voices.find((voice) => isMandarinLanguage(voice.lang))
     ?? voices.find((voice) => voice.lang.toLowerCase().startsWith('zh'))
     ?? voices.find((voice) => voice.default)
     ?? voices[0]
@@ -166,6 +195,7 @@ export class BrowserSpeechController {
   private run = 0
   private disposed = false
   private voicesHandler: (() => void) | null = null
+  private startTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(callbacks: SpeechCallbacks = {}, environment: SpeechEnvironment = browserEnvironment()) {
     this.synthesis = environment.synthesis
@@ -221,6 +251,7 @@ export class BrowserSpeechController {
 
     utterance.onstart = () => {
       if (this.isCurrentRun(run)) {
+        this.clearStartTimer()
         this.callbacks.onStateChange?.('speaking')
         this.callbacks.onSentenceChange?.(this.sentences[0] ?? null)
       }
@@ -246,6 +277,7 @@ export class BrowserSpeechController {
     utterance.onerror = (event) => {
       if (!this.isCurrentRun(run)) return
       this.utterance = null
+      this.clearStartTimer()
       const error = (event as SpeechSynthesisErrorEvent).error
       // cancel/interrupted 来自用户主动停止或切换讲解，不应把正常控制显示成错误。
       if (error === 'canceled' || error === 'interrupted') return
@@ -255,11 +287,28 @@ export class BrowserSpeechController {
     }
 
     try {
+      // Chromium/Electron 可能在页面切换、系统锁屏后把 speechSynthesis 留在
+      // paused 状态；此时 speak() 不一定抛错，但不会真正出声。播放前主动唤醒，
+      // 并在短时间没有进入 speaking 时再唤醒一次，覆盖该类静默失败。
+      try { this.synthesis!.resume() } catch { /* 某些 WebView 未实现 resume */ }
       this.synthesis!.speak(utterance)
+      this.startTimer = setTimeout(() => {
+        this.startTimer = null
+        if (!this.isCurrentRun(run) || this.synthesis!.speaking) return
+        // 某些 Chromium 版本在 cancel() 后同一事件循环内首次 speak 会被吞掉；
+        // 重新排队一次可恢复播放，同时仍保持原 utterance 的事件回调。
+        try { this.synthesis!.cancel() } catch { /* ignore */ }
+        try { this.synthesis!.resume() } catch { /* ignore */ }
+        try {
+          this.utterance = utterance
+          this.synthesis!.speak(utterance)
+        } catch { /* ignore */ }
+      }, 350)
       return true
     } catch {
       if (this.isCurrentRun(run)) {
         this.utterance = null
+        this.clearStartTimer()
         this.callbacks.onStateChange?.('error')
         this.callbacks.onSentenceChange?.(null)
         this.callbacks.onError?.(speechErrorMessage())
@@ -285,6 +334,7 @@ export class BrowserSpeechController {
     this.run++
     this.utterance = null
     this.sentences = []
+    this.clearStartTimer()
     this.synthesis!.cancel()
     if (notify) {
       this.callbacks.onStateChange?.('idle')
@@ -305,6 +355,13 @@ export class BrowserSpeechController {
     this.callbacks.onStateChange?.('unsupported')
     this.callbacks.onSentenceChange?.(null)
     this.callbacks.onError?.(SPEECH_UNSUPPORTED_MESSAGE)
+  }
+
+  private clearStartTimer(): void {
+    if (this.startTimer) {
+      clearTimeout(this.startTimer)
+      this.startTimer = null
+    }
   }
 
   private isCurrentRun(run: number): boolean {

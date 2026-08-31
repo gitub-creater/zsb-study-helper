@@ -2949,7 +2949,7 @@ body.rm *::after {
   }
 }
 
-/* ---------- AI 讲题朗读（设备原生 SpeechSynthesis） ---------- */
+/* ---------- AI 讲题朗读（普通话自然音色优先） ---------- */
 .mathai-speech {
   margin-top: 10px;
   padding-top: 9px;

@@ -27,6 +27,7 @@ function makeEnvironment() {
   let utterance: FakeUtterance | null = null
   let voicesChanged: (() => void) | undefined
   let cancelled = 0
+  let resumed = 0
 
   const synthesis: SpeechSynthesisPort = {
     speaking: false,
@@ -42,6 +43,7 @@ function makeEnvironment() {
       utterance?.onpause?.(new Event('pause') as SpeechSynthesisEvent)
     },
     resume: () => {
+      resumed++
       synthesis.paused = false
       utterance?.onresume?.(new Event('resume') as SpeechSynthesisEvent)
     },
@@ -63,6 +65,7 @@ function makeEnvironment() {
     synthesis,
     get utterance() { return utterance },
     get cancelled() { return cancelled },
+    get resumed() { return resumed },
     triggerVoicesChanged: () => voicesChanged?.(),
   }
 }
@@ -81,6 +84,15 @@ describe('原生语音文本处理', () => {
     expect(resolveSpeechVoice(voices)?.voiceURI).toBe('zh-cn')
     expect(resolveSpeechVoice(voices, 'en')?.voiceURI).toBe('en')
     expect(resolveSpeechVoice(voices, 'old-uri', 'English')?.voiceURI).toBe('en')
+  })
+
+  it('系统提供自然音色时优先使用，不再默认选择机械 SAPI 音色', () => {
+    const voices = [
+      voice('Microsoft Huihui Desktop', 'zh-CN', 'huihui'),
+      voice('Microsoft Xiaoxiao Online (Natural)', 'zh-CN', 'xiaoxiao'),
+    ]
+    expect(listSpeechVoices(voices)[0]).toMatchObject({ name: 'Microsoft Xiaoxiao Online (Natural)', isNatural: true })
+    expect(resolveSpeechVoice(voices)?.voiceURI).toBe('xiaoxiao')
   })
 
   it('将系统错误转换为可恢复的中文提示', () => {
@@ -120,6 +132,7 @@ describe('BrowserSpeechController', () => {
     expect(controller.speak('第一句。第二句！', { rate: 1.25, voiceId: 'zh-cn' })).toBe(true)
     expect(fake.utterance?.rate).toBe(1.25)
     expect(fake.utterance?.voice?.voiceURI).toBe('zh-cn')
+    expect(fake.resumed).toBeGreaterThan(0)
     expect(highlighted).toEqual(['第一句。'])
 
     fake.utterance?.onboundary?.({ charIndex: 4 } as SpeechSynthesisEvent)
