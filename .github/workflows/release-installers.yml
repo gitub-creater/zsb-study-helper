@@ -188,6 +188,7 @@ jobs:
   publish:
     name: Publish GitHub Release
     needs: [windows, android]
+    if: always() && (needs.android.result == 'success' || needs.windows.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
