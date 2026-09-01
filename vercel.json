@@ -2,5 +2,9 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "installCommand": "npm install --include=dev --no-audit --no-fund"
+  "installCommand": "npm install --include=dev --no-audit --no-fund",
+  "functions": {
+    "api/ai/proxy.ts": { "maxDuration": 60 },
+    "api/ai/models.ts": { "maxDuration": 30 }
+  }
 }

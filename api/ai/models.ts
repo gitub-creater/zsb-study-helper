@@ -11,6 +11,8 @@ type ModelsBody = {
   headers?: unknown
 }
 
+const UPSTREAM_TIMEOUT_MS = 20_000
+
 function setUpstreamHeaders(res: ApiResponse, upstream: Response): void {
   const contentType = upstream.headers.get('content-type')
   const requestId = upstream.headers.get('x-request-id') || upstream.headers.get('request-id')
@@ -29,12 +31,26 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const targetError = validateAiModelsTarget(target)
     if (targetError) return sendError(res, 400, 'invalid_target', targetError)
 
-    const upstream = await fetch(target as string, {
-      method: 'GET',
-      headers: proxyHeaders(headers),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+    let upstream: Response
+    try {
+      upstream = await fetch(target as string, {
+        method: 'GET',
+        headers: proxyHeaders(headers),
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        clearTimeout(timeout)
+        return sendError(res, 504, 'upstream_timeout', '上游模型接口响应超时，请检查接口地址或稍后重试')
+      }
+      clearTimeout(timeout)
+      throw error
+    }
     setUpstreamHeaders(res, upstream)
     const text = await upstream.text()
+    clearTimeout(timeout)
     res.status(upstream.status)
     try {
       res.json(JSON.parse(text))

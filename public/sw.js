@@ -1,5 +1,5 @@
 // Service Worker:让 PWA 可安装 + 基础离线缓存
-const CACHE = 'zsb-v4';
+const CACHE = 'zsb-v5';
 const CORE = ['./', './index.html', './manifest.json', './favicon.svg'];
 
 self.addEventListener('install', (e) => {

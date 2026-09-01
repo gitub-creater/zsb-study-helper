@@ -143,6 +143,20 @@ export async function throwForStatus(res: Response): Promise<never> {
   throw new AiRequestError(res.status, `请求失败（HTTP ${res.status}）：${short} ${retryHint(res.status)}`, res.status === 408 || res.status === 429 || res.status >= 500)
 }
 
+/** 读取 JSON 响应并把静态站点 HTML 回退页转换为可操作的配置错误。 */
+async function responseJson(res: Response, label = '服务商'): Promise<unknown> {
+  const text = await res.text().catch(() => '')
+  try {
+    return JSON.parse(text)
+  } catch {
+    const compact = text.trim().replace(/\s+/g, ' ').slice(0, 120)
+    if (/^<!doctype\s+html|^<html[\s>]/i.test(text.trim())) {
+      throw new Error(`${label}返回了网页 HTML 而不是 JSON，请检查应用中转地址是否填写为 /api/ai/proxy。`)
+    }
+    throw new Error(`${label}返回了无效 JSON${compact ? `：${compact}` : ''}`)
+  }
+}
+
 function mapFetchError(e: unknown): unknown {
   if (e instanceof DOMException && e.name === 'AbortError') throw new Error('请求超时,请稍后重试或检查网络')
   if (e instanceof TypeError) {
@@ -399,7 +413,20 @@ function responsesBody(cfg: AiConfig, messages: ChatMessage[], stream: boolean):
 }
 
 function proxyEndpoint(cfg: AiConfig): string {
-  return (cfg.proxyURL || DEFAULT_AI_PROXY_URL).trim()
+  const configured = (cfg.proxyURL || DEFAULT_AI_PROXY_URL).trim()
+  if (!configured) return DEFAULT_AI_PROXY_URL
+  try {
+    const url = new URL(configured)
+    const pathname = url.pathname.replace(/\/+$/, '')
+    // 兼容用户只填写站点根地址、/api/ai 或模型代理地址的旧配置。
+    if (!pathname || pathname === '/') url.pathname = '/api/ai/proxy'
+    else if (pathname.endsWith('/models')) url.pathname = `${pathname.slice(0, -'/models'.length)}/proxy`
+    else if (pathname.endsWith('/api/ai')) url.pathname = `${pathname}/proxy`
+    else if (!pathname.endsWith('/proxy')) url.pathname = `${pathname}/api/ai/proxy`
+    return url.toString()
+  } catch {
+    return configured
+  }
 }
 
 function modelsProxyEndpoint(cfg: AiConfig): string {
@@ -422,6 +449,18 @@ function serializableHeaders(headers: Headers): Record<string, string> {
   return result
 }
 
+async function isHtmlResponse(res: Response): Promise<boolean> {
+  const contentType = (res.headers.get('content-type') ?? '').toLowerCase()
+  if (contentType.includes('text/html')) return true
+  // Some local static servers omit Content-Type. Inspect a clone so the actual
+  // response body remains available to the normal JSON/SSE parser.
+  if (!contentType || contentType.includes('text/plain')) {
+    const preview = await res.clone().text().catch(() => '')
+    return /^\s*(?:<!doctype\s+html|<html[\s>])/i.test(preview)
+  }
+  return false
+}
+
 /**
  * 统一发送请求。自动模式只在浏览器拿不到 HTTP 响应（典型为 CORS）时回退到中转，
  * 不会掩盖上游已经明确返回的 401/404/429 等配置问题。
@@ -434,18 +473,33 @@ async function sendAiRequest(
 ): Promise<Response> {
   const targets = endpointCandidates(cfg.baseURL, mode === 'responses' ? '/responses' : '/chat/completions')
   const headers = requestHeaders(cfg)
-  const direct = (target: string) => fetch(target, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-    signal,
-  })
-  const throughProxy = (target: string) => fetch(proxyEndpoint(cfg), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ target, headers: serializableHeaders(headers), payload }),
-    signal,
-  })
+  const direct = async (target: string) => {
+    const response = await fetch(target, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal,
+    })
+    // SPA 回退页通常是 200 text/html；视为直连失败，让 auto 模式继续尝试中转。
+    if (response.ok && await isHtmlResponse(response)) {
+      try { await response.body?.cancel() } catch { /* ignore */ }
+      throw new TypeError('AI endpoint returned HTML')
+    }
+    return response
+  }
+  const throughProxy = async (target: string) => {
+    const response = await fetch(proxyEndpoint(cfg), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target, headers: serializableHeaders(headers), payload }),
+      signal,
+    })
+    if (response.ok && await isHtmlResponse(response)) {
+      try { await response.body?.cancel() } catch { /* ignore */ }
+      throw new Error('应用中转地址返回了网页 HTML，请填写完整的 /api/ai/proxy 地址。')
+    }
+    return response
+  }
 
   const transport = cfg.transport ?? 'auto'
   if (transport === 'proxy') {
@@ -542,7 +596,7 @@ export async function aiChat(cfg: AiConfig, messages: ChatMessage[], timeoutMs =
       controller.signal,
     )
     if (!res.ok) await throwForStatus(res)
-    const out = responseText(await res.json())
+    const out = responseText(await responseJson(res))
     if (!out) throw new Error('服务商返回了空回复')
     return out
   } catch (e) {
@@ -585,7 +639,7 @@ export async function aiChatStream(cfg: AiConfig, messages: ChatMessage[], opts:
     const contentType = res.headers.get('content-type') ?? ''
     if (!contentType.includes('text/event-stream') || !res.body) {
       // 网关不支持流式:退化为一次性读取
-      const out = responseText(await res.json())
+      const out = responseText(await responseJson(res))
       if (!out) throw new Error('服务商返回了空回复')
       return emit(out, '')
     }
@@ -667,13 +721,27 @@ export async function aiModels(cfg: AiConfig, timeoutMs = 20000): Promise<AiMode
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? timeoutMs)
   const targets = endpointCandidates(cfg.baseURL, '/models')
   const headers = requestHeaders(cfg)
-  const direct = (target: string) => fetch(target, { method: 'GET', headers, signal: controller.signal })
-  const throughProxy = (target: string) => fetch(modelsProxyEndpoint(cfg), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ target, headers: serializableHeaders(headers) }),
-    signal: controller.signal,
-  })
+  const direct = async (target: string) => {
+    const response = await fetch(target, { method: 'GET', headers, signal: controller.signal })
+    if (response.ok && await isHtmlResponse(response)) {
+      try { await response.body?.cancel() } catch { /* ignore */ }
+      throw new TypeError('AI models endpoint returned HTML')
+    }
+    return response
+  }
+  const throughProxy = async (target: string) => {
+    const response = await fetch(modelsProxyEndpoint(cfg), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target, headers: serializableHeaders(headers) }),
+      signal: controller.signal,
+    })
+    if (response.ok && await isHtmlResponse(response)) {
+      try { await response.body?.cancel() } catch { /* ignore */ }
+      throw new Error('应用中转地址返回了网页 HTML，请填写完整的 /api/ai/proxy 地址。')
+    }
+    return response
+  }
   try {
     const transport = cfg.transport ?? 'auto'
     let res: Response
@@ -691,7 +759,7 @@ export async function aiModels(cfg: AiConfig, timeoutMs = 20000): Promise<AiMode
       }
     }
     if (!res.ok) await throwForStatus(res)
-    const models = parseAiModels(await res.json())
+    const models = parseAiModels(await responseJson(res, '模型接口'))
     if (!models.length) throw new Error('上游返回了空模型列表，请检查接口是否支持 GET /models')
     return models
   } catch (error) {
@@ -713,4 +781,3 @@ function extractJson(text: string): Record<string, unknown> | null {
     return null
   }
 }
-

@@ -1,5 +1,6 @@
 // 设置:备考信息 / 复习间隔 / 外观动效 / 数据管理 / 路线图
 import React, { useEffect, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { useStore, emptyState } from '../store/store'
 import { Chip, Field, Segmented, useConfirm, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
@@ -48,17 +49,34 @@ export function SettingsPage() {
   const [aiKey, setAiKey] = useState(state.settings.ai?.apiKey ?? '')
   const [aiModel, setAiModel] = useState(state.settings.ai?.model ?? AI_PRESETS[preset0].model)
   const [aiTransport, setAiTransport] = useState<AiTransport>(state.settings.ai?.transport ?? 'auto')
-  // 本地 Vercel 预览包含同一份 Serverless API，优先走当前入口，避免模型目录仍命中旧线上版本。
-  const defaultAiProxyURL = typeof window !== 'undefined' && (() => {
+  // Capacitor 的 Android WebView 使用 http://localhost 作为页面 origin，但这里
+  // 没有对应的 HTTP API；误用该地址会返回 index.html，随后触发 JSON 解析错误。
+  // 原生壳统一使用远程 Vercel 中转，浏览器本地预览才使用同源 API。
+  const nativeShell = typeof window !== 'undefined' && (() => {
+    try { return Capacitor.isNativePlatform() || /Electron\//.test(navigator.userAgent) } catch { return false }
+  })()
+  const previewHost = typeof window !== 'undefined' && (() => {
     const host = window.location.hostname
     const localHost = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(host)
     const privateIpv4 = /^(10|192\.168|172\.(?:1[6-9]|2\d|3[0-1]))\./.test(host)
     return localHost || privateIpv4
   })()
+  const vercelHost = typeof window !== 'undefined' && /(^|\.)vercel\.app$/i.test(window.location.hostname)
+  const defaultAiProxyURL = (previewHost || vercelHost) && !nativeShell
     ? `${window.location.origin}/api/ai/proxy`
     : DEFAULT_AI_PROXY_URL
   const savedAiProxyURL = state.settings.ai?.proxyURL?.trim()
-  const initialAiProxyURL = defaultAiProxyURL !== DEFAULT_AI_PROXY_URL && savedAiProxyURL === DEFAULT_AI_PROXY_URL
+  const savedProxyIsLocal = !!savedAiProxyURL && (() => {
+    try {
+      const url = new URL(savedAiProxyURL)
+      const host = url.hostname.toLowerCase()
+      return /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(host)
+        || /^(10|192\.168|172\.(?:1[6-9]|2\d|3[0-1]))\./.test(host)
+    } catch { return false }
+  })()
+  const initialAiProxyURL = (savedProxyIsLocal && (nativeShell || previewHost))
+    ? (nativeShell ? DEFAULT_AI_PROXY_URL : defaultAiProxyURL)
+    : defaultAiProxyURL !== DEFAULT_AI_PROXY_URL && savedAiProxyURL === DEFAULT_AI_PROXY_URL
     ? defaultAiProxyURL
     : savedAiProxyURL || defaultAiProxyURL
   const [aiProxyURL, setAiProxyURL] = useState(initialAiProxyURL)

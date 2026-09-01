@@ -15,6 +15,8 @@ type StreamingResponse = ApiResponse & {
 
 // 保持在 Vercel Serverless 默认请求体上限以内；更大的图片请压缩后上传。
 const MAX_PROXY_BODY_BYTES = 4_000_000
+// Vercel 函数和浏览器都应在上游无响应时尽快收到 JSON 错误，避免页面表现为“网络超时”。
+const UPSTREAM_TIMEOUT_MS = 50_000
 const BLOCKED_REQUEST_HEADERS = new Set([
   'connection', 'content-length', 'cookie', 'host', 'origin', 'referer', 'te', 'trailer', 'transfer-encoding', 'upgrade',
 ])
@@ -36,6 +38,7 @@ function isPrivateHost(hostname: string): boolean {
 function validateHttpsUpstreamTarget(target: unknown, paths: string[], pathHint: string): string | null {
   if (typeof target !== 'string' || !target.trim()) return '缺少上游接口地址'
   let url: URL
+  let timeout: ReturnType<typeof setTimeout> | undefined
   try {
     url = new URL(target)
   } catch {
@@ -86,6 +89,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   setCors(req, res)
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', '仅支持 POST 请求')
 
+  let timeout: ReturnType<typeof setTimeout> | undefined
   try {
     const { target, headers, payload } = getBody<ProxyBody>(req)
     const targetError = validateAiProxyTarget(target)
@@ -96,14 +100,30 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return sendError(res, 413, 'request_too_large', '请求内容过大，请减少图片或缩短材料后重试')
     }
 
-    const upstream = await fetch(target as string, {
-      method: 'POST',
-      headers: proxyHeaders(headers),
-      body: encodedPayload,
-    })
+    const controller = new AbortController()
+    timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+    let upstream: Response
+    try {
+      upstream = await fetch(target as string, {
+        method: 'POST',
+        headers: proxyHeaders(headers),
+        body: encodedPayload,
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        if (timeout) clearTimeout(timeout)
+        return sendError(res, 504, 'upstream_timeout', '上游服务响应超时，请检查接口地址或稍后重试')
+      }
+      if (timeout) clearTimeout(timeout)
+      throw error
+    }
     setUpstreamHeaders(res, upstream)
     res.status(upstream.status)
-    if (!upstream.body) return res.end()
+    if (!upstream.body) {
+      if (timeout) clearTimeout(timeout)
+      return res.end()
+    }
 
     const stream = res as StreamingResponse
     const reader = upstream.body.getReader()
@@ -113,7 +133,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       stream.write(value)
     }
     stream.end()
+    if (timeout) clearTimeout(timeout)
   } catch {
+    if (timeout) clearTimeout(timeout)
     // 不返回上游 URL、请求头或密钥，避免把敏感信息写入响应或日志。
     return sendError(res, 502, 'upstream_unreachable', '应用中转暂时无法连接上游服务，请检查接口地址或稍后重试')
   }

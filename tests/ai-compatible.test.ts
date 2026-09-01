@@ -58,6 +58,16 @@ describe('OpenAI-compatible AI 接口', () => {
     expect(body.headers.authorization).toBe('Bearer test-key')
   })
 
+  it('自动模式把直连返回的 200 HTML 回退页识别为失败并改走中转', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('<!doctype html><html></html>', { status: 200, headers: { 'content-type': 'text/html' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: 'model-a' }] }), { status: 200, headers: { 'content-type': 'application/json' } }))
+
+    await expect(aiModels({ ...cfg, baseURL: 'https://relay.example/v1', transport: 'auto', proxyURL: 'https://study.example' })).resolves.toHaveLength(1)
+    expect(fetchMock.mock.calls[0][0]).toBe('https://relay.example/v1/models')
+    expect(fetchMock.mock.calls[1][0]).toBe('https://study.example/api/ai/models')
+  })
+
   it('发送标准 messages/model/stream 和自定义请求头', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: '连接成功' } }] }), { status: 200, headers: { 'content-type': 'application/json' } }))
     await expect(aiChat({ ...cfg, customHeaders: { 'X-Relay': 'yes' } }, [{ role: 'user', content: 'hi' }])).resolves.toBe('连接成功')
@@ -215,6 +225,57 @@ describe('OpenAI-compatible AI 接口', () => {
     expect(body.target).toBe('https://relay.example/v1/chat/completions')
     expect(body.headers.authorization).toBe('Bearer test-key')
     expect(body.payload).toMatchObject({ model: 'test-model', stream: false })
+  })
+
+  it('自动模式直连收到 SPA HTML 时改走应用中转', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('<!doctype html><html><body>app</body></html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: 'HTML 回退成功' } }] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+
+    await expect(aiChat({ ...cfg, transport: 'auto', proxyURL: 'https://study.example' }, [{ role: 'user', content: 'hi' }])).resolves.toBe('HTML 回退成功')
+    expect(fetchMock.mock.calls[0][0]).toBe('https://relay.example/v1/chat/completions')
+    expect(fetchMock.mock.calls[1][0]).toBe('https://study.example/api/ai/proxy')
+  })
+
+  it('自动模式也能识别缺少 HTML Content-Type 的 SPA 回退页', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('<!doctype html><html><body>app</body></html>', { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: '无头回退成功' } }] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+
+    await expect(aiChat({ ...cfg, transport: 'auto', proxyURL: 'https://study.example' }, [{ role: 'user', content: 'hi' }])).resolves.toBe('无头回退成功')
+    expect(fetchMock.mock.calls[1][0]).toBe('https://study.example/api/ai/proxy')
+  })
+
+  it('模型目录代理地址为站点根地址或 /models 时归一化为 /api/ai/models', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: 'model-a' }] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+
+    await expect(aiModels({ ...cfg, transport: 'auto', proxyURL: 'https://study.example/api/ai/models' })).resolves.toEqual([
+      { id: 'model-a', name: 'model-a', ownedBy: undefined },
+    ])
+    expect(fetchMock.mock.calls[1][0]).toBe('https://study.example/api/ai/models')
+  })
+
+  it('应用中转只填写站点根地址时自动补全 proxy 路径', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: '根地址中转成功' } }] }), { status: 200, headers: { 'content-type': 'application/json' } }))
+
+    await expect(aiChat({ ...cfg, transport: 'auto', proxyURL: 'https://study.example' }, [{ role: 'user', content: 'hi' }])).resolves.toBe('根地址中转成功')
+    expect(fetchMock.mock.calls[1][0]).toBe('https://study.example/api/ai/proxy')
   })
 
   it('解析 OpenAI SSE delta 和 Responses delta', () => {
