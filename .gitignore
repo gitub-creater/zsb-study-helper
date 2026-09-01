@@ -17,3 +17,5 @@ android/capacitor-cordova-android-plugins/
 release/
 *.jks
 base64_key.txt
+
+.env*
