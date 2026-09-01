@@ -64,6 +64,65 @@ function browserEnvironment(): SpeechEnvironment {
   }
 }
 
+/**
+ * 某些移动设备（如 vivo、OPPO 等）的浏览器在页面初始化时 speechSynthesis API 可能未完全就绪，
+ * 需要延迟检测并等待 voiceschanged 事件。此函数通过多次尝试和超时机制确保兼容性。
+ */
+export async function waitForSpeechSynthesis(timeout = 5000): Promise<SpeechEnvironment> {
+  const env = browserEnvironment()
+  if (!env.synthesis) return {}
+
+  // 如果已经有可用声音，直接返回
+  const initialVoices = env.synthesis.getVoices()
+  if (initialVoices && initialVoices.length > 0) return env
+
+  // 等待 voiceschanged 事件或超时
+  return new Promise((resolve) => {
+    let resolved = false
+    const timer = setTimeout(() => {
+      if (resolved) return
+      resolved = true
+      if (handler && env.synthesis!.removeEventListener) {
+        env.synthesis!.removeEventListener('voiceschanged', handler)
+      }
+      // 超时后再次检查，某些设备可能静默加载完成
+      const voices = env.synthesis!.getVoices()
+      if (voices && voices.length > 0) {
+        resolve(env)
+      } else {
+        // 即使没有声音也返回环境，让用户看到提示而不是直接失败
+        resolve(env)
+      }
+    }, timeout)
+
+    const handler = () => {
+      if (resolved) return
+      const voices = env.synthesis!.getVoices()
+      if (voices && voices.length > 0) {
+        resolved = true
+        clearTimeout(timer)
+        if (env.synthesis!.removeEventListener) {
+          env.synthesis!.removeEventListener('voiceschanged', handler)
+        }
+        resolve(env)
+      }
+    }
+
+    if (env.synthesis.addEventListener) {
+      env.synthesis.addEventListener('voiceschanged', handler)
+      // 某些浏览器需要手动触发一次 getVoices 来激活 voiceschanged 事件
+      setTimeout(() => {
+        if (!resolved && env.synthesis) {
+          env.synthesis.getVoices()
+        }
+      }, 100)
+    } else {
+      clearTimeout(timer)
+      resolve(env)
+    }
+  })
+}
+
 function isMandarinLanguage(lang: string): boolean {
   const normalized = lang.toLowerCase()
   return normalized === 'zh-cn'
@@ -143,7 +202,7 @@ export function resolveSpeechVoice(voices: SpeechSynthesisVoice[], selectedId?: 
  */
 export function splitSpeechSentences(text: string): SpeechSentence[] {
   const sentences: SpeechSentence[] = []
-  const boundary = /[。！？!?；;]+(?:[”』」）】》'”]*)|\n+/g
+  const boundary = /[。！？!?；;]+(?:["』」）】》'"]*)|\n+/g
   let rawStart = 0
   let match: RegExpExecArray | null
 
@@ -170,7 +229,7 @@ export function speechErrorMessage(error?: string): string {
   switch (error) {
     case 'not-allowed':
     case 'service-not-allowed':
-      return '系统已禁止语音朗读。请在浏览器或设备设置中允许媒体播放后重试，文字讲解仍可正常阅读。'
+      return '系统已禁止语音朗读。请在浏览器或设备设置中允许媒体播放后重试，文字讲解仍可正常使用。'
     case 'voice-unavailable':
       return '所选音色当前不可用，已保留文字讲解。请刷新可用声音或选择其他音色后重试。'
     case 'network':
@@ -180,7 +239,7 @@ export function speechErrorMessage(error?: string): string {
   }
 }
 
-export const SPEECH_UNSUPPORTED_MESSAGE = '当前浏览器或设备不支持语音朗读。你仍可直接查看完整文字讲解，或换用支持系统朗读功能的浏览器。'
+export const SPEECH_UNSUPPORTED_MESSAGE = '当前设备不支持语音朗读，文字讲解可继续正常使用。'
 
 /**
  * 对 Web Speech API 的小封装：一条讲解使用一个 utterance，因此暂停/继续不会丢失位置。
@@ -196,6 +255,7 @@ export class BrowserSpeechController {
   private disposed = false
   private voicesHandler: (() => void) | null = null
   private startTimer: ReturnType<typeof setTimeout> | null = null
+  private voicesLoadAttempted = false
 
   constructor(callbacks: SpeechCallbacks = {}, environment: SpeechEnvironment = browserEnvironment()) {
     this.synthesis = environment.synthesis
@@ -212,13 +272,68 @@ export class BrowserSpeechController {
   }
 
   voices(): SpeechVoiceOption[] {
-    return this.supported ? listSpeechVoices(this.synthesis!.getVoices()) : []
+    if (!this.supported) return []
+    // 某些设备需要多次调用 getVoices 才能返回结果
+    if (!this.voicesLoadAttempted) {
+      this.voicesLoadAttempted = true
+      // 触发加载
+      this.synthesis!.getVoices()
+    }
+    return listSpeechVoices(this.synthesis!.getVoices())
   }
 
   refreshVoices(): SpeechVoiceOption[] {
+    this.voicesLoadAttempted = false
     const voices = this.voices()
     this.callbacks.onVoicesChange?.(voices)
     return voices
+  }
+
+  /**
+   * 异步等待语音引擎就绪。某些移动设备需要延迟加载。
+   */
+  async ensureReady(timeout = 3000): Promise<boolean> {
+    if (!this.supported) return false
+    
+    const voices = this.synthesis!.getVoices()
+    if (voices && voices.length > 0) return true
+
+    return new Promise((resolve) => {
+      let resolved = false
+      const timer = setTimeout(() => {
+        if (resolved) return
+        resolved = true
+        if (handler && this.synthesis!.removeEventListener) {
+          this.synthesis!.removeEventListener('voiceschanged', handler)
+        }
+        const finalVoices = this.synthesis!.getVoices()
+        resolve(finalVoices && finalVoices.length > 0)
+      }, timeout)
+
+      const handler = () => {
+        if (resolved) return
+        const currentVoices = this.synthesis!.getVoices()
+        if (currentVoices && currentVoices.length > 0) {
+          resolved = true
+          clearTimeout(timer)
+          if (this.synthesis!.removeEventListener) {
+            this.synthesis!.removeEventListener('voiceschanged', handler)
+          }
+          this.callbacks.onVoicesChange?.(this.voices())
+          resolve(true)
+        }
+      }
+
+      if (this.synthesis!.addEventListener) {
+        this.synthesis!.addEventListener('voiceschanged', handler)
+        // 多次触发以激活某些懒加载的实现
+        setTimeout(() => this.synthesis!.getVoices(), 50)
+        setTimeout(() => this.synthesis!.getVoices(), 200)
+      } else {
+        clearTimeout(timer)
+        resolve(false)
+      }
+    })
   }
 
   speak(text: string, options: SpeechSpeakOptions = {}): boolean {
