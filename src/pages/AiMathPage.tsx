@@ -627,33 +627,16 @@ export function AiMathPage() {
     }
     if (speechSettings.enabled === false) updateSpeechSettings({ enabled: true })
     setSpeech({ messageId: 'speech-preview', playback: 'idle', sentence: null, error: null })
-    
-    // 某些移动设备（vivo、OPPO 等）需要在用户手势触发时主动初始化语音引擎
-    void (async () => {
-      try {
-        const ready = await controller.ensureReady(3000)
-        if (!ready) {
-          toast('设备语音引擎尚未就绪，请稍后重试或刷新可用声音', { kind: 'warning' })
-          // 即使未就绪也尝试播放，某些设备可能仍能使用默认声音
-        }
-        
-        // 刷新声音列表，确保获取到最新的可用声音
-        const voices = controller.refreshVoices()
-        if (voices.length > 0) {
-          setSpeechVoices(voices)
-        }
-        
-        const started = controller.speak('你好，这是专升本学习助手的语音播放测试。', {
-          rate: speechSettings.rate,
-          voiceId: speechSettings.voiceURI,
-          voiceName: speechSettings.voiceName,
-        })
-        if (!started) toast('语音测试未能启动，请查看页面提示并检查浏览器声音设置', { kind: 'error' })
-      } catch (err) {
-        console.error('语音初始化失败:', err)
-        toast('语音初始化失败，请检查设备设置或使用其他浏览器', { kind: 'error' })
-      }
-    })()
+    // 必须在点击事件内立即调用 speak；等待 voiceschanged 的异步回调会丢失
+    // Android 浏览器的用户手势授权，导致 vivo 等设备静默拦截播放。
+    const voices = controller.refreshVoices()
+    if (voices.length > 0) setSpeechVoices(voices)
+    const started = controller.speak('你好，这是专升本学习助手的语音播放测试。', {
+      rate: speechSettings.rate,
+      voiceId: speechSettings.voiceURI,
+      voiceName: speechSettings.voiceName,
+    })
+    if (!started) toast('语音测试未能启动，请查看页面提示并检查浏览器声音设置', { kind: 'error' })
   }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceName, speechSettings.voiceURI, toast, updateSpeechSettings])
 
   const warnNoConfig = useCallback(() => {

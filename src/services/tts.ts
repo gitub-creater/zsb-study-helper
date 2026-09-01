@@ -80,16 +80,24 @@ export function browserSpeechEnvironment(): SpeechEnvironment {
   }
 }
 
+function safeSpeechVoices(synthesis: SpeechSynthesisPort): SpeechSynthesisVoice[] {
+  try {
+    return synthesis.getVoices() ?? []
+  } catch {
+    return []
+  }
+}
+
 /**
  * 某些移动设备（如 vivo、OPPO 等）的浏览器在页面初始化时 speechSynthesis API 可能未完全就绪，
  * 需要延迟检测并等待 voiceschanged 事件。此函数通过多次尝试和超时机制确保兼容性。
  */
 export async function waitForSpeechSynthesis(timeout = 5000): Promise<SpeechEnvironment> {
-  const env = browserEnvironment()
+  const env = browserSpeechEnvironment()
   if (!env.synthesis) return {}
 
   // 如果已经有可用声音，直接返回
-  const initialVoices = env.synthesis.getVoices()
+  const initialVoices = safeSpeechVoices(env.synthesis)
   if (initialVoices && initialVoices.length > 0) return env
 
   // 等待 voiceschanged 事件或超时
@@ -102,7 +110,7 @@ export async function waitForSpeechSynthesis(timeout = 5000): Promise<SpeechEnvi
         env.synthesis!.removeEventListener('voiceschanged', handler)
       }
       // 超时后再次检查，某些设备可能静默加载完成
-      const voices = env.synthesis!.getVoices()
+      const voices = safeSpeechVoices(env.synthesis!)
       if (voices && voices.length > 0) {
         resolve(env)
       } else {
@@ -113,7 +121,7 @@ export async function waitForSpeechSynthesis(timeout = 5000): Promise<SpeechEnvi
 
     const handler = () => {
       if (resolved) return
-      const voices = env.synthesis!.getVoices()
+      const voices = safeSpeechVoices(env.synthesis!)
       if (voices && voices.length > 0) {
         resolved = true
         clearTimeout(timer)
@@ -124,12 +132,13 @@ export async function waitForSpeechSynthesis(timeout = 5000): Promise<SpeechEnvi
       }
     }
 
-    if (env.synthesis.addEventListener) {
-      env.synthesis.addEventListener('voiceschanged', handler)
+    const synthesis = env.synthesis!
+    if (synthesis.addEventListener) {
+      synthesis.addEventListener('voiceschanged', handler)
       // 某些浏览器需要手动触发一次 getVoices 来激活 voiceschanged 事件
       setTimeout(() => {
-        if (!resolved && env.synthesis) {
-          env.synthesis.getVoices()
+        if (!resolved) {
+          safeSpeechVoices(synthesis)
         }
       }, 100)
     } else {
@@ -316,7 +325,7 @@ export class BrowserSpeechController {
   async ensureReady(timeout = 3000): Promise<boolean> {
     if (!this.supported) return false
     
-    const voices = this.synthesis!.getVoices()
+    const voices = this.voicesForSynthesis()
     if (voices && voices.length > 0) return true
 
     return new Promise((resolve) => {
@@ -327,13 +336,13 @@ export class BrowserSpeechController {
         if (handler && this.synthesis!.removeEventListener) {
           this.synthesis!.removeEventListener('voiceschanged', handler)
         }
-        const finalVoices = this.synthesis!.getVoices()
+        const finalVoices = this.voicesForSynthesis()
         resolve(finalVoices && finalVoices.length > 0)
       }, timeout)
 
       const handler = () => {
         if (resolved) return
-        const currentVoices = this.synthesis!.getVoices()
+        const currentVoices = this.voicesForSynthesis()
         if (currentVoices && currentVoices.length > 0) {
           resolved = true
           clearTimeout(timer)
@@ -348,8 +357,8 @@ export class BrowserSpeechController {
       if (this.synthesis!.addEventListener) {
         this.synthesis!.addEventListener('voiceschanged', handler)
         // 多次触发以激活某些懒加载的实现
-        setTimeout(() => this.synthesis!.getVoices(), 50)
-        setTimeout(() => this.synthesis!.getVoices(), 200)
+        setTimeout(() => { this.voicesForSynthesis() }, 50)
+        setTimeout(() => { this.voicesForSynthesis() }, 200)
       } else {
         clearTimeout(timer)
         resolve(false)
