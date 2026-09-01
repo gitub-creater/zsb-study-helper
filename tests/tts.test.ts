@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BrowserSpeechController,
+  browserSpeechEnvironment,
   listSpeechVoices,
   resolveSpeechVoice,
   SPEECH_UNSUPPORTED_MESSAGE,
@@ -185,5 +186,95 @@ describe('BrowserSpeechController', () => {
     expect(controller.probeSupport()).toBe(true)
     controller.dispose()
     expect(controller.probeSupport(fake.environment)).toBe(false)
+  })
+})
+
+describe('Android 原生 TTS 桥适配', () => {
+  function makeBridge() {
+    const calls: Array<{ id: string; text: string; rate: number; voiceName: string }> = []
+    let stopped = 0
+    const bridge = {
+      info: () => '{"ready":true}',
+      voices: () =>
+        JSON.stringify([
+          { voiceURI: 'vivo-en', name: 'vivo English', lang: 'en-US', default: false, localService: true },
+          { voiceURI: 'vivo-local-cmn', name: 'vivo 普通话', lang: 'zh-CN', default: false, localService: true },
+        ]),
+      speak: (id: string, text: string, rate: number, voiceName: string) => {
+        calls.push({ id, text, rate, voiceName })
+        return true
+      },
+      stop: () => {
+        stopped += 1
+      },
+    }
+    return { bridge, calls, stoppedCount: () => stopped }
+  }
+
+  function fireNative(type: string, id: string, extra = '0') {
+    ;(globalThis as unknown as Record<string, unknown>).__zsbTtsEvent?.(type, id, extra)
+  }
+
+  it('桥存在时语音走原生系统 TTS：选声、播放、暂停续播全链路', () => {
+    const env = makeBridge()
+    ;(globalThis as unknown as Record<string, unknown>).ZsbNativeTts = env.bridge
+    try {
+      const states: string[] = []
+      const highlighted: string[] = []
+      const controller = new BrowserSpeechController({
+        onStateChange: (state) => states.push(state),
+        onSentenceChange: (sentence) => { if (sentence) highlighted.push(sentence.text) },
+      }, browserSpeechEnvironment())
+
+      expect(controller.supported).toBe(true)
+      expect(controller.voices()[0].name).toBe('vivo 普通话')
+
+      expect(controller.speak('第一句。第二句！', { rate: 1.25, voiceId: 'vivo-local-cmn' })).toBe(true)
+      expect(env.calls[0]).toMatchObject({ text: '第一句。第二句！', rate: 1.25, voiceName: 'vivo-local-cmn' })
+
+      const id = env.calls[0].id
+      fireNative('start', id)
+      expect(states[states.length - 1]).toBe('speaking')
+      expect(highlighted[0]).toBe('第一句。')
+
+      fireNative('boundary', id, '4')
+      expect(highlighted[highlighted.length - 1]).toBe('第二句！')
+
+      expect(controller.pause()).toBe(true)
+      expect(states[states.length - 1]).toBe('paused')
+      expect(controller.resume()).toBe(true)
+      expect(env.calls[1]).toMatchObject({ text: '第二句！', rate: 1.25 })
+      expect(states[states.length - 1]).toBe('speaking')
+
+      fireNative('end', env.calls[1].id)
+      expect(states[states.length - 1]).toBe('idle')
+
+      controller.stop()
+      expect(env.stoppedCount()).toBeGreaterThan(0)
+      // 停止后到达的旧事件不应再影响状态
+      fireNative('boundary', id, '8')
+      expect(states[states.length - 1]).toBe('idle')
+    } finally {
+      delete (globalThis as unknown as Record<string, unknown>).ZsbNativeTts
+    }
+  })
+
+  it('原生 speak 提交失败时上报错误而不是无声', async () => {
+    const errors: string[] = []
+    const bridge = {
+      info: () => '{"ready":false}',
+      voices: () => '[]',
+      speak: () => false,
+      stop: () => {},
+    }
+    ;(globalThis as unknown as Record<string, unknown>).ZsbNativeTts = bridge
+    try {
+      const controller = new BrowserSpeechController({ onError: (message) => errors.push(message) }, browserSpeechEnvironment())
+      expect(controller.speak('测试')).toBe(true)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      expect(errors.length).toBe(1)
+    } finally {
+      delete (globalThis as unknown as Record<string, unknown>).ZsbNativeTts
+    }
   })
 })

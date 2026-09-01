@@ -69,6 +69,9 @@ type SpeechWindow = Window & {
  * system TTS engine is installed and ready to use.
  */
 export function browserSpeechEnvironment(): SpeechEnvironment {
+  // Android WebView（Capacitor 壳）不实现 speechSynthesis，优先走原生 TTS 桥。
+  const bridge = nativeTtsBridge()
+  if (bridge) return nativeTtsEnvironment(bridge)
   if (typeof window === 'undefined') return {}
   const browserWindow = window as SpeechWindow
   const synthesis = browserWindow.speechSynthesis ?? browserWindow.webkitSpeechSynthesis
@@ -77,6 +80,167 @@ export function browserSpeechEnvironment(): SpeechEnvironment {
   return {
     synthesis: synthesis as SpeechSynthesisPort,
     createUtterance: (text) => new Utterance(text),
+  }
+}
+
+// ---- Android WebView 原生 TTS 桥（Capacitor 壳内可用）----
+// Android WebView 不实现 speechSynthesis，网页在 APK 里会判定为"设备不支持"。
+// MainActivity 注入 window.ZsbNativeTts，背后是系统 TextToSpeech 引擎——
+// 与浏览器朗读用的是同一套系统语音引擎和语音包，未引入第三方服务。
+
+interface NativeTtsBridge {
+  info(): string
+  voices(): string
+  speak(utteranceId: string, text: string, rate: number, voiceName: string): boolean
+  stop(): void
+}
+
+function nativeTtsBridge(): NativeTtsBridge | null {
+  if (typeof globalThis === 'undefined') return null
+  const bridge = (globalThis as unknown as { ZsbNativeTts?: NativeTtsBridge }).ZsbNativeTts
+  return bridge && typeof bridge.speak === 'function' && typeof bridge.voices === 'function' ? bridge : null
+}
+
+/** 把原生 TTS 桥适配成 Web Speech 的 synthesis/utterance 事件模型。 */
+export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment {
+  const listeners: (() => void)[] = []
+  let currentId = ''
+  let current: SpeechSynthesisUtterance | null = null
+  let currentText = ''
+  let currentRate = 1
+  let offset = 0
+  let resumedFrom = 0
+  let seq = 0
+  let cachedVoices: SpeechSynthesisVoice[] | null = null
+
+  const voiceNameOf = (utterance: SpeechSynthesisUtterance): string => utterance.voice?.voiceURI ?? ''
+
+  const finish = () => {
+    current = null
+    currentId = ''
+    currentText = ''
+    synthesis.speaking = false
+    synthesis.paused = false
+  }
+
+  const emit = (type: string, id: string, extra: string) => {
+    if (!current || id !== currentId) return
+    const utterance = current
+    try {
+      if (type === 'start') {
+        offset = 0
+        utterance.onstart?.(new Event('start') as SpeechSynthesisEvent)
+      } else if (type === 'boundary') {
+        const charIndex = Math.min(resumedFrom + (Number(extra) || 0), currentText.length)
+        offset = charIndex
+        utterance.onboundary?.({ charIndex } as unknown as SpeechSynthesisEvent)
+      } else if (type === 'end') {
+        finish()
+        utterance.onend?.(new Event('end') as SpeechSynthesisEvent)
+      } else if (type === 'error') {
+        finish()
+        utterance.onerror?.({ error: 'synthesis-failed' } as unknown as SpeechSynthesisErrorEvent)
+      } else if (type === 'ready') {
+        cachedVoices = null
+        listeners.forEach((listener) => listener())
+      }
+      // 'stopped' 来自主动 stop（停止/暂停/切讲解），状态已在对应方法里处理，这里静默。
+    } catch {
+      /* 事件回调异常不影响播放状态机 */
+    }
+  }
+
+  const synthesis = {
+    speaking: false,
+    paused: false,
+    cancel() {
+      if (currentId) bridge.stop()
+      finish()
+    },
+    getVoices(): SpeechSynthesisVoice[] {
+      if (cachedVoices) return cachedVoices
+      try {
+        const raw = JSON.parse(bridge.voices()) as Array<{
+          voiceURI?: string
+          name?: string
+          lang?: string
+          default?: boolean
+          localService?: boolean
+        }>
+        cachedVoices = raw
+          .filter((voice) => voice.name && voice.voiceURI)
+          .map((voice) => ({
+            name: String(voice.name),
+            lang: String(voice.lang ?? 'zh-CN'),
+            voiceURI: String(voice.voiceURI),
+            default: !!voice.default,
+            localService: voice.localService !== false,
+          })) as unknown as SpeechSynthesisVoice[]
+      } catch {
+        cachedVoices = []
+      }
+      return cachedVoices
+    },
+    pause() {
+      if (!synthesis.speaking || synthesis.paused || !current) return
+      synthesis.paused = true
+      bridge.stop()
+      try {
+        current.onpause?.(new Event('pause') as SpeechSynthesisEvent)
+      } catch {
+        /* ignore */
+      }
+    },
+    resume() {
+      if (!synthesis.paused || !current) return
+      synthesis.paused = false
+      const remaining = currentText.slice(offset)
+      if (remaining) {
+        resumedFrom = offset
+        seq += 1
+        currentId = `zsb-tts-${seq}`
+        bridge.speak(currentId, remaining, currentRate, voiceNameOf(current))
+      }
+      try {
+        current.onresume?.(new Event('resume') as SpeechSynthesisEvent)
+      } catch {
+        /* ignore */
+      }
+    },
+    speak(utterance: SpeechSynthesisUtterance) {
+      synthesis.cancel()
+      current = utterance
+      currentText = utterance.text
+      currentRate = utterance.rate ?? 1
+      offset = 0
+      resumedFrom = 0
+      seq += 1
+      currentId = `zsb-tts-${seq}`
+      synthesis.speaking = true
+      const ok = bridge.speak(currentId, utterance.text, currentRate, voiceNameOf(utterance))
+      if (!ok) {
+        const failedId = currentId
+        setTimeout(() => emit('error', failedId, ''), 0)
+      }
+    },
+    addEventListener(type: 'voiceschanged', listener: () => void) {
+      if (type === 'voiceschanged') listeners.push(listener)
+    },
+    removeEventListener(type: 'voiceschanged', listener: () => void) {
+      if (type !== 'voiceschanged') return
+      const index = listeners.indexOf(listener)
+      if (index >= 0) listeners.splice(index, 1)
+    },
+  }
+
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as unknown as Record<string, unknown>).__zsbTtsEvent = (type: string, id: string, extra: string) =>
+      emit(type, id, extra)
+  }
+
+  return {
+    synthesis: synthesis as unknown as SpeechSynthesisPort,
+    createUtterance: (text) => ({ text } as unknown as SpeechSynthesisUtterance),
   }
 }
 
