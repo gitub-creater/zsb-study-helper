@@ -1,13 +1,18 @@
-// 桌面宠物「芽芽」:单实例静音悬浮窗。可拖动、两档缩放、最小化与关闭;
-// 通过窗口事件接收任务提醒与讲题进度,只用动画与文字气泡,不播放任何声音。
+// 桌面宠物:一只"活"的小生物,直接站在页面上(没有卡片外壳)。
+// 它会在屏幕底部踱步、张望、坐下、打盹;任务到点跑到屏幕中间举旗提醒;
+// 讲题时坐下来陪伴;点击它会兴奋跳起来。全程静音,只用动画与文字气泡。
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { Mascot, type MascotMood } from './Mascot'
 import { Icon } from './Icon'
+import { PetCreature } from './PetCreature'
 import { SNOOZE_MINUTES } from '../lib/schedule'
 import {
-  clampPetPosition,
+  CREATURES,
+  advanceCreature,
+  creatureStateDuration,
   enqueuePetMessage,
+  nextCreatureState,
+  nextWalkTarget,
   onPetEvent,
   petIdleEncouragement,
   petMessageDuration,
@@ -19,36 +24,51 @@ import {
   petTaskSnoozeReply,
   shouldPromptIdle,
 } from '../lib/pet'
-import type { PetActionId, PetMessage, PetMood } from '../lib/pet'
-import type { PetSettings } from '../types'
+import type { CreatureProfile, CreatureState } from '../lib/pet'
+import type { PetActionId, PetMessage } from '../lib/pet'
+import type { AvatarKind, PetSettings } from '../types'
 
-/** 浮窗标准档尺寸(px);放大档按 1.25 倍计算。 */
-const PET_WIDTH = 168
-const PET_HEIGHT = 216
-const SCALE_1: PetSettings['scale'] = 1
+/** 宠物脚底离视口底部的活动带高度:在这条带子里活动,像在桌面前踱步。 */
+const FLOOR_BAND = 26
+/** 生物渲染尺寸:标准/放大两档。 */
+function creatureSize(scale: PetSettings['scale'] | undefined) {
+  return scale === 1.25 ? 120 : 96
+}
 
-function petSize(scale: PetSettings['scale'] | undefined) {
-  const factor = scale === 1.25 ? 1.25 : 1
-  return { width: Math.round(PET_WIDTH * factor), height: Math.round(PET_HEIGHT * factor) }
+interface BrainState {
+  creature: CreatureState
+  x: number
+  target: number
+  facing: 1 | -1
+  stateUntil: number
+  /** 被任务/讲题事件接管,期间不跑自由行为。 */
+  lockedUntil: number
 }
 
 export function PetWindow() {
   const { state, dispatch } = useStore()
   const pet: PetSettings = state.settings.pet ?? { enabled: true }
+  const species: CreatureProfile = CREATURES[(pet.avatar ?? 'sprout') as AvatarKind] ?? CREATURES.sprout
+  const size = creatureSize(pet.scale)
+  const [brain, setBrain] = useState<BrainState>(() => ({
+    creature: 'walk',
+    x: 40,
+    target: 320,
+    facing: 1,
+    stateUntil: 0,
+    lockedUntil: 0,
+  }))
   const [queue, setQueue] = useState<PetMessage[]>([])
-  const [mood, setMood] = useState<PetMood>('idle')
-  const [pos, setPos] = useState<{ x: number; y: number }>(() =>
-    clampPetPosition(pet.x ?? 24, pet.y ?? 120, petSize(pet.scale).width, petSize(pet.scale).height, window.innerWidth, window.innerHeight),
-  )
-  const [dragging, setDragging] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const brainRef = useRef(brain)
+  brainRef.current = brain
+  const queueRef = useRef<PetMessage[]>([])
+  queueRef.current = queue
   const studyActiveRef = useRef(false)
   const lastActiveRef = useRef(Date.now())
   const lastIdlePromptRef = useRef(0)
-  const dragRef = useRef<{ pointerX: number; pointerY: number; originX: number; originY: number } | null>(null)
-  const moodRef = useRef<PetMood>('idle')
-  moodRef.current = mood
-  const queueRef = useRef<PetMessage[]>([])
-  queueRef.current = queue
+  const lastPetClickRef = useRef(0)
+  const viewportRef = useRef({ w: window.innerWidth, h: window.innerHeight })
 
   const persist = useCallback(
     (patch: Partial<PetSettings>) => {
@@ -68,22 +88,60 @@ export function PetWindow() {
     return () => window.clearTimeout(timer)
   }, [current])
 
-  // 队列放空后,讲题期间保持思考状态,其余场景回到待机。
+  // 行为心跳:走路推进位置,其他状态到点切换,像一只自己拿主意的小生物。
   useEffect(() => {
-    if (queue.length > 0) return
-    const timer = window.setTimeout(() => {
-      setMood(studyActiveRef.current ? 'think' : 'idle')
-    }, 4000)
-    return () => window.clearTimeout(timer)
-  }, [queue.length])
+    if (!pet.enabled || pet.minimized) return
+    const timer = window.setInterval(() => {
+      const now = Date.now()
+      setBrain((prev) => {
+        // 被提醒/讲题接管期间:位置照常逼近目标点,行为不自由切换。
+        if (now < prev.lockedUntil) {
+          if (prev.creature === 'walk') {
+            const moved = advanceCreature(prev.x, prev.target, species.speed * 1.6, 120)
+            return { ...prev, x: moved.x, facing: moved.x < prev.target ? -1 : 1 }
+          }
+          return prev
+        }
+        if (prev.creature === 'walk') {
+          const moved = advanceCreature(prev.x, prev.target, species.speed, 120)
+          if (!moved.arrived) {
+            return { ...prev, x: moved.x, facing: moved.x < prev.target ? -1 : 1 }
+          }
+          const next = nextCreatureState('walk', Math.random())
+          return {
+            ...prev,
+            x: moved.x,
+            creature: next,
+            stateUntil: now + creatureStateDuration(next, Math.random()),
+          }
+        }
+        if (now < prev.stateUntil) return prev
+        const next = nextCreatureState(prev.creature, Math.random())
+        const duration = creatureStateDuration(next, Math.random())
+        if (next === 'walk') {
+          const target = nextWalkTarget(prev.x, viewportRef.current.w)
+          return { ...prev, creature: 'walk', target, stateUntil: now + duration }
+        }
+        return { ...prev, creature: next, stateUntil: now + duration }
+      })
+    }, 120)
+    return () => window.clearInterval(timer)
+  }, [pet.enabled, pet.minimized, species.speed])
 
-  // 接收任务提醒与讲题进度事件。
+  // 接收任务提醒与讲题进度事件:跑到屏幕中央举旗/坐下陪伴。
   useEffect(() => {
     return onPetEvent((detail) => {
       if (detail.type === 'task') {
         const { task } = detail
         studyActiveRef.current = false
-        setMood('remind')
+        const midX = Math.max(90, viewportRef.current.w / 2 - size / 2)
+        setBrain((prev) => ({
+          ...prev,
+          creature: 'remind',
+          target: midX,
+          lockedUntil: Date.now() + 5200,
+          stateUntil: Date.now() + 5200,
+        }))
         setQueue((prev) =>
           enqueuePetMessage(prev, {
             text: petTaskGreeting(task.name, task.lateMinutes),
@@ -103,17 +161,18 @@ export function PetWindow() {
       }
       if (detail.phase === 'start') {
         studyActiveRef.current = true
-        setMood('think')
+        const midX = Math.max(90, viewportRef.current.w / 2 - size / 2)
+        setBrain((prev) => ({ ...prev, creature: 'sit', target: midX, lockedUntil: Date.now() + 4000, stateUntil: Date.now() + 4000 }))
         setQueue((prev) => enqueuePetMessage(prev, { text: petStudyStartReply(), mood: 'think' }))
       } else {
         studyActiveRef.current = false
-        setMood('happy')
+        setBrain((prev) => ({ ...prev, creature: 'excited', lockedUntil: Date.now() + 1500, stateUntil: Date.now() + 1500 }))
         setQueue((prev) => enqueuePetMessage(prev, { text: petStudyDoneReply(), mood: 'happy' }))
       }
     })
-  }, [])
+  }, [size])
 
-  // 闲置检测:长时间没有输入且页面可见时说一句鼓励的话,间隔内不重复。
+  // 闲置检测:长时间没有输入时说一句鼓励的话,间隔内不重复。
   useEffect(() => {
     const markActive = () => {
       lastActiveRef.current = Date.now()
@@ -127,7 +186,6 @@ export function PetWindow() {
       const now = Date.now()
       if (!shouldPromptIdle(lastActiveRef.current, lastIdlePromptRef.current, now)) return
       lastIdlePromptRef.current = now
-      setMood('idle')
       setQueue((prev) => enqueuePetMessage(prev, { text: petIdleEncouragement(), mood: 'idle' }))
     }, 30_000)
     return () => {
@@ -138,62 +196,15 @@ export function PetWindow() {
     }
   }, [])
 
-  // 视口尺寸变化时把浮窗收敛回可视范围。
+  // 视口变化时把宠物收敛回画面内。
   useEffect(() => {
     const onResize = () => {
-      const { width, height } = petSize(pet.scale)
-      setPos((prev) => clampPetPosition(prev.x, prev.y, width, height, window.innerWidth, window.innerHeight))
+      viewportRef.current = { w: window.innerWidth, h: window.innerHeight }
+      setBrain((prev) => ({ ...prev, x: Math.min(Math.max(20, prev.x), Math.max(20, viewportRef.current.w - size - 10)) }))
     }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
-  }, [pet.scale])
-
-  const onDragStart = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.button !== 0 && event.pointerType === 'mouse') return
-      dragRef.current = { pointerX: event.clientX, pointerY: event.clientY, originX: pos.x, originY: pos.y }
-      setDragging(true)
-      event.currentTarget.setPointerCapture(event.pointerId)
-    },
-    [pos.x, pos.y],
-  )
-
-  const onDragMove = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current
-      if (!drag) return
-      const { width, height } = petSize(pet.scale)
-      setPos(
-        clampPetPosition(
-          drag.originX + (event.clientX - drag.pointerX),
-          drag.originY + (event.clientY - drag.pointerY),
-          width,
-          height,
-          window.innerWidth,
-          window.innerHeight,
-        ),
-      )
-    },
-    [pet.scale],
-  )
-
-  const onDragEnd = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!dragRef.current) return
-      dragRef.current = null
-      setDragging(false)
-      try {
-        event.currentTarget.releasePointerCapture(event.pointerId)
-      } catch {
-        /* 指针已释放时忽略 */
-      }
-      setPos((final) => {
-        persist({ x: final.x, y: final.y })
-        return final
-      })
-    },
-    [persist],
-  )
+  }, [size])
 
   const dismissCurrent = useCallback(() => {
     setQueue((prev) => prev.slice(1))
@@ -213,14 +224,14 @@ export function PetWindow() {
           })
         }
         if (action === 'dismiss') dispatch({ type: 'SCHEDULE_NOTIFIED', id: taskId, key: taskKey })
+        const replyMood = action === 'done' ? 'happy' : 'idle'
         const reply = action === 'done'
           ? petTaskDoneReply(message.name ?? '任务')
           : action === 'snooze'
             ? petTaskSnoozeReply(message.name ?? '任务')
             : petTaskDismissReply(message.name ?? '任务')
-        const replyMood: PetMood = action === 'done' ? 'happy' : 'idle'
-        setMood(replyMood)
         setQueue([{ id: `petmsg-reply-${Date.now().toString(36)}`, text: reply, mood: replyMood }])
+        setBrain((prev) => ({ ...prev, creature: action === 'done' ? 'excited' : 'look', lockedUntil: Date.now() + 1500, stateUntil: Date.now() + 1500 }))
         return
       }
       dismissCurrent()
@@ -228,73 +239,40 @@ export function PetWindow() {
     [dispatch, dismissCurrent],
   )
 
+  // 点一下宠物:蹦跳撒星星,偶尔说句话。
+  const onCreatureClick = useCallback(() => {
+    const now = Date.now()
+    if (now - lastPetClickRef.current < 2600) return
+    lastPetClickRef.current = now
+    setBrain((prev) => ({ ...prev, creature: 'excited', lockedUntil: now + 1500, stateUntil: now + 1500 }))
+    if (queueRef.current.length === 0) {
+      setQueue((prev) => enqueuePetMessage(prev, { text: `${species.name}跳起来啦!继续加油哦~`, mood: 'happy' }))
+    }
+  }, [species.name])
+
   if (!pet.enabled) return null
 
+  // 最小化:宠物趴在右下角打盹,点它醒来。
   if (pet.minimized) {
     return (
-      <button
-        type="button"
-        className="pet-ball"
-        style={{ left: pos.x, top: pos.y }}
-        aria-label="打开学习宠物芽芽"
-        title="打开芽芽"
-        onClick={() => persist({ minimized: false })}
-      >
-        <Mascot mood="idle" size={40} />
-        {queue.length > 0 && <i className="pet-ball-dot" aria-hidden />}
-      </button>
+      <div className="pet-live is-min" style={{ left: window.innerWidth - size - 18 }}>
+        <button type="button" className="pet-creature-btn" aria-label="唤醒宠物" title="唤醒" onClick={() => persist({ minimized: false })}>
+          <PetCreature species={species} state="sleep" size={64} />
+        </button>
+      </div>
     )
   }
 
-  const { width, height } = petSize(pet.scale)
+  const bottom = 14 + ((species.speed * 7) % FLOOR_BAND)
+  const showBubble = !!current
 
   return (
-    <section
-      className={`pet-float is-${mood}${dragging ? ' is-dragging' : ''}`}
-      style={{ left: pos.x, top: pos.y, width, minHeight: height }}
-      aria-label="学习宠物芽芽"
+    <div
+      className={`pet-live${showBubble ? ' has-bubble' : ''}`}
+      style={{ left: brain.x, bottom }}
+      aria-label={`桌面宠物${species.name}`}
     >
-      <div
-        className="pet-head"
-        onPointerDown={onDragStart}
-        onPointerMove={onDragMove}
-        onPointerUp={onDragEnd}
-        onPointerCancel={onDragEnd}
-      >
-        <span className="pet-head-title">
-          <Icon name="sparkle" size={12} /> 芽芽陪学
-        </span>
-        <span className="spacer" />
-        <button
-          type="button"
-          className="pet-btn"
-          aria-label={pet.scale === 1.25 ? '恢复标准大小' : '放大宠物窗口'}
-          title={pet.scale === 1.25 ? '恢复标准大小' : '放大'}
-          onClick={() => persist({ scale: pet.scale === 1.25 ? SCALE_1 : 1.25 })}
-        >
-          {pet.scale === 1.25 ? '−' : '+'}
-        </button>
-        <button
-          type="button"
-          className="pet-btn"
-          aria-label="最小化宠物"
-          title="最小化"
-          onClick={() => persist({ minimized: true })}
-        >
-          <Icon name="up" size={12} />
-        </button>
-        <button
-          type="button"
-          className="pet-btn"
-          aria-label="关闭宠物(可在设置中重新开启)"
-          title="关闭"
-          onClick={() => persist({ enabled: false })}
-        >
-          <Icon name="close" size={12} />
-        </button>
-      </div>
-
-      {current ? (
+      {showBubble && (
         <div className="pet-bubble" role="status" onClick={dismissCurrent} title="点击看下一条">
           <p>{current.text}</p>
           {current.actions && current.actions.length > 0 && (
@@ -315,15 +293,29 @@ export function PetWindow() {
           )}
           {queue.length > 1 && <span className="pet-bubble-more">还有 {queue.length - 1} 条</span>}
         </div>
-      ) : (
-        <div className="pet-hint" aria-hidden>
-          {mood === 'think' ? '认真讲题中…' : '芽芽在你身边'}
-        </div>
       )}
 
-      <div className="pet-stage">
-        <Mascot mood={mood} size={Math.round((pet.scale === 1.25 ? 96 : 78))} />
+      <div className="pet-creature-wrap" onMouseEnter={() => setToolsOpen(true)} onMouseLeave={() => setToolsOpen(false)}>
+        <div className="pet-tools" data-open={toolsOpen}>
+          <button type="button" className="pet-btn" aria-label="放大或还原宠物" title="大小" onClick={() => persist({ scale: pet.scale === 1.25 ? 1 : 1.25 })}>
+            {pet.scale === 1.25 ? '−' : '+'}
+          </button>
+          <button type="button" className="pet-btn" aria-label="让宠物打盹(最小化)" title="打盹" onClick={() => persist({ minimized: true })}>
+            <Icon name="up" size={11} />
+          </button>
+          <button type="button" className="pet-btn" aria-label="送走宠物(可在设置页找回)" title="送走" onClick={() => persist({ enabled: false })}>
+            <Icon name="close" size={11} />
+          </button>
+        </div>
+        <button type="button" className="pet-creature-btn" aria-label={`和${species.name}互动`} onClick={onCreatureClick}>
+          <PetCreature
+            species={species}
+            state={brain.creature === 'walk' ? 'walk' : brain.creature}
+            size={size}
+            facing={brain.facing}
+          />
+        </button>
       </div>
-    </section>
+    </div>
   )
 }

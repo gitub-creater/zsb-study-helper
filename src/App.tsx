@@ -33,6 +33,7 @@ import { LoginGate } from './pages/LoginPage'
 import { Splash } from './components/Splash'
 import { InstallBanner } from './components/InstallBanner'
 import { ScheduledPage } from './pages/ScheduledPage'
+import { PetPark } from './pages/PetPage'
 import { ScheduleAlerts } from './components/ScheduleAlerts'
 import { PetWindow } from './components/PetWindow'
 
@@ -51,6 +52,7 @@ const NAV: NavItem[] = [
   { key: 'office', label: '实操大题', icon: 'edit' },
   { key: 'aioffice', label: 'AI 办公文档', icon: 'sparkle' },
   { key: 'english', label: '英语打卡', icon: 'mic' },
+  { key: 'pet', label: '宠物园', icon: 'star' },
   { key: 'sources', label: '考试资料', icon: 'cap' },
   { key: 'hot', label: '热门题', icon: 'fire' },
   { key: 'wrong', label: '错题本', icon: 'wrongbook' },
@@ -137,7 +139,7 @@ function BottomNav({ route, onMore }: { route: string; onMore: () => void }) {
           )}
         </a>
       ))}
-      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings'].includes(route) ? 'on' : ''} onClick={onMore}>
+      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings', 'pet'].includes(route) ? 'on' : ''} onClick={onMore}>
         <Icon name="dots" size={20} />
         更多
       </button>
@@ -238,6 +240,7 @@ function Router() {
     office: <OfficePage />,
     aioffice: <AiOfficePage />,
     english: <EnglishPage />,
+    pet: <PetPark />,
     sources: <SourcesPage />,
     hot: <HotPage />,
     wrong: <WrongBook />,

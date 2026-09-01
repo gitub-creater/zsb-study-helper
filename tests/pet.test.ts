@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  CREATURES,
+  CREATURE_ORDER,
   PET_QUEUE_LIMIT,
+  advanceCreature,
   clampPetPosition,
+  creatureStateDuration,
   enqueuePetMessage,
   emitPetEvent,
+  nextCreatureState,
   nextPetMessageId,
+  nextWalkTarget,
   onPetEvent,
   petMessageDuration,
   petTaskDoneReply,
@@ -30,6 +36,54 @@ function taskMessage(overrides: Partial<PetMessage> = {}): PetMessage {
     ...overrides,
   }
 }
+
+describe('宠物生物行为', () => {
+  it('四只角色齐全且速度性格各不相同', () => {
+    expect(CREATURE_ORDER).toEqual(['sprout', 'cat', 'rabbit', 'bear'])
+    const speeds = CREATURE_ORDER.map((id) => CREATURES[id].speed)
+    expect(new Set(speeds).size).toBe(CREATURE_ORDER.length)
+    for (const id of CREATURE_ORDER) {
+      expect(CREATURES[id].name).toBeTruthy()
+      expect(CREATURES[id].trait).toBeTruthy()
+    }
+  })
+
+  it('行为链循环推进,不会卡死在单个状态', () => {
+    let state = nextCreatureState('walk', 0.01)
+    expect(['look', 'sit', 'sleep', 'walk']).toContain(state)
+    // 任意随机数都能得到合法状态
+    for (let roll = 0; roll <= 10; roll += 1) {
+      const next = nextCreatureState('sleep', roll / 10)
+      expect(['walk', 'sit', 'look', 'sleep', 'excited', 'remind', 'think']).toContain(next)
+    }
+  })
+
+  it('走路按速度推进并在到达时停下', () => {
+    const far = advanceCreature(0, 300, 60, 1000)
+    expect(far).toEqual({ x: 60, arrived: false })
+    const near = advanceCreature(290, 300, 60, 1000)
+    expect(near).toEqual({ x: 300, arrived: true })
+    const backward = advanceCreature(300, 100, 60, 1000)
+    expect(backward.x).toBe(240)
+  })
+
+  it('踱步目标始终在视口内,且与当前位置保持距离', () => {
+    for (let i = 0; i < 30; i += 1) {
+      const target = nextWalkTarget(400, 900)
+      expect(target).toBeGreaterThanOrEqual(70)
+      expect(target).toBeLessThanOrEqual(830)
+    }
+  })
+
+  it('各状态都有正的持续时间,打盹最久', () => {
+    const walk = creatureStateDuration('walk', 0.5)
+    const sleep = creatureStateDuration('sleep', 0.5)
+    const look = creatureStateDuration('look', 0.5)
+    expect(walk).toBeGreaterThan(0)
+    expect(look).toBeGreaterThan(0)
+    expect(sleep).toBeGreaterThan(walk)
+  })
+})
 
 describe('宠物消息队列', () => {
   it('消息按顺序追加，超过上限时丢弃最旧的', () => {

@@ -175,3 +175,82 @@ export function clampPetPosition(
     y: Math.min(Math.max(0, y), maxY),
   }
 }
+
+// ---- 宠物生物(creature)角色与行为状态机 ----
+// 宠物是"活的":在地面踱步、张望、坐下、打盹,而不是静态图标。
+
+import type { AvatarKind } from '../types'
+
+export type CreatureState = 'walk' | 'look' | 'sit' | 'sleep' | 'excited' | 'remind' | 'think'
+
+export interface CreatureProfile {
+  id: AvatarKind
+  name: string
+  trait: string
+  body: string
+  belly: string
+  ear: 'sprout' | 'cat' | 'rabbit' | 'bear'
+  /** 走路速度 px/s,性格不同快慢不同 */
+  speed: number
+}
+
+export const CREATURES: Record<AvatarKind, CreatureProfile> = {
+  sprout: { id: 'sprout', name: '芽芽', trait: '元气满满的小豆芽,最爱陪你解题', body: '#8FE3C8', belly: '#79D5B9', ear: 'sprout', speed: 46 },
+  cat: { id: 'cat', name: '团团', trait: '好奇心旺盛的小橘猫,走两步就要东张西望', body: '#FFC069', belly: '#F5A940', ear: 'cat', speed: 62 },
+  rabbit: { id: 'rabbit', name: '雪球', trait: '安安静静的小雪兔,经常坐着发呆想事情', body: '#FFB1C6', belly: '#F99BB4', ear: 'rabbit', speed: 40 },
+  bear: { id: 'bear', name: '布丁', trait: '慢悠悠的小熊,走着走着就犯困打盹', body: '#D8A86F', belly: '#C7945C', ear: 'bear', speed: 34 },
+}
+
+export const CREATURE_ORDER: AvatarKind[] = ['sprout', 'cat', 'rabbit', 'bear']
+
+/** 行为链:走路后多半张望,张望后继续走或坐下,坐久打盹——循环往复像真的一样。 */
+export function nextCreatureState(current: CreatureState, roll: number): CreatureState {
+  const r = Math.floor(roll * 100)
+  switch (current) {
+    case 'walk':
+      return r < 55 ? 'look' : r < 75 ? 'sit' : r < 88 ? 'sleep' : 'walk'
+    case 'look':
+      return r < 60 ? 'walk' : r < 85 ? 'sit' : 'look'
+    case 'sit':
+      return r < 45 ? 'walk' : r < 80 ? 'sleep' : 'look'
+    case 'sleep':
+      return r < 70 ? 'walk' : 'sit'
+    default:
+      return 'walk'
+  }
+}
+
+/** 每个状态的持续时间(ms):走路久一点,打盹更长。 */
+export function creatureStateDuration(state: CreatureState, roll: number): number {
+  switch (state) {
+    case 'walk':
+      return 2600 + roll * 3400
+    case 'look':
+      return 1600 + roll * 1800
+    case 'sit':
+      return 2400 + roll * 2600
+    case 'sleep':
+      return 4200 + roll * 4600
+    case 'excited':
+      return 1400
+    default:
+      return 2400
+  }
+}
+
+/** 随机下一个踱步目标点:与当前位置至少隔开一段距离,来回走才自然。 */
+export function nextWalkTarget(x: number, viewportWidth: number, margin = 70): number {
+  const low = margin
+  const high = Math.max(margin + 40, viewportWidth - margin)
+  let target = margin + Math.random() * (high - low)
+  if (Math.abs(target - x) < 120) target = x < (low + high) / 2 ? high - Math.random() * 100 : low + Math.random() * 100
+  return Math.min(high, Math.max(low, target))
+}
+
+/** 走路推进:按速度逼近目标,返回新位置与是否到达。 */
+export function advanceCreature(x: number, target: number, speed: number, dtMs: number): { x: number; arrived: boolean } {
+  const step = (speed * dtMs) / 1000
+  const delta = target - x
+  if (Math.abs(delta) <= step) return { x: target, arrived: true }
+  return { x: x + Math.sign(delta) * step, arrived: false }
+}

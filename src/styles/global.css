@@ -3376,3 +3376,432 @@ body.rm *::after {
   .pet-float, .pet-bubble, .pet-ball { animation: none; }
   .pet-float.is-remind .pet-stage, .pet-float.is-happy .pet-stage { animation: none; }
 }
+
+/* ===== 宠物动画系统:呼吸/眨眼/摇摆/蹦跳/歪头/思考泡泡/庆祝星星/旗子 ===== */
+.pet-avatar { overflow: visible; }
+.pet-body {
+  animation: petBreathe 2.6s ease-in-out infinite;
+  transform-origin: 60px 104px;
+}
+@keyframes petBreathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.03, 0.965); }
+}
+.pet-shadow {
+  animation: petShadowBreathe 2.6s ease-in-out infinite;
+  transform-origin: 60px 112px;
+  transform-box: fill-box;
+}
+@keyframes petShadowBreathe {
+  0%, 100% { transform: scaleX(1); opacity: 0.16; }
+  50% { transform: scaleX(0.94); opacity: 0.12; }
+}
+.pet-eye {
+  animation: petBlink 4.2s infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes petBlink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.08); }
+  97% { transform: scaleY(1); }
+}
+.pet-tassel {
+  animation: petTassel 3.4s ease-in-out infinite;
+  transform-origin: 96px 18px;
+  transform-box: fill-box;
+}
+@keyframes petTassel {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(14deg); }
+}
+
+/* 待机小动作(作用于动作层,与呼吸分层互不覆盖) */
+.pet-act-sway .pet-action {
+  animation: petSway 2.4s ease-in-out infinite;
+  transform-origin: 60px 106px;
+}
+@keyframes petSway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+.pet-act-hop .pet-action {
+  animation: petHop 0.85s cubic-bezier(0.34, 1.4, 0.64, 1) 2;
+  transform-origin: 60px 106px;
+}
+.pet-act-hop .pet-shadow {
+  animation: petShadowHop 0.85s ease-in-out 2;
+}
+@keyframes petHop {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-13px); }
+}
+@keyframes petShadowHop {
+  0%, 100% { transform: scaleX(1); opacity: 0.16; }
+  45% { transform: scaleX(0.72); opacity: 0.08; }
+}
+.pet-act-tilt .pet-action {
+  animation: petTilt 2.8s ease-in-out infinite;
+  transform-origin: 60px 106px;
+}
+@keyframes petTilt {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  70% { transform: rotate(-7deg); }
+  85% { transform: rotate(-7deg); }
+}
+
+/* remind:旗面摇摆 + 身体前倾一遍 */
+.pet-flag {
+  animation: petFlagWave 0.9s ease-in-out infinite;
+  transform-origin: 92px 62px;
+  transform-box: fill-box;
+}
+@keyframes petFlagWave {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(-9deg) translateX(-1.5px); }
+}
+.pet-m-remind .pet-action {
+  animation: petLean 1.6s ease-in-out infinite;
+  transform-origin: 60px 106px;
+}
+@keyframes petLean {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3.2deg) translateY(-2px); }
+}
+
+/* think:三个泡泡依次上浮 */
+.pet-bub {
+  opacity: 0;
+  animation: petBubbleUp 2.4s ease-out infinite;
+}
+.pet-bub-2 { animation-delay: 0.8s; }
+.pet-bub-3 { animation-delay: 1.6s; }
+@keyframes petBubbleUp {
+  0% { opacity: 0; transform: translateY(6px) scale(0.6); }
+  25% { opacity: 0.9; transform: translateY(0) scale(1); }
+  70% { opacity: 0.55; transform: translateY(-9px) scale(1); }
+  100% { opacity: 0; transform: translateY(-18px) scale(0.7); }
+}
+
+/* happy:星星闪烁 */
+.pet-star {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: petStar 1.1s ease-in-out infinite;
+}
+.pet-star-2 { animation-delay: 0.45s; }
+@keyframes petStar {
+  0%, 100% { transform: scale(0.55) rotate(0deg); opacity: 0.35; }
+  50% { transform: scale(1.15) rotate(24deg); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-body, .pet-shadow, .pet-eye, .pet-tassel, .pet-flag,
+  .pet-act-sway .pet-action, .pet-act-hop .pet-action, .pet-act-tilt .pet-action,
+  .pet-m-remind .pet-action, .pet-bub, .pet-star { animation: none; }
+}
+
+/* ===== 活的宠物生物:走路迈腿/打盹冒Zzz/张望动瞳孔/开心蹦跳 ===== */
+.pet-live {
+  position: fixed;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  transition: left 0.12s linear;
+}
+.pet-live .pet-bubble, .pet-live .pet-creature-btn, .pet-live .pet-tools .pet-btn { pointer-events: auto; }
+.pet-creature-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.pet-creature-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
+.pet-tools {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 2px;
+  opacity: 0.45;
+  transition: opacity 0.15s;
+}
+.pet-creature-wrap:hover .pet-tools, .pet-tools[data-open="true"] { opacity: 1; }
+.pet-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line, #e3e9f2);
+  border-radius: 6px;
+  background: var(--card, #fff);
+  color: var(--muted, #7b8794);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.pet-btn:hover { background: var(--primary-weak, #e7f2ff); color: var(--primary-deep, #2465b8); }
+
+/* 生物分层动画 */
+.petc { overflow: visible; }
+.petc-body {
+  animation: petcBreathe 2.6s ease-in-out infinite;
+  transform-origin: 60px 104px;
+}
+@keyframes petcBreathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.025, 0.972); }
+}
+.petc-shadow {
+  transform-origin: 60px 112px;
+  transform-box: fill-box;
+  animation: petcShadow 2.6s ease-in-out infinite;
+}
+@keyframes petcShadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.16; }
+  50% { transform: scaleX(0.94); opacity: 0.12; }
+}
+.petc-eye { animation: petcBlink 4.2s infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes petcBlink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.08); }
+  97% { transform: scaleY(1); }
+}
+.petc-tassel { animation: petcTassel 3.4s ease-in-out infinite; transform-origin: 96px 18px; transform-box: fill-box; }
+@keyframes petcTassel {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(14deg); }
+}
+.petc-tail { animation: petcTail 1.6s ease-in-out infinite; transform-origin: 94px 84px; }
+@keyframes petcTail {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(16deg); }
+}
+.petc-ear { animation: petcEar 4.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes petcEar {
+  0%, 88%, 100% { transform: rotate(0deg); }
+  93% { transform: rotate(-5deg); }
+}
+
+/* 走路:身体上下颠 + 两脚交替迈 */
+.petc-is-walk .petc-body {
+  animation: petcWalkBounce 0.52s ease-in-out infinite;
+}
+@keyframes petcWalkBounce {
+  0%, 100% { transform: translateY(0) rotate(-1.6deg); }
+  50% { transform: translateY(-4.5px) rotate(1.6deg); }
+}
+.petc-foot { transform-origin: top center; transform-box: fill-box; }
+.petc-foot.is-step { animation: petcStep 0.52s ease-in-out infinite; }
+.petc-foot-r.is-step { animation-delay: 0.26s; }
+@keyframes petcStep {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3.5px) rotate(-16deg); }
+}
+.petc-is-walk .petc-shadow { animation: petcWalkShadow 0.52s ease-in-out infinite; }
+@keyframes petcWalkShadow {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.9); }
+}
+
+/* 张望:瞳孔左右看 */
+.petc-is-look .petc-pupil { animation: petcLookAround 2.2s ease-in-out infinite; }
+@keyframes petcLookAround {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(1.6px); }
+  65% { transform: translateX(-1.6px); }
+}
+
+/* 打盹:身体压低慢起伏 + Zzz 上浮 */
+.petc-is-sleep .petc-body {
+  animation: petcSleep 3s ease-in-out infinite;
+  transform-origin: 60px 104px;
+}
+@keyframes petcSleep {
+  0%, 100% { transform: scale(1.02, 0.95) translateY(2px); }
+  50% { transform: scale(1.04, 0.99) translateY(0); }
+}
+.petc-z { animation: petcZ 2.7s ease-out infinite; opacity: 0; }
+.petc-z-2 { animation-delay: 0.9s; }
+.petc-z-3 { animation-delay: 1.8s; }
+@keyframes petcZ {
+  0% { opacity: 0; transform: translateY(4px); }
+  30% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-14px); }
+}
+
+/* 开心:蹦跳 + 星星闪 */
+.petc-is-excited .petc-body {
+  animation: petcJump 0.62s cubic-bezier(0.34, 1.5, 0.64, 1) 2;
+}
+@keyframes petcJump {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-14px); }
+  70% { transform: translateY(-5px); }
+}
+.petc-is-excited .petc-shadow { animation: petcJumpShadow 0.62s ease-in-out 2; }
+@keyframes petcJumpShadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.16; }
+  40% { transform: scaleX(0.68); opacity: 0.07; }
+}
+.petc-star { transform-origin: center; transform-box: fill-box; animation: petcStar 1s ease-in-out infinite; }
+.petc-star-2 { animation-delay: 0.4s; }
+@keyframes petcStar {
+  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.3; }
+  50% { transform: scale(1.2) rotate(24deg); opacity: 1; }
+}
+
+/* 提醒:举旗摇摆 + 身体前倾晃 */
+.petc-flag { animation: petcFlagWave 0.9s ease-in-out infinite; transform-origin: 92px 62px; transform-box: fill-box; }
+@keyframes petcFlagWave {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(-9deg) translateX(-1.5px); }
+}
+.petc-is-remind .petc-body { animation: petcLean 1.6s ease-in-out infinite; transform-origin: 60px 106px; }
+@keyframes petcLean {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg) translateY(-2px); }
+}
+
+/* 最小化:趴着打盹的小宠物 */
+.pet-live.is-min { pointer-events: none; }
+.pet-live.is-min .pet-creature-btn { pointer-events: auto; }
+
+/* ===== 宠物园页面 ===== */
+.park { display: flex; flex-direction: column; gap: 14px; }
+.park-intro b { font-size: 15px; }
+.park-scene {
+  position: relative;
+  height: min(52vh, 430px);
+  min-height: 300px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #bfe3ff 0%, #e3f3ff 46%, #d9f2df 46%, #bfe6c8 74%, #a9dcb8 100%);
+  border-radius: var(--r, 14px);
+  border: 1px solid var(--line, #e3e9f2);
+}
+.park-sun {
+  position: absolute;
+  top: 26px;
+  right: 44px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe9a3 40%, #ffd34d 70%);
+  box-shadow: 0 0 34px rgba(255, 211, 77, 0.55);
+  animation: parkSun 5s ease-in-out infinite;
+}
+@keyframes parkSun {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.park-cloud {
+  position: absolute;
+  width: 74px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 22px -10px 0 -4px rgba(255, 255, 255, 0.85), -20px -6px 0 -6px rgba(255, 255, 255, 0.85);
+  animation: parkCloud linear infinite;
+}
+.park-cloud-1 { top: 34px; animation-duration: 44s; }
+.park-cloud-2 { top: 78px; transform: scale(0.7); animation-duration: 62s; animation-delay: -20s; }
+.park-cloud-3 { top: 16px; transform: scale(0.55); animation-duration: 78s; animation-delay: -50s; }
+@keyframes parkCloud {
+  from { left: -140px; }
+  to { left: 110%; }
+}
+.park-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 34%; }
+.park-flower {
+  position: absolute;
+  bottom: 8px;
+  font-style: normal;
+  font-size: 15px;
+  opacity: 0.75;
+  animation: parkFlower 3.6s ease-in-out infinite;
+}
+.park-flower-1 { left: 8%; }
+.park-flower-2 { left: 30%; bottom: 20px; animation-delay: 0.7s; }
+.park-flower-3 { left: 58%; animation-delay: 1.3s; }
+.park-flower-4 { left: 84%; bottom: 18px; animation-delay: 2s; }
+@keyframes parkFlower {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(8deg); }
+}
+.park-pet {
+  position: absolute;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  transition: left 0.12s linear;
+}
+.park-pet-btn { border: none; background: transparent; padding: 0; cursor: pointer; line-height: 0; -webkit-tap-highlight-color: transparent; }
+.park-pet-btn:hover { transform: translateY(-2px); }
+.park-crown {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--yellow, #e89b1c);
+  background: var(--card, #fff);
+  border: 1px solid var(--yellow-weak, #fcf3de);
+  border-radius: 999px;
+  padding: 2px 6px;
+  display: inline-flex;
+  box-shadow: var(--shadow, 0 4px 14px rgba(23, 32, 44, 0.1));
+  z-index: 2;
+}
+.park-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-deep, #2465b8);
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e3e9f2);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: -6px;
+  pointer-events: none;
+}
+.park-heart {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  color: var(--coral, #e85d4f);
+  font-size: 15px;
+  animation: parkHeart 1.1s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes parkHeart {
+  0% { opacity: 0; transform: translateY(4px) scale(0.5); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-26px) scale(1.25); }
+}
+.park-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.park-card.is-on { border-color: var(--primary, #3e9bff); box-shadow: 0 0 0 2px var(--primary-soft, #cfe5ff); }
+.park-card-avatar {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--primary-weak, #e7f2ff);
+  overflow: hidden;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petc-body, .petc-shadow, .petc-eye, .petc-tassel, .petc-tail, .petc-ear,
+  .petc-foot.is-step, .petc-is-walk .petc-body, .petc-is-walk .petc-shadow,
+  .petc-is-look .petc-pupil, .petc-is-sleep .petc-body, .petc-z,
+  .petc-is-excited .petc-body, .petc-is-excited .petc-shadow, .petc-star,
+  .petc-is-remind .petc-body, .petc-flag,
+  .park-sun, .park-cloud, .park-flower, .park-heart { animation: none; }
+  .pet-live { transition: none; }
+}
