@@ -25,6 +25,8 @@ function ringForLevel(level: number): string | undefined {
 
 export function ProfilePage() {
   const { state, dispatch } = useStore()
+  const petSettings = state.settings.pet ?? { enabled: true }
+  const petEnabled = petSettings.enabled !== false
   const toast = useToast()
   const [editOpen, setEditOpen] = useState(false)
   const [nickname, setNickname] = useState(state.profile?.nickname ?? '')
@@ -259,6 +261,27 @@ export function ProfilePage() {
             </div>
           </div>
 
+          <div className="card">
+            <div className="card-h">
+              <span className="icon-chip">
+                <Icon name="sparkle" size={15} />
+              </span>
+              <b>桌面宠物</b>
+            </div>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <div className="col" style={{ gap: 3 }}>
+                <span className="fs13">芽芽陪学悬浮窗</span>
+                <span className="fs12 muted">静音陪伴:任务到点提醒、讲题时陪思考、久坐鼓励。可拖动、缩放与最小化。</span>
+              </div>
+              <button
+                type="button"
+                className={`btn btn-sm${petEnabled ? ' btn-primary' : ''}`}
+                onClick={() => dispatch({ type: 'SET_SETTINGS', patch: { pet: { ...petSettings, enabled: !petEnabled } } })}
+              >
+                {petEnabled ? '已开启' : '已关闭'}
+              </button>
+            </div>
+          </div>
           <div className="card">
             <div className="card-h">
               <span className="icon-chip">

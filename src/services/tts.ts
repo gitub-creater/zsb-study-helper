@@ -101,6 +101,16 @@ function nativeTtsBridge(): NativeTtsBridge | null {
   return bridge && typeof bridge.speak === 'function' && typeof bridge.voices === 'function' ? bridge : null
 }
 
+/** 软件派生音色：同一个系统引擎通过音高参数得到不同听感，不依赖额外语音包。 */
+const NATIVE_PITCH_VOICES: Array<{ pitch: number; name: string; note: string }> = [
+  { pitch: 1, name: '悦悦·标准', note: '系统原声' },
+  { pitch: 0.72, name: '辉辉·低沉', note: '沉稳男声感' },
+  { pitch: 1.3, name: '甜甜·清亮', note: '清脆甜美' },
+  { pitch: 1.12, name: '悠悠·舒缓', note: '温和柔声' },
+]
+
+const PITCH_VOICE_PREFIX = 'zsb-pitch:'
+
 /** 把原生 TTS 桥适配成 Web Speech 的 synthesis/utterance 事件模型。 */
 export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment {
   const listeners: (() => void)[] = []
@@ -111,6 +121,7 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
   let offset = 0
   let resumedFrom = 0
   let seq = 0
+  let started = false
   let cachedVoices: SpeechSynthesisVoice[] | null = null
 
   const voiceNameOf = (utterance: SpeechSynthesisUtterance): string => utterance.voice?.voiceURI ?? ''
@@ -119,6 +130,7 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
     current = null
     currentId = ''
     currentText = ''
+    started = false
     synthesis.speaking = false
     synthesis.paused = false
   }
@@ -129,7 +141,11 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
     try {
       if (type === 'start') {
         offset = 0
-        utterance.onstart?.(new Event('start') as SpeechSynthesisEvent)
+        // onstart 已在 speak 提交成功时乐观触发过；部分引擎回调缺失或延迟，这里只做幂等兜底。
+        if (!started) {
+          started = true
+          utterance.onstart?.(new Event('start') as SpeechSynthesisEvent)
+        }
       } else if (type === 'boundary') {
         const charIndex = Math.min(resumedFrom + (Number(extra) || 0), currentText.length)
         offset = charIndex
@@ -159,6 +175,7 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
     },
     getVoices(): SpeechSynthesisVoice[] {
       if (cachedVoices) return cachedVoices
+      let systemVoices: SpeechSynthesisVoice[] = []
       try {
         const raw = JSON.parse(bridge.voices()) as Array<{
           voiceURI?: string
@@ -167,7 +184,7 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
           default?: boolean
           localService?: boolean
         }>
-        cachedVoices = raw
+        systemVoices = raw
           .filter((voice) => voice.name && voice.voiceURI)
           .map((voice) => ({
             name: String(voice.name),
@@ -177,8 +194,17 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
             localService: voice.localService !== false,
           })) as unknown as SpeechSynthesisVoice[]
       } catch {
-        cachedVoices = []
+        systemVoices = []
       }
+      // 系统引擎通常只带一两个声音；追加软件派生音色（音高变体）让用户有更多选择。
+      const presets = NATIVE_PITCH_VOICES.map((preset) => ({
+        name: `${preset.name}（${preset.note}）`,
+        lang: 'zh-CN',
+        voiceURI: `${PITCH_VOICE_PREFIX}${preset.pitch}`,
+        default: preset.pitch === 1,
+        localService: true,
+      })) as unknown as SpeechSynthesisVoice[]
+      cachedVoices = [...presets, ...systemVoices]
       return cachedVoices
     },
     pause() {
@@ -218,7 +244,12 @@ export function nativeTtsEnvironment(bridge: NativeTtsBridge): SpeechEnvironment
       currentId = `zsb-tts-${seq}`
       synthesis.speaking = true
       const ok = bridge.speak(currentId, utterance.text, currentRate, voiceNameOf(utterance))
-      if (!ok) {
+      if (ok) {
+        // Android TTS 的 onStart 回调时机不确定（部分引擎延迟甚至缺失），提交成功即
+        // 乐观进入 speaking：暂停/停止按钮立即可用，原生 start 事件到达时幂等跳过。
+        started = true
+        utterance.onstart?.(new Event('start') as SpeechSynthesisEvent)
+      } else {
         const failedId = currentId
         setTimeout(() => emit('error', failedId, ''), 0)
       }

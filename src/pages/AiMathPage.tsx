@@ -9,6 +9,7 @@ import { Markdown } from '../components/Markdown'
 import { AI_PRESETS, aiChatStream, AiAbortedError } from '../services/ai'
 import type { AiConfig, AiProviderId } from '../services/ai'
 import { BrowserSpeechController, SPEECH_RATES, SPEECH_RETRY_MESSAGE } from '../services/tts'
+import { emitPetEvent } from '../lib/pet'
 import type { SpeechPlaybackState, SpeechRate, SpeechSentence, SpeechVoiceOption } from '../services/tts'
 import { getSkill } from '../skills'
 import { nav, uid } from '../lib/misc'
@@ -708,6 +709,8 @@ export function AiMathPage() {
       const aid = uid('m')
       setMsgs([...history, { id: aid, role: 'assistant', text: '' }])
       setBusy(true)
+      // 通知桌面宠物进入陪伴/思考状态;宠物关闭时事件无人消费。
+      emitPetEvent({ type: 'study', phase: 'start' })
       const ac = new AbortController()
       abortRef.current = ac
       try {
@@ -729,6 +732,8 @@ export function AiMathPage() {
       } finally {
         setBusy(false)
         abortRef.current = null
+        // 讲题结束(无论完成还是中断),宠物给出总结鼓励并回到待机。
+        emitPetEvent({ type: 'study', phase: 'done' })
       }
     },
     [ai, configured, presetId, effort, skill, warnNoConfig]

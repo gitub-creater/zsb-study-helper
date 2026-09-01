@@ -34,6 +34,7 @@ import { Splash } from './components/Splash'
 import { InstallBanner } from './components/InstallBanner'
 import { ScheduledPage } from './pages/ScheduledPage'
 import { ScheduleAlerts } from './components/ScheduleAlerts'
+import { PetWindow } from './components/PetWindow'
 
 interface NavItem {
   key: string
@@ -273,6 +274,8 @@ export default function App() {
           <Router />
           {/* 全局调度器:任何页面都能收到到点提醒 */}
           <ScheduleAlerts />
+          {/* 桌面宠物芽芽:静音悬浮窗,单实例 */}
+          <PetWindow />
         </ToastProvider>
       </StoreProvider>
     </ErrorBoundary>

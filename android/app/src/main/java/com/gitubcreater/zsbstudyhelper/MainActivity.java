@@ -159,7 +159,16 @@ public class MainActivity extends BridgeActivity {
       if (!awaitTtsReady(4) || tts == null || text == null || text.length() == 0) return false;
       try {
         boolean voiceApplied = false;
-        if (voiceName != null && voiceName.length() > 0) {
+        if (voiceName != null && voiceName.startsWith("zsb-pitch:")) {
+          // 软件派生音色：同一系统引擎用音高参数变化听感，不依赖额外语音包。
+          try {
+            tts.setPitch(Float.parseFloat(voiceName.substring("zsb-pitch:".length())));
+          } catch (Exception ignored) {
+            tts.setPitch(1.0f);
+          }
+          tts.setLanguage(Locale.SIMPLIFIED_CHINESE);
+          voiceApplied = true;
+        } else if (voiceName != null && voiceName.length() > 0) {
           for (Voice voice : tts.getVoices()) {
             if (voice != null && voiceName.equals(voice.getName())) {
               if (tts.setVoice(voice) == TextToSpeech.SUCCESS) {

@@ -317,6 +317,21 @@ export interface Settings {
   ai?: AiSettings
   /** AI 讲题朗读偏好:优先使用系统提供的普通话自然音色 */
   speech?: SpeechSettings
+  /** 桌面宠物「芽芽」悬浮窗:开关、位置与外观跟随账号持久化 */
+  pet?: PetSettings
+}
+
+/** 桌面宠物悬浮窗偏好。宠物全程静音,只用动画与文字气泡。 */
+export interface PetSettings {
+  /** 关闭后设置页可重新开启;提醒不再经过宠物 */
+  enabled: boolean
+  /** 浮窗左上角位置(px),越界由组件自行收敛 */
+  x?: number
+  y?: number
+  /** 尺寸档位:1 标准 / 1.25 放大 */
+  scale?: 1 | 1.25
+  /** 最小化成小球,点击恢复 */
+  minimized?: boolean
 }
 
 /** OpenAI-compatible 服务配置。apiKey 仅保存在当前设备，不进入云端快照。 */

@@ -227,7 +227,9 @@ describe('Android 原生 TTS 桥适配', () => {
       }, browserSpeechEnvironment())
 
       expect(controller.supported).toBe(true)
-      expect(controller.voices()[0].name).toBe('vivo 普通话')
+      const voiceNames = controller.voices().map((voice) => voice.name)
+      expect(voiceNames.some((name) => name.includes('悦悦·标准'))).toBe(true)
+      expect(voiceNames.some((name) => name.includes('甜甜·清亮'))).toBe(true)
 
       expect(controller.speak('第一句。第二句！', { rate: 1.25, voiceId: 'vivo-local-cmn' })).toBe(true)
       expect(env.calls[0]).toMatchObject({ text: '第一句。第二句！', rate: 1.25, voiceName: 'vivo-local-cmn' })
@@ -254,6 +256,26 @@ describe('Android 原生 TTS 桥适配', () => {
       // 停止后到达的旧事件不应再影响状态
       fireNative('boundary', id, '8')
       expect(states[states.length - 1]).toBe('idle')
+    } finally {
+      delete (globalThis as unknown as Record<string, unknown>).ZsbNativeTts
+    }
+  })
+
+  it('原生 speak 提交成功即进入 speaking（乐观状态），start 事件幂等', () => {
+    const states: string[] = []
+    const env = makeBridge()
+    ;(globalThis as unknown as Record<string, unknown>).ZsbNativeTts = env.bridge
+    try {
+      const controller = new BrowserSpeechController({ onStateChange: (state) => states.push(state) }, browserSpeechEnvironment())
+      controller.speak('你好。')
+      const id = env.calls[0].id
+      // stop() 的收尾 idle 属正常清理;关键是 speak 提交后立即 speaking,不再依赖原生 onStart 回调。
+      expect(states[states.length - 1]).toBe('speaking')
+      fireNative('start', id)
+      expect(states.filter((state) => state === 'speaking')).toHaveLength(1)
+      // 软件派生音色:pitch URI 原样传给原生端解析
+      controller.speak('低音测试。', { voiceId: 'zsb-pitch:0.72' })
+      expect(env.calls[1]).toMatchObject({ voiceName: 'zsb-pitch:0.72' })
     } finally {
       delete (globalThis as unknown as Record<string, unknown>).ZsbNativeTts
     }

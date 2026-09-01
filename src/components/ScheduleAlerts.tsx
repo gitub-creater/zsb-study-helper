@@ -21,6 +21,7 @@ import {
 import type { ScheduleTask } from '../types'
 import { BrowserSpeechController } from '../services/tts'
 import { syncNativeScheduleNotifications } from '../services/nativeScheduleNotifications'
+import { emitPetEvent } from '../lib/pet'
 
 /** 页面里的“测试提醒”按钮通过这个事件请求弹出提醒。 */
 export const SCHEDULE_TEST_EVENT = 'zsb-schedule-test'
@@ -238,11 +239,22 @@ export function ScheduleAlerts() {
     void syncNativeScheduleNotifications(state.schedules ?? [], globalSpeechEnabled)
   }, [state.schedules, globalSpeechEnabled])
 
-  // 弹窗出现时尝试系统通知；权限、任务开关或环境不满足时，应用内弹窗仍是完整兜底。
+  // 弹窗出现时尝试系统通知,并同步喂给桌面宠物;宠物关闭时事件无人消费,无副作用。
   useEffect(() => {
     if (!alert || !task) return
     sendSystemNotification(task, alert.key)
-  }, [alert?.taskId, alert?.key, task?.id, task?.notificationEnabled, task?.name, task?.note, task?.title, task?.content])
+    emitPetEvent({
+      type: 'task',
+      task: {
+        taskId: task.id,
+        taskKey: alert.key,
+        name: scheduleTitle(task),
+        content: scheduleContent(task),
+        lateMinutes: Math.max(0, Math.round((Date.now() - fireAt(alert.key, scheduleAdvanceMinutes(task)).getTime()) / 60000)),
+        test: alert.test,
+      },
+    })
+  }, [alert?.taskId, alert?.key, alert?.test, task?.id, task?.notificationEnabled, task?.name, task?.note, task?.title, task?.content])
 
   // 声音在每次新提醒或用户点“再次播放”时启动；关闭、完成、稍后提醒均会停掉声音。
   useEffect(() => {

@@ -3229,3 +3229,150 @@ body.rm *::after {
 .spacer {
   flex: 1;
 }
+
+/* ===== 桌面宠物「芽芽」:静音悬浮窗,亮暗主题跟随语义变量 ===== */
+.pet-float {
+  position: fixed;
+  z-index: 85;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e3e9f2);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(23, 32, 44, 0.18);
+  animation: pet-pop 0.22s;
+  touch-action: none;
+  user-select: none;
+}
+.pet-float.is-dragging {
+  box-shadow: 0 20px 44px rgba(23, 32, 44, 0.28);
+  cursor: grabbing;
+}
+.pet-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: grab;
+  min-height: 22px;
+}
+.pet-float.is-dragging .pet-head { cursor: grabbing; }
+.pet-head-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-deep, #2465b8);
+}
+.pet-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line, #e3e9f2);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted, #7b8794);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pet-btn:hover { background: var(--primary-weak, #e7f2ff); color: var(--primary-deep, #2465b8); }
+
+.pet-bubble {
+  position: relative;
+  padding: 8px 10px;
+  background: var(--primary-weak, #e7f2ff);
+  border: 1px solid var(--primary-soft, #cfe5ff);
+  border-radius: 12px 12px 12px 4px;
+  cursor: pointer;
+  animation: pet-pop 0.18s;
+}
+.pet-bubble p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text, #26313e);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.pet-bubble-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.pet-bubble-more {
+  display: block;
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--primary-deep, #2465b8);
+  opacity: 0.85;
+}
+.pet-hint {
+  min-height: 18px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--muted, #7b8794);
+}
+.pet-stage {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex: 1;
+}
+.pet-float.is-remind .pet-stage { animation: pet-swing 0.9s ease-in-out 2; }
+.pet-float.is-happy .pet-stage { animation: pet-bounce 0.55s ease-out 2; }
+
+.pet-ball {
+  position: fixed;
+  z-index: 85;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e3e9f2);
+  border-radius: 50%;
+  box-shadow: 0 10px 24px rgba(23, 32, 44, 0.22);
+  cursor: pointer;
+  animation: pet-breathe 3.2s ease-in-out infinite;
+}
+.pet-ball-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--coral, #e85d4f);
+  border: 2px solid var(--card, #fff);
+}
+
+@keyframes pet-pop {
+  from { transform: scale(0.86); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes pet-swing {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-3.5deg); }
+  70% { transform: rotate(3.5deg); }
+}
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-7px); }
+}
+@keyframes pet-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-float, .pet-bubble, .pet-ball { animation: none; }
+  .pet-float.is-remind .pet-stage, .pet-float.is-happy .pet-stage { animation: none; }
+}
