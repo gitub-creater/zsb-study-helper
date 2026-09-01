@@ -56,11 +56,27 @@ export interface SpeechEnvironment {
   createUtterance?: (text: string) => SpeechSynthesisUtterance
 }
 
-function browserEnvironment(): SpeechEnvironment {
-  if (typeof window === 'undefined' || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return {}
+type SpeechWindow = Window & {
+  SpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance
+  /** Older Android WebView/Chromium builds expose the Web Speech constructor with a prefix. */
+  webkitSpeechSynthesis?: SpeechSynthesis
+  webkitSpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance
+}
+
+/**
+ * Resolve both standard and legacy Web Speech names. Vivo's browser and older
+ * Android WebViews can expose only the prefixed constructor, even though the
+ * system TTS engine is installed and ready to use.
+ */
+export function browserSpeechEnvironment(): SpeechEnvironment {
+  if (typeof window === 'undefined') return {}
+  const browserWindow = window as SpeechWindow
+  const synthesis = browserWindow.speechSynthesis ?? browserWindow.webkitSpeechSynthesis
+  const Utterance = browserWindow.SpeechSynthesisUtterance ?? browserWindow.webkitSpeechSynthesisUtterance
+  if (!synthesis || !Utterance) return {}
   return {
-    synthesis: window.speechSynthesis,
-    createUtterance: (text) => new window.SpeechSynthesisUtterance(text),
+    synthesis: synthesis as SpeechSynthesisPort,
+    createUtterance: (text) => new Utterance(text),
   }
 }
 
@@ -257,7 +273,7 @@ export class BrowserSpeechController {
   private startTimer: ReturnType<typeof setTimeout> | null = null
   private voicesLoadAttempted = false
 
-  constructor(callbacks: SpeechCallbacks = {}, environment: SpeechEnvironment = browserEnvironment()) {
+  constructor(callbacks: SpeechCallbacks = {}, environment: SpeechEnvironment = browserSpeechEnvironment()) {
     this.synthesis = environment.synthesis
     this.createUtterance = environment.createUtterance
     this.callbacks = callbacks
@@ -277,9 +293,14 @@ export class BrowserSpeechController {
     if (!this.voicesLoadAttempted) {
       this.voicesLoadAttempted = true
       // 触发加载
-      this.synthesis!.getVoices()
+      try { this.synthesis!.getVoices() } catch { /* 语音服务尚未就绪 */ }
     }
-    return listSpeechVoices(this.synthesis!.getVoices())
+    try {
+      return listSpeechVoices(this.synthesis!.getVoices() ?? [])
+    } catch {
+      // A few Android WebViews expose getVoices before the speech service is ready.
+      return []
+    }
   }
 
   refreshVoices(): SpeechVoiceOption[] {
@@ -351,7 +372,7 @@ export class BrowserSpeechController {
     this.stop()
     const run = ++this.run
     const utterance = this.createUtterance!(script)
-    const selectedVoice = resolveSpeechVoice(this.synthesis!.getVoices(), options.voiceId, options.voiceName)
+    const selectedVoice = resolveSpeechVoice(this.voicesForSynthesis(), options.voiceId, options.voiceName)
     if (selectedVoice) {
       utterance.voice = selectedVoice
       utterance.lang = selectedVoice.lang || 'zh-CN'
@@ -434,14 +455,22 @@ export class BrowserSpeechController {
 
   pause(): boolean {
     if (!this.supported || !this.utterance || !this.synthesis!.speaking || this.synthesis!.paused) return false
-    this.synthesis!.pause()
-    return true
+    try {
+      this.synthesis!.pause()
+      return true
+    } catch {
+      return false
+    }
   }
 
   resume(): boolean {
     if (!this.supported || !this.utterance || !this.synthesis!.paused) return false
-    this.synthesis!.resume()
-    return true
+    try {
+      this.synthesis!.resume()
+      return true
+    } catch {
+      return false
+    }
   }
 
   stop(notify = true): void {
@@ -450,7 +479,11 @@ export class BrowserSpeechController {
     this.utterance = null
     this.sentences = []
     this.clearStartTimer()
-    this.synthesis!.cancel()
+    try {
+      this.synthesis!.cancel()
+    } catch {
+      // Partial Web Speech implementations can throw while their service is restarting.
+    }
     if (notify) {
       this.callbacks.onStateChange?.('idle')
       this.callbacks.onSentenceChange?.(null)
@@ -476,6 +509,14 @@ export class BrowserSpeechController {
     if (this.startTimer) {
       clearTimeout(this.startTimer)
       this.startTimer = null
+    }
+  }
+
+  private voicesForSynthesis(): SpeechSynthesisVoice[] {
+    try {
+      return this.synthesis?.getVoices() ?? []
+    } catch {
+      return []
     }
   }
 
