@@ -1,7 +1,7 @@
 {
   "name": "zsb-study-helper",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.26",
   "type": "module",
   "description": "山东专升本学习助手 - 可爱校园冒险风备考工具",
   "scripts": {
