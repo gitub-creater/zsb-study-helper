@@ -8,7 +8,7 @@ import { Mascot } from '../components/Mascot'
 import { Markdown } from '../components/Markdown'
 import { AI_PRESETS, aiChatStream, AiAbortedError } from '../services/ai'
 import type { AiConfig, AiProviderId } from '../services/ai'
-import { BrowserSpeechController, SPEECH_RATES } from '../services/tts'
+import { BrowserSpeechController, SPEECH_RATES, SPEECH_RETRY_MESSAGE } from '../services/tts'
 import type { SpeechPlaybackState, SpeechRate, SpeechSentence, SpeechVoiceOption } from '../services/tts'
 import { getSkill } from '../skills'
 import { nav, uid } from '../lib/misc'
@@ -214,6 +214,8 @@ function SpeechControls({
   const playback = active ? speech.playback : 'idle'
   const speechEnabled = settings.enabled !== false
   const disabled = !speechEnabled || !supported || !toSpeechScript(text)
+  // 朗读/重新播放即使用户手势后重新探测语音能力，所以未探测到时仍保持可点。
+  const playable = !speechEnabled || !toSpeechScript(text)
   const hasNatural = voices.some((voice) => voice.isNatural)
 
   return (
@@ -247,8 +249,8 @@ function SpeechControls({
       </label>
 
       <div className="mathai-speech-actions" aria-label="朗读操作">
-        <button type="button" className="btn btn-xs" disabled={disabled} onClick={onRead}>
-          <Icon name="play" size={13} /> 朗读
+        <button type="button" className="btn btn-xs" disabled={playable} onClick={onRead}>
+          <Icon name="play" size={13} /> {supported ? '朗读' : '朗读（重新检测）'}
         </button>
         <button type="button" className="btn btn-xs" disabled={disabled || playback !== 'speaking'} onClick={onPause}>
           <Icon name="pause" size={13} /> 暂停
@@ -259,7 +261,7 @@ function SpeechControls({
         <button type="button" className="btn btn-xs" disabled={disabled || (playback !== 'speaking' && playback !== 'paused')} onClick={onStop}>
           <Icon name="stop" size={12} /> 停止
         </button>
-        <button type="button" className="btn btn-xs" disabled={disabled} onClick={onReplay}>
+        <button type="button" className="btn btn-xs" disabled={playable} onClick={onReplay}>
           <Icon name="refresh" size={13} /> 重新播放
         </button>
       </div>
@@ -297,7 +299,7 @@ function SpeechControls({
           className="btn btn-xs btn-icon btn-ghost"
           aria-label="刷新可用声音"
           title="刷新可用声音"
-          disabled={!speechEnabled || !supported}
+          disabled={!speechEnabled}
           onClick={onRefreshVoices}
         >
           <Icon name="refresh" size={14} />
@@ -311,7 +313,7 @@ function SpeechControls({
       )}
       {speechEnabled && !supported && (
         <p className="mathai-speech-note" role="status">
-          当前设备不支持语音朗读，文字讲解可继续正常使用。
+          {SPEECH_RETRY_MESSAGE}
         </p>
       )}
       {speechEnabled && supported && permission === 'default' && (
@@ -530,7 +532,7 @@ export function AiMathPage() {
     if (el) el.scrollTop = el.scrollHeight
   }, [msgs])
 
-  useEffect(() => {
+  const attachSpeech = useCallback(() => {
     const controller = new BrowserSpeechController({
       onStateChange: (playback) => {
         setSpeech((prev) => ({ ...prev, playback }))
@@ -547,11 +549,43 @@ export function AiMathPage() {
     setSpeechSupported(controller.supported)
     setSpeechPermission(controller.supported ? 'default' : 'unsupported')
     setSpeechVoices(controller.refreshVoices())
+    return controller
+  }, [])
+
+  useEffect(() => {
+    const controller = attachSpeech()
     return () => {
       if (speechRef.current === controller) speechRef.current = null
       controller.dispose()
     }
-  }, [])
+  }, [attachSpeech])
+
+  /** 初始探测失败后重新探测：部分手机浏览器（vivo/OPPO 等）会延迟注入语音 API。 */
+  const retrySpeechSupport = useCallback(() => {
+    if (!speechRef.current) attachSpeech()
+    const controller = speechRef.current
+    if (!controller?.probeSupport()) return false
+    setSpeechSupported(true)
+    setSpeechPermission((prev) => (prev === 'unsupported' ? 'default' : prev))
+    setSpeechVoices(controller.refreshVoices())
+    return true
+  }, [attachSpeech])
+
+  // 探测不到语音 API 时，在延时与页面回前台时机自动重试；仍失败则保留提示，等用户手势再试。
+  useEffect(() => {
+    if (speechSupported) return
+    const timers = [2000, 6000, 12000].map((delay) => window.setTimeout(retrySpeechSupport, delay))
+    const reprobe = () => {
+      if (document.visibilityState === 'visible') retrySpeechSupport()
+    }
+    document.addEventListener('visibilitychange', reprobe)
+    window.addEventListener('pageshow', reprobe)
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer))
+      document.removeEventListener('visibilitychange', reprobe)
+      window.removeEventListener('pageshow', reprobe)
+    }
+  }, [speechSupported, retrySpeechSupport])
 
   const stopSpeech = useCallback(() => {
     speechRef.current?.stop()
@@ -580,13 +614,15 @@ export function AiMathPage() {
     }
     const script = toSpeechScript(message.text)
     setSpeech({ messageId: message.id, playback: 'idle', sentence: null, error: null })
+    // 用户手势是部分浏览器注入/激活语音引擎的时机，播放前先重新探测。
+    retrySpeechSupport()
     const controller = speechRef.current
-    if (!controller) {
+    if (!controller || !controller.supported) {
       setSpeech({
         messageId: message.id,
         playback: 'unsupported',
         sentence: null,
-        error: '当前设备尚未初始化语音朗读，文字讲解可继续正常使用。',
+        error: SPEECH_RETRY_MESSAGE,
       })
       return
     }
@@ -595,7 +631,7 @@ export function AiMathPage() {
       voiceId: speechSettings.voiceURI,
       voiceName: speechSettings.voiceName,
     })
-  }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceURI, speechSettings.voiceName])
+  }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceURI, speechSettings.voiceName, retrySpeechSupport])
 
   // 从设置页关闭总开关时，也要立刻停止当前讲解。
   useEffect(() => {
@@ -611,22 +647,27 @@ export function AiMathPage() {
   }, [])
 
   const refreshSpeechVoices = useCallback(() => {
+    // 刷新声音同时也是一次重探测：部分浏览器需要交互后才暴露语音能力。
+    retrySpeechSupport()
     const voices = speechRef.current?.refreshVoices() ?? []
     setSpeechVoices(voices)
     toast(voices.length ? `已刷新 ${voices.length} 个可用声音` : '当前系统尚未返回可用声音，朗读时将尝试使用系统默认声音', {
       kind: voices.length ? 'success' : 'error',
     })
-  }, [toast])
+  }, [toast, retrySpeechSupport])
 
   /** 必须由点击事件直接触发，避免浏览器把定时器或异步回调当作自动播放拦截。 */
   const testSpeech = useCallback(() => {
-    const controller = speechRef.current
-    if (!controller) {
-      setSpeech({ messageId: 'speech-preview', playback: 'unsupported', sentence: null, error: '当前设备尚未初始化语音朗读，请使用支持系统朗读的浏览器或应用。' })
-      return
-    }
     if (speechSettings.enabled === false) updateSpeechSettings({ enabled: true })
     setSpeech({ messageId: 'speech-preview', playback: 'idle', sentence: null, error: null })
+    // 用户手势是部分手机浏览器（vivo/OPPO 等）注入语音 API 的时机：先重新探测。
+    if (!retrySpeechSupport()) {
+      setSpeech({ messageId: 'speech-preview', playback: 'unsupported', sentence: null, error: SPEECH_RETRY_MESSAGE })
+      toast('本浏览器未开放系统语音能力，可改用 Chrome/Edge 打开本页；文字讲解不受影响', { kind: 'warning' })
+      return
+    }
+    const controller = speechRef.current
+    if (!controller) return
     // 必须在点击事件内立即调用 speak；等待 voiceschanged 的异步回调会丢失
     // Android 浏览器的用户手势授权，导致 vivo 等设备静默拦截播放。
     const voices = controller.refreshVoices()
@@ -637,7 +678,7 @@ export function AiMathPage() {
       voiceName: speechSettings.voiceName,
     })
     if (!started) toast('语音测试未能启动，请查看页面提示并检查浏览器声音设置', { kind: 'error' })
-  }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceName, speechSettings.voiceURI, toast, updateSpeechSettings])
+  }, [speechSettings.enabled, speechSettings.rate, speechSettings.voiceName, speechSettings.voiceURI, toast, updateSpeechSettings, retrySpeechSupport])
 
   const warnNoConfig = useCallback(() => {
     toast('请先在「设置 → AI 服务」配置接口地址、API Key 和模型名', { kind: 'error' })
@@ -843,7 +884,7 @@ export function AiMathPage() {
         <span className="mathai-voice-label">
           <Icon name={speechSettings.enabled === false ? 'volumeOff' : 'volume'} size={16} />
           AI 讲题声音
-          <small>{speechSettings.enabled === false ? '已关闭' : speechSupported ? '已开启' : '设备不支持'}</small>
+          <small>{speechSettings.enabled === false ? '已关闭' : speechSupported ? '已开启' : '未就绪·可重试'}</small>
         </span>
         <div className="spacer" />
         <button
@@ -856,8 +897,8 @@ export function AiMathPage() {
         >
           <Icon name={speechSettings.enabled === false ? 'volumeOff' : 'volume'} size={18} />
         </button>
-        <button type="button" className="btn btn-sm" onClick={testSpeech} disabled={!speechSupported}>
-          <Icon name="play" size={13} /> 测试声音
+        <button type="button" className="btn btn-sm" onClick={testSpeech}>
+          <Icon name="play" size={13} /> {speechSupported ? '测试声音' : '重试检测'}
         </button>
       </div>
       {dragging && (

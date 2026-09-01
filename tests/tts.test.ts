@@ -166,4 +166,24 @@ describe('BrowserSpeechController', () => {
     expect(controller.speak('测试')).toBe(false)
     expect(errors).toEqual([SPEECH_UNSUPPORTED_MESSAGE])
   })
+
+  it('初始探测失败后，语音 API 延迟注入时可通过 probeSupport 恢复朗读', () => {
+    const errors: string[] = []
+    const controller = new BrowserSpeechController({ onError: (message) => errors.push(message) }, {})
+    expect(controller.supported).toBe(false)
+    expect(controller.probeSupport()).toBe(false)
+
+    const fake = makeEnvironment()
+    expect(controller.probeSupport(fake.environment)).toBe(true)
+    expect(controller.speak('测试', { voiceId: 'zh-cn' })).toBe(true)
+    expect(fake.utterance?.voice?.voiceURI).toBe('zh-cn')
+  })
+
+  it('已支持的控制器重复 probeSupport 保持可用，卸载后探测失败', () => {
+    const fake = makeEnvironment()
+    const controller = new BrowserSpeechController({}, fake.environment)
+    expect(controller.probeSupport()).toBe(true)
+    controller.dispose()
+    expect(controller.probeSupport(fake.environment)).toBe(false)
+  })
 })

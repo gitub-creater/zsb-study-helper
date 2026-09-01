@@ -266,13 +266,17 @@ export function speechErrorMessage(error?: string): string {
 
 export const SPEECH_UNSUPPORTED_MESSAGE = '当前设备不支持语音朗读，文字讲解可继续正常使用。'
 
+/** 初始探测失败后给用户可操作的重试提示，而不是直接宣判设备不支持。 */
+export const SPEECH_RETRY_MESSAGE =
+  '暂未获取到系统语音能力。点击「朗读」或「测试声音」会自动重新检测；部分手机自带浏览器（如 vivo 浏览器）会屏蔽网页朗读，可改用 Chrome/Edge 打开本页。文字讲解不受影响。'
+
 /**
  * 对 Web Speech API 的小封装：一条讲解使用一个 utterance，因此暂停/继续不会丢失位置。
  * 不把状态保存在该对象中，页面可自行将语速和音色持久化到学习状态。
  */
 export class BrowserSpeechController {
-  private readonly synthesis?: SpeechSynthesisPort
-  private readonly createUtterance?: (text: string) => SpeechSynthesisUtterance
+  private synthesis?: SpeechSynthesisPort
+  private createUtterance?: (text: string) => SpeechSynthesisUtterance
   private readonly callbacks: SpeechCallbacks
   private utterance: SpeechSynthesisUtterance | null = null
   private sentences: SpeechSentence[] = []
@@ -283,17 +287,35 @@ export class BrowserSpeechController {
   private voicesLoadAttempted = false
 
   constructor(callbacks: SpeechCallbacks = {}, environment: SpeechEnvironment = browserSpeechEnvironment()) {
+    this.callbacks = callbacks
+    this.applyEnvironment(environment)
+  }
+
+  get supported(): boolean {
+    return !!this.synthesis && !!this.createUtterance
+  }
+
+  private applyEnvironment(environment: SpeechEnvironment): void {
     this.synthesis = environment.synthesis
     this.createUtterance = environment.createUtterance
-    this.callbacks = callbacks
-    if (this.synthesis?.addEventListener) {
+    if (this.synthesis?.addEventListener && !this.voicesHandler) {
       this.voicesHandler = () => this.callbacks.onVoicesChange?.(this.voices())
       this.synthesis.addEventListener('voiceschanged', this.voicesHandler)
     }
   }
 
-  get supported(): boolean {
-    return !!this.synthesis && !!this.createUtterance
+  /**
+   * 重新探测浏览器语音能力。部分手机浏览器（vivo、OPPO 等）在页面加载后
+   * 才懒注入 speechSynthesis，初始检测失败不代表真的不支持；每次用户手势
+   * 或页面回到前台时调用一次，探测到 API 出现即可恢复朗读。
+   */
+  probeSupport(environment: SpeechEnvironment = browserSpeechEnvironment()): boolean {
+    if (this.disposed) return false
+    if (this.supported) return true
+    if (!environment.synthesis || !environment.createUtterance) return false
+    this.applyEnvironment(environment)
+    this.voicesLoadAttempted = false
+    return true
   }
 
   voices(): SpeechVoiceOption[] {
