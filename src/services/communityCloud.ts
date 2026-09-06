@@ -1,7 +1,10 @@
 // 社区云端事件层:好友请求 / 站内会议邀请 / 私信 的跨设备同步
 // 统一走 rtc_message 表(room_id='community',anon 可写已配策略),接收端订阅 postgres_changes 合并进本地共享数据。
 // 身份:本应用自有账号体系(payload 里带 CommunityUser),sender_uid 保持 null(auth.users 外键)。
-import { getSupabase } from './supabaseClient'
+import { getSupabase, supabaseConfigured } from './supabaseClient'
+
+/** 构建时是否包含 Supabase 配置(决定是否启用云端驱动) */
+export const communityCloudConfigured = supabaseConfigured
 import type { CommunityData, CommunityUser, FriendEdge, MeetingInvite } from '../types'
 import { uid } from '../lib/misc'
 import { flush, loadCommunity, subscribeCommunity } from './community'

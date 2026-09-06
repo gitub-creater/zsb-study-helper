@@ -625,10 +625,15 @@ export class SupabaseRealtimeDriver implements RtcDriver {
   private channel: ReturnType<NonNullable<ReturnType<typeof getSupabase>>['channel']> | null = null
   private meetingId = ''
   readonly clientId = uid('cli')
+  /** 构建时缺 Supabase 环境变量时,自动降级为本机 BroadcastChannel(绝不崩溃) */
+  private fallback = new BroadcastChannelDriver()
 
   connect(meetingId: string, handlers: RtcHandlers): void {
     const supabase = getSupabase()
-    if (!supabase) throw new Error('Supabase 未配置(VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)')
+    if (!supabase) {
+      this.fallback.connect(meetingId, handlers)
+      return
+    }
     this.handlers = handlers
     this.meetingId = meetingId
     this.channel = supabase
@@ -667,6 +672,10 @@ export class SupabaseRealtimeDriver implements RtcDriver {
   }
 
   send(action: RtcAction): void {
+    if (!getSupabase()) {
+      this.fallback.send(action)
+      return
+    }
     if (action.kind === '__room') {
       void this.publish({ t: 'room', client_id: this.clientId, state: action.state as MeetingRoomState })
     } else if (action.kind === 'chat') {
@@ -682,6 +691,7 @@ export class SupabaseRealtimeDriver implements RtcDriver {
   disconnect(): void {
     const supabase = getSupabase()
     if (supabase && this.channel) supabase.removeChannel(this.channel)
+    else this.fallback.disconnect()
     this.channel = null
     this.handlers = null
   }
