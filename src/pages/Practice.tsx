@@ -291,6 +291,17 @@ export function Practice() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now])
 
+  // 上一次限时练习到期后复位标记,否则新开的限时练习不会自动交卷
+  useEffect(() => {
+    expiredRef.current = false
+  }, [s?.expiresAt])
+
+  // 当前题目被删除等异常:在 effect 中安全结束会话(渲染期 dispatch 在 StrictMode 下会重复触发)
+  useEffect(() => {
+    if (s && s.index >= questions.length) finish(s)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s?.index, questions.length])
+
   // ---- 结算页 ----
   if (!s) {
     if (summary) {
@@ -371,10 +382,7 @@ export function Practice() {
 
   // ---- 做题页 ----
   const q = questions[s.index]
-  if (!q) {
-    finish(s)
-    return null
-  }
+  if (!q) return null
   const answer = s.answers[q.id]
   const isLast = s.index >= questions.length - 1
   const remainSec = s.expiresAt ? Math.max(0, Math.round((s.expiresAt - now) / 1000)) : null
@@ -399,7 +407,7 @@ export function Practice() {
           {s.name}
         </b>
         <div className="pbar">
-          <i style={{ width: `${((s.index + (answer ? 1 : 0)) / questions.length) * 100}%` }} />
+          <i style={{ width: `${((s.index + (answer ? 1 : 0)) / Math.max(1, questions.length)) * 100}%` }} />
         </div>
         <span className="fs13 num">
           {s.index + 1}/{questions.length}

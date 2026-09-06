@@ -14,12 +14,24 @@ export function EnglishPage() {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const [words, setWords] = useState<EngWord[]>([])
+  const [loadState, setLoadState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [tab, setTab] = useState<'today' | 'list' | 'calendar' | 'history'>('today')
   const [hideCn, setHideCn] = useState(false)
   const today = todayStr()
 
+  const reloadWords = () => {
+    setLoadState('loading')
+    loadEnglishWords()
+      .then((b) => {
+        setWords(b.words)
+        setLoadState('ok')
+      })
+      .catch(() => setLoadState('error'))
+  }
+
   useEffect(() => {
-    loadEnglishWords().then((b) => setWords(b.words))
+    reloadWords()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const eng = state.english ?? { checkedDates: [], mastered: [] }
@@ -40,7 +52,8 @@ export function EnglishPage() {
   }
 
   // 打卡日历(当月)
-  const now = new Date(today)
+  const [yy, mm, dd] = today.split('-').map(Number)
+  const now = new Date(yy, (mm ?? 1) - 1, dd ?? 1)
   const year = now.getFullYear()
   const month = now.getMonth()
   const firstDay = new Date(year, month, 1).getDay()
@@ -56,7 +69,7 @@ export function EnglishPage() {
         <span className="fs12 muted">{w.phon}</span>
         <span className="chip chip-blue">{w.pos}</span>
         <div className="grow" />
-        <button className="btn btn-sm" onClick={() => setHideCn((v) => !v)} title="显示/隐藏中文释义">
+        <button className="btn btn-sm" onClick={() => setHideCn((v) => !v)} title="显示/隐藏中文释义" aria-label="显示或隐藏中文释义">
           <Icon name="eye" size={13} />
         </button>
         <button className={`btn btn-sm ${mastered(w) ? 'btn-soft' : ''}`} onClick={() => toggleMaster(w)}>
@@ -106,7 +119,11 @@ export function EnglishPage() {
                 </div>
               </div>
             )}
-            {todayWords.length === 0 ? (
+            {loadState === 'loading' ? (
+              <EmptyState mood="think" title="词库加载中…" />
+            ) : loadState === 'error' ? (
+              <EmptyState mood="think" title="词库加载失败" desc="请检查网络后重试;本页其他功能不受影响。" action={<button className="btn btn-primary" onClick={reloadWords}>重新加载</button>} />
+            ) : todayWords.length === 0 ? (
               <EmptyState mood="happy" title="单词已全部学完!" desc="词库已全部完成,可以到「单词列表」中复习未掌握的词。" />
             ) : (
               <>
@@ -135,7 +152,7 @@ export function EnglishPage() {
                   <p className="fs12 muted mt8">完成上方第 {unit} 单元后点击打卡。</p>
                 </>
               )}
-              <button className={`btn btn-lg w100 mt12 ${done ? '' : 'btn-primary'}`} disabled={done} onClick={checkin}>
+              <button className={`btn btn-lg w100 mt12 ${done ? '' : 'btn-primary'}`} disabled={done || loadState !== 'ok' || todayWords.length === 0} onClick={checkin}>
                 <Icon name={done ? 'check' : 'flag'} size={15} />
                 {done ? '今日已完成' : `今日打卡(${todayWords.length} 词)`}
               </button>
@@ -222,7 +239,7 @@ export function EnglishPage() {
               <div key={d} className="row" style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px' }}>
                 <Icon name="check" size={14} />
                 <b className="fs13 grow num">{fmtDate(d)}</b>
-                <span className="fs12 muted num">{addDays(d, 1) === d ? '' : `第 ${history.length - i} 次打卡`}</span>
+                <span className="fs12 muted num">{`第 ${history.length - i} 次打卡`}</span>
                 <Chip tone="green">20 词</Chip>
               </div>
             ))

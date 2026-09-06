@@ -17,7 +17,7 @@ export function StatsPage() {
   const today = todayStr()
 
   const totalAcc = totalAccuracy(state)
-  const weak = useMemo(() => weakKps(state, 10), [state.kps, state.attempts]) // eslint-disable-line react-hooks/exhaustive-deps
+  const weak = useMemo(() => weakKps(state, 10), [state.kps, state.attempts, state.profile]) // eslint-disable-line react-hooks/exhaustive-deps
   const dueCount = Object.values(state.wrong).filter((e) => !e.archived && e.nextReviewAt != null && e.nextReviewAt <= today).length
 
   const days = useMemo(() => {
@@ -33,6 +33,7 @@ export function StatsPage() {
   if (!state.profile) return <EmptyState title="请先完成角色创建" />
 
   const totalMin = Object.values(state.studyTime).reduce((s, v) => s + v, 0)
+  const latestExam = (state.examHistory ?? [])[0]
   const level = levelInfo(state.xp)
 
   return (
@@ -60,7 +61,7 @@ export function StatsPage() {
         </div>
         <div className="card">
           <div className="fs12 muted">累计学习时长</div>
-          <b className="num" style={{ fontSize: 24 }}>{totalMin < 60 ? `${Math.round(totalMin / 60)} 分` : fmtDuration(totalMin)}</b>
+          <b className="num" style={{ fontSize: 24 }}>{fmtDuration(totalMin)}</b>
           <div className="fs12 muted">连续学习 {state.streak.current} 天(最佳 {state.streak.best})</div>
         </div>
       </div>
@@ -143,10 +144,23 @@ export function StatsPage() {
               </span>
               <b>模拟考试成绩变化</b>
               <div className="right">
-                <Chip>第二阶段开放</Chip>
+                <a className="btn btn-sm" href="#/exam">
+                  去模拟考
+                </a>
               </div>
             </div>
-            <p className="fs13 muted">完成第一、二阶段的练习后,这里会展示历次模拟考与阶段测试的分数走势。</p>
+            {latestExam ? (
+              <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span className="fs13">
+                  最近一场:{latestExam.name}
+                </span>
+                <b className="num" style={{ fontSize: 22, color: 'var(--primary-deep)' }}>
+                  {latestExam.score}/{latestExam.totalScore}
+                </b>
+              </div>
+            ) : (
+              <p className="fs13 muted">还没考过模拟考。考一场,这里就会展示最新成绩与得分率。</p>
+            )}
           </div>
         </div>
 
@@ -219,6 +233,62 @@ export function StatsPage() {
             <p className="fs12 muted mt8">等级和徽章只是学习行为的纪念,上面的掌握度才是真实水平。</p>
           </div>
         </div>
+      </div>
+
+      <StudyHeatmap />
+    </div>
+  )
+}
+
+/** 学习热力图:最近 26 周,颜色=当日题量(绿点=英语打卡日) */
+function StudyHeatmap() {
+  const { state } = useStore()
+  const today = todayStr()
+  const weeks = 26
+  // 以今天所在周(周一为一周开始)对齐
+  const d = new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, Number(today.slice(8, 10)))
+  const dow = (d.getDay() + 6) % 7
+  const end = new Date(d)
+  end.setDate(end.getDate() + (6 - dow))
+  const cells: { date: string; count: number }[] = []
+  for (let w = weeks - 1; w >= 0; w--) {
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(end)
+      day.setDate(end.getDate() - w * 7 - (6 - i))
+      const y = day.getFullYear()
+      const m = String(day.getMonth() + 1).padStart(2, '0')
+      const dd = String(day.getDate()).padStart(2, '0')
+      const date = `${y}-${m}-${dd}`
+      cells.push({ date, count: state.attempts.filter((a) => a.date === date).length })
+    }
+  }
+  const max = Math.max(1, ...cells.map((c) => c.count))
+  const level = (n: number) => (n === 0 ? 0 : n <= max * 0.25 ? 1 : n <= max * 0.5 ? 2 : n <= max * 0.75 ? 3 : 4)
+  return (
+    <div className="card heatmap-card">
+      <div className="card-h">
+        <b>学习热力图</b>
+        <span className="fs12 muted">最近 26 周 · 颜色越深当天做题越多</span>
+      </div>
+      <div className="heatmap" role="img" aria-label="最近 26 周学习热力图">
+        {Array.from({ length: weeks }, (_, w) => (
+          <div key={w} className="heatmap-col">
+            {cells.slice(w * 7, w * 7 + 7).map((c) => (
+              <i
+                key={c.date}
+                className={`hm hm-${level(c.count)}${c.date === today ? ' today' : ''}`}
+                title={`${c.date}:${c.count} 题`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="row fs12 muted mt8" style={{ alignItems: 'center', gap: 6 }}>
+        少
+        {[0, 1, 2, 3, 4].map((n) => (
+          <i key={n} className={`hm hm-${n}`} />
+        ))}
+        多
       </div>
     </div>
   )

@@ -25,7 +25,8 @@ import { OfficePage } from './pages/OfficePage'
 import { AiOfficePage } from './pages/AiOfficePage'
 import { EnglishPage } from './pages/EnglishPage'
 import { AiMathPage } from './pages/AiMathPage'
-import { AVATAR_INFO, applyTheme } from './lib/theme'
+import { applySkin, AVATAR_INFO } from './lib/theme'
+import type { CustomSkin } from './types'
 import { levelInfo } from './lib/xp'
 import { nav } from './lib/misc'
 import { clearSession, dataKey, getSession } from './lib/auth'
@@ -36,6 +37,11 @@ import { ScheduledPage } from './pages/ScheduledPage'
 import { PetPark } from './pages/PetPage'
 import { ScheduleAlerts } from './components/ScheduleAlerts'
 import { PetWindow } from './components/PetWindow'
+import { ThemePage } from './pages/ThemePage'
+import { CommunityPage } from './pages/CommunityPage'
+import { MeetingPage } from './pages/MeetingPage'
+import { ExamPage } from './pages/ExamPage'
+import { FormulasPage } from './pages/FormulasPage'
 
 interface NavItem {
   key: string
@@ -48,10 +54,14 @@ const NAV: NavItem[] = [
   { key: 'today', label: '今日学习', icon: 'home' },
   { key: 'map', label: '知识校园', icon: 'map' },
   { key: 'bank', label: '题库', icon: 'book' },
-  { key: 'aimath', label: 'AI 数学讲题', icon: 'math' },
+  { key: 'exam', label: '模拟考试', icon: 'target' },
+  { key: 'formulas', label: '公式手册', icon: 'math' },
+  { key: 'aimath', label: 'AI 数学讲题', icon: 'zap' },
   { key: 'office', label: '实操大题', icon: 'edit' },
   { key: 'aioffice', label: 'AI 办公文档', icon: 'sparkle' },
   { key: 'english', label: '英语打卡', icon: 'mic' },
+  { key: 'community', label: '问题社区', icon: 'chat' },
+  { key: 'meeting', label: '在线会议', icon: 'video' },
   { key: 'pet', label: '宠物园', icon: 'star' },
   { key: 'sources', label: '考试资料', icon: 'cap' },
   { key: 'hot', label: '热门题', icon: 'fire' },
@@ -59,11 +69,12 @@ const NAV: NavItem[] = [
   { key: 'plan', label: '学习计划', icon: 'calendar' },
   { key: 'scheduled', label: '已安排任务', icon: 'timer' },
   { key: 'stats', label: '数据分析', icon: 'chart' },
+  { key: 'theme', label: '主题皮肤', icon: 'palette' },
   { key: 'profile', label: '个人角色', icon: 'user' },
   { key: 'settings', label: '设置', icon: 'settings' },
 ]
 
-const MOBILE_MAIN: NavItem[] = [NAV[0], NAV[2], NAV[4], NAV[6]]
+const MOBILE_MAIN_KEYS = ['today', 'bank', 'community']
 
 const PAGE_TITLES: Record<string, string> = Object.fromEntries(NAV.map((n) => [n.key, n.label]))
 
@@ -80,6 +91,7 @@ function useHashRoute(): string {
 
 function Sidebar({ route }: { route: string }) {
   const { state } = useStore()
+  const base = route.split('?')[0].split('/')[0]
   const level = levelInfo(state.xp)
   return (
     <aside className="sidebar">
@@ -92,7 +104,7 @@ function Sidebar({ route }: { route: string }) {
       </div>
       <nav className="nav" aria-label="主导航">
         {NAV.map((n) => (
-          <a key={n.key} href={`#/${n.key}`} className={route === n.key ? 'on' : ''}>
+          <a key={n.key} href={`#/${n.key}`} className={base === n.key ? 'on' : ''}>
             <Icon name={n.icon} size={17} />
             {n.label}
             {n.phase && <span className="soon">{n.phase}期</span>}
@@ -125,11 +137,12 @@ function Sidebar({ route }: { route: string }) {
 
 function BottomNav({ route, onMore }: { route: string; onMore: () => void }) {
   const { state } = useStore()
+  const base = route.split('?')[0].split('/')[0]
   const dueCount = Object.values(state.wrong).filter((e) => !e.archived && e.nextReviewAt && e.nextReviewAt <= new Date().toISOString().slice(0, 10)).length
   return (
     <nav className="bottom-nav" aria-label="底部导航">
-      {MOBILE_MAIN.map((n) => (
-        <a key={n.key} href={`#/${n.key}`} className={route === n.key ? 'on' : ''}>
+      {NAV.filter((n) => MOBILE_MAIN_KEYS.includes(n.key)).map((n) => (
+        <a key={n.key} href={`#/${n.key}`} className={base === n.key ? 'on' : ''}>
           <Icon name={n.icon} size={20} />
           {n.label}
           {n.key === 'wrong' && dueCount > 0 && (
@@ -139,7 +152,7 @@ function BottomNav({ route, onMore }: { route: string; onMore: () => void }) {
           )}
         </a>
       ))}
-      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings', 'pet'].includes(route) ? 'on' : ''} onClick={onMore}>
+      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings', 'pet', 'community', 'meeting', 'theme'].includes(base) ? 'on' : ''} onClick={onMore}>
         <Icon name="dots" size={20} />
         更多
       </button>
@@ -150,6 +163,7 @@ function BottomNav({ route, onMore }: { route: string; onMore: () => void }) {
 function Shell({ route, children }: { route: string; children: ReactNode }) {
   const { state } = useStore()
   const [moreOpen, setMoreOpen] = useState(false)
+  const base = route.split('?')[0].split('/')[0]
   const level = levelInfo(state.xp)
   return (
     <div className="app">
@@ -157,7 +171,7 @@ function Shell({ route, children }: { route: string; children: ReactNode }) {
       <div className="main-col">
         <header className="topbar">
           <Mascot mood="idle" size={26} />
-          <b>{PAGE_TITLES[route] ?? '今日学习'}</b>
+          <b>{PAGE_TITLES[base] ?? '今日学习'}</b>
           <div className="right">
             <span className="chip chip-yellow num">Lv.{level.level}</span>
             <a href="#/profile" aria-label="个人角色">
@@ -171,7 +185,7 @@ function Shell({ route, children }: { route: string; children: ReactNode }) {
       <BottomNav route={route} onMore={() => setMoreOpen(true)} />
       <Modal open={moreOpen} title="更多功能" onClose={() => setMoreOpen(false)} width={360}>
         <div className="more-sheet-list">
-          {NAV.filter((n) => !MOBILE_MAIN.some((m) => m.key === n.key) && n.key !== 'today').map((n) => (
+          {NAV.filter((n) => !MOBILE_MAIN_KEYS.includes(n.key) && n.key !== 'today').map((n) => (
             <a key={n.key} href={`#/${n.key}`} onClick={() => setMoreOpen(false)}>
               <Icon name={n.icon} size={18} />
               {n.label}
@@ -212,10 +226,15 @@ class ErrorBoundary extends React.Component<{ children: ReactNode }, { err: Erro
 function Router() {
   const { state } = useStore()
   const route = useHashRoute()
+  const base = route.split('?')[0].split('/')[0]
+
+  const activeSkin: CustomSkin | null = state.skins?.activeId
+    ? state.skins.customs.find((s) => s.id === state.skins!.activeId) ?? null
+    : null
 
   useEffect(() => {
-    applyTheme(state.profile?.theme ?? 'sky')
-  }, [state.profile?.theme])
+    applySkin(activeSkin, state.profile?.theme ?? 'sky', base)
+  }, [activeSkin, state.profile?.theme, base])
 
   useEffect(() => {
     document.body.classList.toggle('rm', state.settings.reduceMotion)
@@ -231,6 +250,13 @@ function Router() {
   if (route === 'rank') return <RankWindow />
 
   if (route === 'practice') return <Practice />
+
+  const session = getSession()
+  const me = {
+    id: session?.userId ?? 'local',
+    name: state.profile?.nickname || session?.name || '同学',
+    avatar: state.profile?.avatar ?? ('sprout' as const),
+  }
 
   const pages: Record<string, ReactNode> = {
     today: <Today />,
@@ -249,9 +275,14 @@ function Router() {
     stats: <StatsPage />,
     profile: <ProfilePage />,
     settings: <SettingsPage />,
+    community: <CommunityPage me={me} />,
+    meeting: <MeetingPage me={me} />,
+    theme: <ThemePage />,
+    exam: <ExamPage />,
+    formulas: <FormulasPage />,
   }
 
-  return <Shell route={route}>{pages[route] ?? <Today />}</Shell>
+  return <Shell route={route}>{pages[base] ?? <Today />}</Shell>
 }
 
 export default function App() {

@@ -1,7 +1,16 @@
 // 数据模型定义 —— 所有实体与状态的唯一来源
 
 export type AvatarKind = 'sprout' | 'cat' | 'rabbit' | 'bear'
-export type ThemeKind = 'sky' | 'mint' | 'sakura' | 'lemon' | 'lavender'
+export type ThemeKind =
+  | 'sky'
+  | 'mint'
+  | 'sakura'
+  | 'lemon'
+  | 'lavender'
+  | 'freshblue'
+  | 'orange'
+  | 'studygreen'
+  | 'dark'
 
 /** 考试类别:高教一类(理学/工学·高数Ⅰ)、二类(经/农/医/管·高数Ⅱ)、三类(文/法/教/史/艺/哲·高数Ⅲ) */
 export type ExamCategory = 'gj1' | 'gj2' | 'gj3'
@@ -57,7 +66,7 @@ export const TASK_TYPE_TEXT: Record<TaskType, string> = {
   mockExam: '模拟考试',
 }
 
-export type PracticeMode = 'sequential' | 'random' | 'chapter' | 'kp' | 'weak' | 'wrong' | 'timed'
+export type PracticeMode = 'sequential' | 'random' | 'chapter' | 'kp' | 'weak' | 'wrong' | 'timed' | 'daily'
 export const PRACTICE_MODE_TEXT: Record<PracticeMode, string> = {
   sequential: '顺序练习',
   random: '随机练习',
@@ -66,6 +75,7 @@ export const PRACTICE_MODE_TEXT: Record<PracticeMode, string> = {
   weak: '薄弱点强化',
   wrong: '错题复习',
   timed: '限时测试',
+  daily: '每日挑战',
 }
 
 export interface Profile {
@@ -332,6 +342,8 @@ export interface PetSettings {
   scale?: 1 | 1.25
   /** 最小化成小球,点击恢复 */
   minimized?: boolean
+  /** 宠物园选择的陪伴角色(悬浮窗与提醒联动形象) */
+  avatar?: AvatarKind
 }
 
 /** OpenAI-compatible 服务配置。apiKey 仅保存在当前设备，不进入云端快照。 */
@@ -515,6 +527,288 @@ export interface State {
   qaLog?: { t: number; text: string }[]
   /** 已安排任务(定时提醒) */
   schedules?: ScheduleTask[]
+  /** 主题皮肤:当前激活的自定义皮肤 id(null=用内置主题)+ 我的自定义皮肤库 */
+  skins?: SkinStore
+  /** 模拟考试:进行中的一场(null=无)+ 历史成绩(最新在前) */
+  activeExam?: ExamAttempt | null
+  examHistory?: ExamAttempt[]
+}
+
+// ---------- 模拟考试 ----------
+
+/** 一场模拟考试:组卷参数 + 作答 + 成绩(未交卷时 score 为空) */
+export interface ExamAttempt {
+  id: string
+  /** 显示名,如"高等数学Ⅰ · 模拟考" */
+  name: string
+  subjectId: string
+  questionIds: string[]
+  /** 题目快照(id→答案),交卷后与题库比对判分 */
+  answers: Record<string, string>
+  startedAt: string
+  finishedAt?: string
+  /** 限时(分钟);到期自动交卷 */
+  durationMinutes: number
+  /** 卷面总分(按题均分) */
+  totalScore: number
+  /** 每题分值(总分/题数,保留 2 位) */
+  perQuestionScore: number
+  score?: number
+  /** 用时秒(交卷时记) */
+  usedSeconds?: number
+}
+
+// ---------- 主题皮肤 ----------
+
+/** 皮肤背景图可应用的界面模块 */
+export type SkinModule = 'login' | 'home' | 'sidebar' | 'study' | 'profile'
+
+export const SKIN_MODULE_TEXT: Record<SkinModule, string> = {
+  login: '登录页背景',
+  home: '首页 Banner',
+  sidebar: '侧边栏背景',
+  study: '学习页面背景',
+  profile: '个人中心背景',
+}
+
+/** 自定义皮肤的可调参数(全部有安全默认值,可只覆盖部分) */
+export interface SkinVars {
+  /** 主色(标题/强调/导航高亮) */
+  primary: string
+  /** 辅助色(徽标/次要强调) */
+  secondary: string
+  /** 按钮色(主按钮背景) */
+  accent: string
+  /** 圆角 px 0-20 */
+  radius: number
+  /** 阴影强度 0-2 */
+  shadow: number
+  /** 卡片不透明度 0.5-1 */
+  opacity: number
+  /** 深色护眼(深色底/浅色文字) */
+  dark: boolean
+  /** 背景图(dataURL,压缩后存储) */
+  bgImage?: string
+  /** 背景图应用的模块;空=全局背景 */
+  bgModules?: SkinModule[]
+}
+
+/** 一套可保存/重命名/删除的自定义皮肤 */
+export interface CustomSkin extends SkinVars {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SkinStore {
+  /** 当前生效的自定义皮肤 id;null=使用内置主题(profile.theme) */
+  activeId: string | null
+  customs: CustomSkin[]
+}
+
+// ---------- 问题社区 ----------
+
+/** 社区用户引用(来自本机账号体系,展示公开资料) */
+export interface CommunityUser {
+  id: string
+  name: string
+  avatar: AvatarKind
+}
+
+export type PostStatus = 'open' | 'answered' | 'solved'
+
+/** 社区问题帖 */
+export interface CommunityPost {
+  id: string
+  author: CommunityUser
+  /** 匿名发帖:对外显示"匿名同学" */
+  anonymous: boolean
+  title: string
+  body: string
+  /** 科目名称(如"高等数学Ⅰ") */
+  subject: string
+  /** 知识点(可空) */
+  kpName?: string
+  tags: string[]
+  /** 题目图片(dataURL,已压缩) */
+  images: string[]
+  /** 附件(名称+dataURL) */
+  attachments: { name: string; dataUrl: string; size: number }[]
+  /** 悬赏积分(发布时从提问者积分扣除,采纳最佳答案时转给回答者) */
+  bounty: number
+  status: PostStatus
+  createdAt: string
+  /** 首次回答时间 */
+  firstAnswerAt?: string
+  /** 标记最佳答案/完成时间 */
+  solvedAt?: string
+  views: number
+  likes: number
+  likedBy: string[]
+  bookmarks: string[]
+  reports: { by: string; reason: string; at: string }[]
+  bestCommentId?: string
+}
+
+/** 评论/回复/楼中楼 */
+export interface CommunityComment {
+  id: string
+  postId: string
+  /** 父评论 id(楼中楼);空=顶层评论 */
+  parentId?: string
+  author: CommunityUser
+  anonymous: boolean
+  body: string
+  createdAt: string
+  likes: number
+  likedBy: string[]
+  best?: boolean
+}
+
+/** 解答时间(一对一答疑约定) */
+export interface TutoringSession {
+  id: string
+  postId: string
+  /** 申请解答的人 */
+  tutor: CommunityUser
+  /** 提问者 */
+  student: CommunityUser
+  status: 'pending' | 'accepted' | 'rejected' | 'active' | 'finished' | 'cancelled'
+  /** 约定开始/预计结束时间(ISO) */
+  proposedStart: string
+  proposedEnd: string
+  actualStart?: string
+  actualEnd?: string
+  note?: string
+  /** 进度与协商记录(最新在前) */
+  history: { at: string; by: string; text: string }[]
+  /** 解答结束后双向评价 */
+  rating?: {
+    studentStars?: number
+    tutorStars?: number
+    studentComment?: string
+    tutorComment?: string
+    ratedAt?: string
+  }
+  /** 关联会议 id */
+  meetingId?: string
+  createdAt: string
+}
+
+/** 好友关系(无向) */
+export interface FriendEdge {
+  id: string
+  a: string
+  b: string
+  since: string
+}
+
+/** 站内私信 */
+export interface DirectMessage {
+  id: string
+  from: string
+  to: string
+  body: string
+  at: string
+  read?: boolean
+}
+
+/** 会议邀请(站内) */
+export interface MeetingInvite {
+  id: string
+  meetingId: string
+  meetingTitle: string
+  from: CommunityUser
+  to: string
+  at: string
+  status: 'pending' | 'accepted' | 'declined'
+}
+
+/** 社区共享数据(本机所有账号共用的"社区",跨设备同步需后端,见 services/community.ts 说明) */
+export interface CommunityData {
+  version: number
+  posts: CommunityPost[]
+  comments: CommunityComment[]
+  tutoring: TutoringSession[]
+  friends: FriendEdge[]
+  messages: DirectMessage[]
+  invites: MeetingInvite[]
+  /** 用户积分(悬赏经济) */
+  credits: Record<string, number>
+  /** 已播种示例数据 */
+  seeded?: boolean
+}
+
+// ---------- 在线会议与白板 ----------
+
+export interface MeetingParticipant {
+  userId: string
+  name: string
+  role: 'host' | 'guest'
+  micOn: boolean
+  camOn: boolean
+  /** 主讲人授权发言(默认关:普通参会者只读白板+聊天) */
+  canSpeak: boolean
+  /** 举手状态(主讲人可见,可顺势授权发言) */
+  handRaised?: boolean
+  joinedAt: string
+}
+
+export interface MeetingInfo {
+  id: string
+  title: string
+  hostId: string
+  hostName: string
+  /** 关联的社区问题 */
+  postId?: string
+  startAt: string
+  plannedMinutes: number
+  status: 'scheduled' | 'live' | 'ended'
+  createdAt: string
+  endedAt?: string
+}
+
+export interface MeetingChatMsg {
+  id: string
+  from: string
+  name: string
+  body: string
+  at: string
+}
+
+/** 白板笔画/图形/图片元素 */
+export interface BoardItem {
+  id: string
+  type: 'pen' | 'line' | 'rect' | 'circle' | 'arrow' | 'text' | 'highlight' | 'image'
+  /** 世界坐标(单位=一个 16:9 视口宽/高;画布无限,平移只改视野不改坐标) */
+  pts: number[]
+  color: string
+  width: number
+  text?: string
+  /** 图片 dataURL */
+  src?: string
+  by: string
+  at: number
+}
+
+export interface BoardPage {
+  id: string
+  items: BoardItem[]
+  /** 页面背景题目图片(世界坐标 0,0 处铺满一屏) */
+  bgImage?: string
+  /** 希沃式底纹:方格纸(数学)/横线(语文英语);空=白底 */
+  grid?: 'grid' | 'lines'
+}
+
+export interface MeetingRoomState {
+  meeting: MeetingInfo
+  participants: MeetingParticipant[]
+  pages: BoardPage[]
+  activePageId: string
+  /** 当前允许编辑白板的用户(主讲人恒可编辑) */
+  editorsAccess?: string[]
+  endedAt?: string
 }
 
 // ---------- 已安排任务(定时提醒,类似"日程提醒") ----------

@@ -11,7 +11,11 @@ import { levelInfo } from '../lib/xp'
 import { daysBetween, fmtDate, todayStr, weekdayCn, clockFmt } from '../lib/date'
 import { dueWrongList, weakKps, getMastery } from '../lib/selectors'
 import { startKpPractice, startWrongReview } from '../lib/practice'
-import { nav } from '../lib/misc'
+import { pickDailyQuestion } from '../lib/exam'
+import { checkAnswer, LETTERS, nav } from '../lib/misc'
+import { getSession } from '../lib/auth'
+import type { Question } from '../types'
+import { Tex } from '../components/Tex'
 import { ELECTIVE_TEXT, EXAM_CATEGORIES } from '../lib/categories'
 
 function Ring({ p }: { p: number }) {
@@ -54,7 +58,8 @@ function TimerCard() {
 
   const flush = () => {
     if (accRef.current > 0) {
-      dispatch({ type: 'ADD_STUDY_TIME', date, seconds: accRef.current })
+      // 落盘时刻取当天,避免跨零点挂机把时长记到昨天
+      dispatch({ type: 'ADD_STUDY_TIME', date: todayStr(), seconds: accRef.current })
       accRef.current = 0
     }
   }
@@ -127,7 +132,9 @@ export function Today() {
   const doneCount = tasks.filter((t) => t.done).length
   const completion = tasks.length > 0 ? doneCount / tasks.length : 0
   const totalQuestions = tasks.reduce((s, t) => s + (t.questionCount || 0), 0)
-  const answeredQuestions = tasks.reduce((s, t) => s + Math.min(t.progress, t.questionCount || 0), 0)
+  const answeredQuestions = tasks
+    .filter((t) => t.type !== 'learnKP')
+    .reduce((s, t) => s + Math.min(t.progress, t.questionCount || 0), 0)
 
   const daysLeft = profile ? daysBetween(date, profile.examDate) : 0
   const hour = new Date().getHours()
@@ -259,7 +266,7 @@ export function Today() {
               className="btn btn-primary w100 mt8"
               onClick={() => {
                 const url = window.location.origin + window.location.pathname + '#/rank'
-                const w = window.open(url, 'zsb-rank', 'width=620,height=860')
+                const w = window.open(url, 'zsb-rank', 'width=620,height=860,noopener,noreferrer')
                 if (!w) nav('rank')
               }}
             >
@@ -294,6 +301,8 @@ export function Today() {
           </div>
 
           <TimerCard />
+
+          <DailyChallenge />
 
           <div className="card">
             <div className="card-h">
@@ -408,6 +417,85 @@ export function Today() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+
+/** 每日一题:按日期确定性出题,答对拿经验(走统一作答链路),连续挑战看得见 */
+function DailyChallenge() {
+  const { state, dispatch } = useStore()
+  const toast = useToast()
+  const today = todayStr()
+  const [answer, setAnswer] = useState('')
+  const q = useMemo(() => pickDailyQuestion(state, today, getSession()?.userId ?? 'local'), [state, today])
+  if (!q) return null
+  const dq: Question = q
+  const already = state.attempts.find((a) => a.date === today && a.mode === 'daily' && a.questionId === q.id)
+  const multi = q.type === 'multiple'
+  const cur = already ? already.userAnswer : answer
+  const showResult = !!already
+  const correct = showResult && checkAnswer(dq, already.userAnswer)
+
+  function submit() {
+    if (!answer.trim()) return
+    const ok = checkAnswer(dq, answer)
+    dispatch({ type: 'ANSWER', questionId: dq.id, userAnswer: answer, correct: ok, mode: 'daily' })
+    toast(ok ? '每日挑战答对,经验到手!' : '答错了,看看解析明天继续', { kind: ok ? 'success' : 'info' })
+  }
+
+  return (
+    <div className="card">
+      <div className="card-h">
+        <span className="icon-chip" style={{ background: 'var(--primary-weak)', color: 'var(--primary-deep)' }}>
+          <Icon name="target" size={15} />
+        </span>
+        <b>每日一题</b>
+        <span className="right fs12 muted">{today.slice(5)} 挑战</span>
+      </div>
+      <div className="exam-stem small">
+        <Tex text={dq.stem} />
+      </div>
+      {dq.options.length > 0 ? (
+        <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+          {q.options.map((opt, i) => {
+            const letter = LETTERS[i]
+            const on = multi ? cur.includes(letter) : cur === letter
+            return (
+              <button
+                key={i}
+                type="button"
+                className={`btn btn-sm${on ? ' btn-soft' : ''}`}
+                disabled={showResult}
+                aria-pressed={on}
+                onClick={() => setAnswer(multi ? (on ? cur.replace(letter, '').split('').sort().join('') : (cur + letter).split('').sort().join('')) : letter)}
+              >
+                <b className="num">{letter}</b>. <Tex text={opt} />
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <input
+          className="input"
+          value={cur}
+          disabled={showResult}
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="输入答案"
+          aria-label="每日一题答案"
+        />
+      )}
+      {showResult ? (
+        <div className="mt8">
+          <span className={`chip chip-${correct ? 'green' : 'red'}`}>{correct ? '挑战成功' : '今天没答对'}</span>
+          {!multi && <span className="fs12 muted num"> 我的答案:{already.userAnswer || '空'}</span>}
+          <p className="fs12 muted mt8">{q.explanation}</p>
+        </div>
+      ) : (
+        <button className="btn btn-primary btn-sm w100 mt8" onClick={submit} disabled={!answer.trim()}>
+          <Icon name="check" size={13} /> 提交挑战
+        </button>
+      )}
     </div>
   )
 }

@@ -2,7 +2,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useReducer, useRef } from 'react'
 import type { Dispatch, ReactNode } from 'react'
 import type {
-  Attempt, CatalogData, Chapter, KnowledgePoint, KPStats, OfficeResultRecord, OfficeSubmission, PracticeMode, Profile, Question, SeedData,
+  Attempt, CatalogData, Chapter, CustomSkin, ExamAttempt, KnowledgePoint, KPStats, OfficeResultRecord, OfficeSubmission, PracticeMode, Profile, Question, SeedData,
   ScheduleTask, Session, SessionSummary, Settings, State, Subject, Task, WrongReason,
 } from '../types'
 import { XP_RULES, pushXpLog } from '../lib/xp'
@@ -57,6 +57,9 @@ export function emptyState(): State {
     english: { checkedDates: [], mastered: [] },
     qaLog: [],
     schedules: [],
+    skins: { activeId: null, customs: [] },
+    activeExam: null,
+    examHistory: [],
   }
 }
 
@@ -123,6 +126,12 @@ export function normalizeState(input: Partial<State> | State | null | undefined)
     },
     streak: { ...base.streak, ...(parsed.streak ?? {}) },
     schedules,
+    skins: {
+      activeId: parsed.skins?.activeId ?? null,
+      customs: Array.isArray(parsed.skins?.customs) ? parsed.skins!.customs : [],
+    },
+    activeExam: parsed.activeExam ?? null,
+    examHistory: Array.isArray(parsed.examHistory) ? parsed.examHistory : [],
     officeResults: oldOfficeResults,
     officeSubmissions: parsed.officeSubmissions ?? {},
     officeBankVersion: parsed.officeBankVersion ?? base.officeBankVersion,
@@ -249,6 +258,15 @@ export type Action =
   | { type: 'SCHEDULE_DONE'; id: string; key: string }
   | { type: 'SCHEDULE_SNOOZE'; id: string; key: string; until: string }
   | { type: 'SCHEDULE_SKIP_STALE'; id: string; now: string }
+  // ---------- 主题皮肤 ----------
+  | { type: 'SKIN_SAVE'; skin: CustomSkin }
+  | { type: 'SKIN_DELETE'; id: string }
+  | { type: 'SKIN_APPLY'; id: string | null }
+  // ---------- 模拟考试 ----------
+  | { type: 'EXAM_START'; attempt: ExamAttempt }
+  | { type: 'EXAM_ANSWER'; questionId: string; answer: string }
+  | { type: 'EXAM_FINISH'; score: number; usedSeconds: number }
+  | { type: 'EXAM_ABORT' }
 
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -881,6 +899,61 @@ export function reducer(state: State, action: Action): State {
         ),
       }
     }
+
+    // ---------- 主题皮肤 ----------
+    case 'SKIN_SAVE': {
+      const skins = state.skins ?? { activeId: null, customs: [] }
+      const exists = skins.customs.some((s) => s.id === action.skin.id)
+      const customs = exists
+        ? skins.customs.map((s) => (s.id === action.skin.id ? action.skin : s))
+        : [...skins.customs, action.skin]
+      return { ...state, skins: { activeId: skins.activeId ?? action.skin.id, customs } }
+    }
+    case 'SKIN_DELETE': {
+      const skins = state.skins ?? { activeId: null, customs: [] }
+      return {
+        ...state,
+        skins: {
+          activeId: skins.activeId === action.id ? null : skins.activeId,
+          customs: skins.customs.filter((s) => s.id !== action.id),
+        },
+      }
+    }
+    case 'SKIN_APPLY': {
+      const skins = state.skins ?? { activeId: null, customs: [] }
+      return { ...state, skins: { ...skins, activeId: action.id } }
+    }
+
+    // ---------- 模拟考试 ----------
+    case 'EXAM_START':
+      return { ...state, activeExam: action.attempt }
+    case 'EXAM_ANSWER':
+      return state.activeExam
+        ? {
+            ...state,
+            activeExam: {
+              ...state.activeExam,
+              answers: { ...state.activeExam.answers, [action.questionId]: action.answer },
+            },
+          }
+        : state
+    case 'EXAM_FINISH': {
+      const exam = state.activeExam
+      if (!exam || exam.finishedAt) return state
+      const finished: ExamAttempt = {
+        ...exam,
+        score: Math.max(0, Math.round(action.score * 100) / 100),
+        usedSeconds: action.usedSeconds,
+        finishedAt: new Date().toISOString(),
+      }
+      return {
+        ...state,
+        activeExam: null,
+        examHistory: [finished, ...(state.examHistory ?? [])].slice(0, 50),
+      }
+    }
+    case 'EXAM_ABORT':
+      return { ...state, activeExam: null }
 
     default:
       return state

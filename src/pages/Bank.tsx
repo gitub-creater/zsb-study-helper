@@ -178,7 +178,12 @@ export function Bank() {
       if (opts.filter(Boolean).length < 2) errs.options = '至少需要 2 个选项'
       const letters = draft.answer.toUpperCase().replace(/[^A-H]/g, '')
       if (!letters) errs.answer = '答案请用字母,如 A 或 ABD'
+      if (draft.type === 'single' && letters.length !== 1) errs.answer = '单选题答案只能是一个字母'
+      if (draft.type === 'multiple' && new Set(letters.split('')).size !== letters.length) errs.answer = '多选答案有重复字母'
       if (letters.split('').some((l) => l.charCodeAt(0) - 65 >= opts.filter(Boolean).length)) errs.answer = '答案超出选项范围'
+    }
+    if (draft.type === 'judge' && !['A', 'B'].includes(draft.answer.trim().toUpperCase())) {
+      errs.answer = '判断题答案只能是 A(对)或 B(错)'
     }
     if (!draft.explanation.trim()) errs.explanation = '请填写解析(哪怕简短)'
     setErrors(errs)
@@ -387,13 +392,17 @@ export function Bank() {
       try {
         const arr = JSON.parse(String(reader.result)) as CatalogQuestion[]
         if (!Array.isArray(arr)) throw new Error()
-        const ok = arr.filter((q) => q.stem && q.answer && q.explanation)
+        const VALID_TYPES = ['single', 'multiple', 'judge', 'fill']
+        const ok = arr.filter(
+          (q) => q.stem && q.answer && q.explanation && VALID_TYPES.includes(q.type) && Array.isArray(q.subjectId !== undefined ? q.options ?? [] : q.options)
+        )
+        const skipped = arr.length - ok.length
         dispatch({
           type: 'ADD_QUESTIONS',
           questions: ok.map((q) => ({ ...q, id: uid('q'), createdAt: new Date().toISOString(), reviewed: true })),
         })
         dispatch({ type: 'LOG', text: `JSON 导入 ${ok.length} 道题` })
-        toast(`JSON 导入成功:${ok.length} 题`, { kind: 'success' })
+        toast(skipped > 0 ? `JSON 导入 ${ok.length} 题,跳过 ${skipped} 条不完整记录` : `JSON 导入成功:${ok.length} 题`, { kind: 'success' })
       } catch {
         toast('JSON 格式不正确(需为题目对象数组)', { kind: 'error' })
       }
@@ -873,7 +882,16 @@ export function Bank() {
                 <input className="input" value={draft.source} onChange={(e) => setDraft({ ...draft, source: e.target.value })} />
               </Field>
               <Field label="年份">
-                <input className="input" type="number" value={draft.year} onChange={(e) => setDraft({ ...draft, year: Number(e.target.value) })} />
+                <input
+                className="input"
+                type="number"
+                value={draft.year}
+                onChange={(e) => {
+                  const y = Math.round(Number(e.target.value))
+                  if (!Number.isFinite(y)) return
+                  setDraft({ ...draft, year: Math.min(2100, Math.max(1990, y)) })
+                }}
+              />
               </Field>
             </div>
           </>

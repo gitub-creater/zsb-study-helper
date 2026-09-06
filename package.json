@@ -22,7 +22,8 @@
     "appId": "com.gitubcreater.zsbstudyhelper",
     "productName": "专升本学习助手",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
@@ -30,6 +31,9 @@
       "package.json"
     ],
     "artifactName": "ZSB-Study-Helper-Setup.${ext}",
+    "electronDownload": {
+      "cache": "${tempdir}/electron-cache"
+    },
     "win": {
       "target": [
         {
@@ -58,7 +62,7 @@
   "dependencies": {
     "@capacitor/core": "^8.5.0",
     "@capacitor/local-notifications": "^8.3.1",
-    "@supabase/supabase-js": "^2.112.4",
+    "@supabase/supabase-js": "^2.115.0",
     "@types/node": "^26.4.0",
     "docx": "^9.7.1",
     "electron-updater": "^6.8.9",

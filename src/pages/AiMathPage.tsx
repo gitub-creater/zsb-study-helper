@@ -664,7 +664,7 @@ export function AiMathPage() {
     // 用户手势是部分手机浏览器（vivo/OPPO 等）注入语音 API 的时机：先重新探测。
     if (!retrySpeechSupport()) {
       setSpeech({ messageId: 'speech-preview', playback: 'unsupported', sentence: null, error: SPEECH_RETRY_MESSAGE })
-      toast('本浏览器未开放系统语音能力，可改用 Chrome/Edge 打开本页；文字讲解不受影响', { kind: 'warning' })
+      toast('本浏览器未开放系统语音能力，可改用 Chrome/Edge 打开本页；文字讲解不受影响', { kind: 'error' })
       return
     }
     const controller = speechRef.current

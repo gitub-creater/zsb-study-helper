@@ -102,7 +102,7 @@ const TASK_GREETINGS = [
 ]
 
 export function petTaskGreeting(name: string, lateMinutes = 0): string {
-  const base = pick(TASK_GREETINGS).replaceAll('{name}', name)
+  const base = pick(TASK_GREETINGS).split('{name}').join(name)
   return lateMinutes >= 1 ? `${base}这条提醒迟到了约 ${lateMinutes} 分钟，现在开始也来得及！` : base
 }
 

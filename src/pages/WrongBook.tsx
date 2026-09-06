@@ -19,7 +19,7 @@ function StageDots({ entry }: { entry: WrongEntry }) {
         <i key={i} className={i <= entry.intervalIndex ? 'on' : ''} />
       ))}
       <span>
-        第 {entry.intervalIndex + 1} 档 · {intervals[entry.intervalIndex]} 天
+        第 {entry.intervalIndex + 1} 档 · {intervals[Math.min(entry.intervalIndex, intervals.length - 1)]} 天
       </span>
     </span>
   )
@@ -57,9 +57,11 @@ export function WrongBook() {
   }
 
   const reviewAll = () => {
-    const ids = entries.filter((e) => !e.archived).map((e) => e.questionId)
+    // 「复习全部到期」只收到期错题,与按钮语义一致(未到期的不提前打扰)
+    const today = todayStr()
+    const ids = entries.filter((e) => !e.archived && e.nextReviewAt != null && e.nextReviewAt <= today).map((e) => e.questionId)
     if (ids.length === 0) {
-      toast('当前筛选下没有可复习的错题')
+      toast('没有到期的错题,去练习页刷几题吧')
       return
     }
     const s = makeSession({ mode: 'wrong', name: '错题复习', questionIds: ids })
@@ -107,7 +109,7 @@ export function WrongBook() {
           title={filter === 'due' ? '太棒了,没有到期的错题' : '这里还没有错题'}
           desc={
             filter === 'due'
-              ? '到期的错题会出现在这里,按 1 → 3 → 7 → 14 → 30 天的节奏安排复习。'
+              ? '到期的错题会出现在这里,按 {intervalStageText(state.settings.intervals)} 的节奏安排复习。'
               : '练习中答错的题会自动收进错题本,并记录错误原因和复习计划。'
           }
           action={

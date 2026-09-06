@@ -1,10 +1,10 @@
 // 个人角色:等级/经验/称号/成就徽章/解锁内容/经验记录
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import type { AvatarKind, ThemeKind } from '../types'
 import { useStore } from '../store/store'
 import { Avatar } from '../components/Avatar'
 import { Mascot } from '../components/Mascot'
-import { Chip, Field, Modal, useToast } from '../components/ui'
+import { Chip, EmptyState, Field, Modal, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import { levelInfo, xpForLevel } from '../lib/xp'
@@ -48,7 +48,14 @@ export function ProfilePage() {
   const [cloudPassword, setCloudPassword] = useState('')
   const [cloudBusy, setCloudBusy] = useState(false)
 
-  if (!state.profile) return null
+  // 验证码倒计时:统一在 effect 里递减,组件卸载自动清理,避免 interval 泄漏
+  useEffect(() => {
+    if (countdown <= 0) return
+    const iv = window.setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000)
+    return () => window.clearInterval(iv)
+  }, [countdown > 0])
+
+  if (!state.profile) return <EmptyState title="请先完成角色创建" desc="回到今日学习页完成引导后即可使用个人角色。" />
   const p = state.profile
   const level = levelInfo(state.xp)
   const sessUser = getSessionUser()
@@ -96,6 +103,10 @@ export function ProfilePage() {
     }
     if (!sessUser.hash) {
       toast('请先为当前临时账号设置密码，再开启云端同步', { kind: 'error' })
+      return
+    }
+    if (!cloudPassword) {
+      toast('请先输入账号密码', { kind: 'error' })
       return
     }
     if (!(await verifyPassword(sessUser.id, cloudPassword))) {
@@ -404,7 +415,6 @@ export function ProfilePage() {
                       const code = issueCode(phoneInput)
                       setSentCode(code)
                       setCountdown(60)
-                      const iv = window.setInterval(() => setCountdown((c) => (c <= 1 ? (window.clearInterval(iv), 0) : c - 1)), 1000)
                       toast(`【本地模拟】短信服务未接入,验证码:${code}`, { duration: 10000 })
                     }}
                   >
