@@ -1,6 +1,13 @@
 const { app, BrowserWindow, dialog, shell } = require('electron')
-const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
+
+// 自动更新容错加载:依赖缺失(如手工替换 asar)时禁用更新而不是让整个应用崩溃
+let autoUpdater = null
+try {
+  ({ autoUpdater } = require('electron-updater'))
+} catch {
+  console.warn('[main] electron-updater 不可用,自动更新已禁用')
+}
 
 let mainWindow
 
@@ -30,7 +37,7 @@ function createWindow() {
 }
 
 function configureUpdates() {
-  if (!app.isPackaged) return
+  if (!app.isPackaged || !autoUpdater) return
 
   autoUpdater.autoDownload = true
   autoUpdater.on('error', () => undefined)
