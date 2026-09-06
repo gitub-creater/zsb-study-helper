@@ -16,7 +16,8 @@
   <body>
     <div id="root"></div>
     <script>
-      if ('serviceWorker' in navigator) {
+      // localhost 下的开发模式不注册 SW(无哈希文件名会被 cache-first 永久扣住旧代码)
+      if ('serviceWorker' in navigator && !/(localhost|127\.0\.0\.1)(:|$)/.test(location.hostname)) {
         window.addEventListener('load', function () {
           navigator.serviceWorker.register('./sw.js').catch(function () {});
         });

@@ -60,6 +60,7 @@ export function emptyState(): State {
     skins: { activeId: null, customs: [] },
     activeExam: null,
     examHistory: [],
+    tours: {},
   }
 }
 
@@ -132,6 +133,7 @@ export function normalizeState(input: Partial<State> | State | null | undefined)
     },
     activeExam: parsed.activeExam ?? null,
     examHistory: Array.isArray(parsed.examHistory) ? parsed.examHistory : [],
+    tours: parsed.tours ?? {},
     officeResults: oldOfficeResults,
     officeSubmissions: parsed.officeSubmissions ?? {},
     officeBankVersion: parsed.officeBankVersion ?? base.officeBankVersion,
@@ -267,6 +269,7 @@ export type Action =
   | { type: 'EXAM_ANSWER'; questionId: string; answer: string }
   | { type: 'EXAM_FINISH'; score: number; usedSeconds: number }
   | { type: 'EXAM_ABORT' }
+  | { type: 'TOUR_DONE'; key: string }
 
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -954,6 +957,8 @@ export function reducer(state: State, action: Action): State {
     }
     case 'EXAM_ABORT':
       return { ...state, activeExam: null }
+    case 'TOUR_DONE':
+      return { ...state, tours: { ...(state.tours ?? {}), [action.key]: true } }
 
     default:
       return state

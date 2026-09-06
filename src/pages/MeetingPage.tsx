@@ -6,6 +6,8 @@ import { Icon } from '../components/Icon'
 import { Avatar } from '../components/Avatar'
 import { Modal, Field, useToast, useConfirm, EmptyState } from '../components/ui'
 import { Whiteboard, renderPageToCanvas, pageBounds } from '../components/Whiteboard'
+import { FeatureTour, filterExistingSteps } from '../components/FeatureTour'
+import type { TourStep } from '../components/FeatureTour'
 import { MeetingSession, createMeeting, getMeeting, listMeetings, upsertMeeting } from '../services/rtc'
 import { createInvite, loadCommunity, respondInvite, subscribeCommunity } from '../services/community'
 import { cloudSendInvite } from '../services/communityCloud'
@@ -57,8 +59,15 @@ function MeetingList({ me }: { me: MeInfo }) {
   const postTitle = (postId?: string) => (postId ? data.posts.find((p) => p.id === postId)?.title : undefined)
   const myInvites = data.invites.filter((i) => i.to === me.id && i.status === 'pending')
 
+  const [tourOpen, setTourOpen] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setTourOpen(true), 400)
+    return () => window.clearTimeout(t)
+  }, [])
+
   return (
     <div className="page meet-list">
+      {tourOpen && <FeatureTour steps={filterExistingSteps(MEETING_LIST_TOUR)} onClose={() => setTourOpen(false)} />}
       <section className="card">
         <div className="card-h">
           <b>会议邀请</b>
@@ -66,7 +75,7 @@ function MeetingList({ me }: { me: MeInfo }) {
         {myInvites.length === 0 ? (
           <p className="muted">暂无待处理的邀请。别人在问题详情页发起讲题会议并邀请你后,这里会出现通知。</p>
         ) : (
-          <ul className="meet-invites">
+          <ul className="meet-invites" data-tour="invites">
             {myInvites.map((i) => (
               <li key={i.id}>
                 <Icon name="video" size={16} />
@@ -95,7 +104,7 @@ function MeetingList({ me }: { me: MeInfo }) {
       <section className="card">
         <div className="card-h">
           <b>讲题会议</b>
-          <button className="btn btn-sm btn-primary" onClick={() => setCreateOpen(true)}>
+          <button className="btn btn-sm btn-primary" data-tour="create" onClick={() => setCreateOpen(true)}>
             <Icon name="plus" size={14} /> 发起会议
           </button>
         </div>
@@ -406,6 +415,13 @@ function RoomInner({
     []
   )
 
+  // 每次进入会议都显示引导(可跳过;新手跟着箭头一步步点)。hooks 必须在条件返回之前
+  const [tourOpen, setTourOpen] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setTourOpen(true), 700)
+    return () => window.clearTimeout(t)
+  }, [])
+
   if (!room) return null
   const meP = room.participants.find((p) => p.userId === me.id)
   const canEditBoard = sessionRef.current?.canEditBoard(me.id) ?? isHost
@@ -502,6 +518,7 @@ function RoomInner({
   return (
     <div className="page meet-room">
       {confirmNode}
+      {tourOpen && <FeatureTour steps={filterExistingSteps(MEETING_ROOM_TOUR)} onClose={() => setTourOpen(false)} />}
       <div className="meet-head card">
         <div className="meet-head-main">
           <b>{room.meeting.title}</b>
@@ -521,7 +538,7 @@ function RoomInner({
       </div>
 
       {/* 钉钉式底部/顶部工具栏:大圆钮 */}
-      <div className="meet-toolbar" role="toolbar" aria-label="会议控制">
+      <div className="meet-toolbar" role="toolbar" aria-label="会议控制" data-tour="toolbar">
         <button
           className={`meet-rbtn${micOn ? ' on' : ''}`}
           disabled={ended || (!isHost && meP ? !meP.canSpeak : false)}
@@ -567,8 +584,13 @@ function RoomInner({
         )}
       </div>
 
+      <p className="page-hint">
+        💡 讲题三步:点<b>「题目贴到白板」</b>放上原题 → 用<b>画笔/图形</b>边画边讲 →
+        <b>「共享到白板」</b>把屏幕截图贴上来圈重点;✋举手示意,主讲人可授权发言与编辑。
+      </p>
+
       {/* 参会者宫格(钉钉式) */}
-      <div className="meet-gallery" aria-label="参会者视频宫格">
+      <div className="meet-gallery" aria-label="参会者视频宫格" data-tour="gallery">
         {room.participants.map((p) => (
           <div key={p.userId} className={`meet-tile${p.handRaised ? ' hand' : ''}${p.camOn && p.userId === me.id ? ' cam' : ''}`}>
             {p.userId === me.id && camOn ? (
@@ -592,7 +614,7 @@ function RoomInner({
         <div className="meet-board-col card">
           {/* 讲题联动:原题卡片 */}
           {linkedPost && (
-            <details className="meet-question" open>
+            <details className="meet-question" open data-tour="question">
               <summary>
                 <Icon name="chat" size={14} /> 待讲题目:{linkedPost.title}
               </summary>
@@ -620,7 +642,7 @@ function RoomInner({
           )}
           <div className="card-h">
             <b>讲题白板</b>
-            <span className="meet-page-tabs">
+            <span className="meet-page-tabs" data-tour="pages">
               {room.pages.map((p, i) => (
                 <button
                   key={p.id}
@@ -667,7 +689,7 @@ function RoomInner({
         </div>
 
         <aside className="meet-side">
-          <section className="card">
+          <section className="card" data-tour="parts">
             <div className="card-h">
               <b>参会人员({room.participants.length})</b>
             </div>
@@ -705,7 +727,7 @@ function RoomInner({
             </ul>
           </section>
 
-          <section className="card meet-chat-card">
+          <section className="card meet-chat-card" data-tour="chat">
             <div className="card-h">
               <b>聊天区</b>
             </div>
@@ -723,7 +745,7 @@ function RoomInner({
               ))}
               <div ref={chatEndRef} />
             </div>
-            <div className="meet-quick">
+            <div className="meet-quick" data-tour="quick">
               {QUICK_PHRASES.map((q) => (
                 <button key={q} className="chip chip-gray" onClick={() => sessionRef.current?.sendChat(q)} disabled={ended}>
                   {q}
@@ -767,3 +789,19 @@ export function startMeetingForPost(me: MeInfo, postId: string, invitee: { id: s
   upsertMeeting(m)
   return m
 }
+
+const MEETING_LIST_TOUR: TourStep[] = [
+  { sel: '[data-tour="invites"]', title: '会议邀请', text: '别人在问题页发起讲题会议并邀请你时,这里会出现通知,点「接受进入」直达白板。', prefer: 'bottom' },
+  { sel: '[data-tour="create"]', title: '发起会议', text: '也可以直接创建会议;更推荐从「问题社区」的问题详情页发起,原题会自动带进白板。', prefer: 'bottom' },
+  { sel: '[data-tour="create"]', title: '双端同步', text: '同一设备开两个标签页、或手机与电脑各自进入同一会议,白板和聊天实时互通。', prefer: 'bottom' },
+]
+
+const MEETING_ROOM_TOUR: TourStep[] = [
+  { sel: '[data-tour="toolbar"]', title: '会议控制台', text: '麦克风(带音量条)/摄像头;「共享到白板」把屏幕截图贴上白板圈画讲题;✋举手示意;主讲人可全体静音、结束会议。', prefer: 'bottom' },
+  { sel: '[data-tour="gallery"]', title: '参会者宫格', text: '谁在会、麦克风开关、谁在举手,一眼可见。', prefer: 'bottom' },
+  { sel: '[data-tour="question"]', title: '待讲题目', text: '从社区带来的原题在这里;点「题目贴到白板」把题目和图片放上画布。', prefer: 'right' },
+  { sel: '[data-tour="pages"]', title: '多页白板', text: '可新增/切换多页;支持保存、导出 PNG 和 PDF。', prefer: 'bottom' },
+  { sel: '.wb-toolbar', title: '希沃式白板工具', text: '画笔/荧光笔/橡皮/图形/文字;「手型」按住拖动=无限画布;方格纸/横线底纹;双击文字可改;全屏讲课。', prefer: 'bottom' },
+  { sel: '[data-tour="parts"]', title: '参会管理(主讲人)', text: '对单个参会者:静音/解除静音、允许发言、允许编辑白板;普通参会者默认只读。', prefer: 'left' },
+  { sel: '[data-tour="quick"]', title: '聊天与快捷短语', text: '「听不懂/再讲一遍/懂了」一键发送;输入框实时聊天。', prefer: 'top' },
+]

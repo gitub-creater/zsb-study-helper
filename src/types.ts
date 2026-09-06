@@ -532,6 +532,8 @@ export interface State {
   /** 模拟考试:进行中的一场(null=无)+ 历史成绩(最新在前) */
   activeExam?: ExamAttempt | null
   examHistory?: ExamAttempt[]
+  /** 新手引导:已完成的功能教程标记(如 community / community-detail / meeting-room) */
+  tours?: Record<string, boolean>
 }
 
 // ---------- 模拟考试 ----------

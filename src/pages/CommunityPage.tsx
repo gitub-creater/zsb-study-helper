@@ -9,6 +9,8 @@ import { listUsers } from '../lib/auth'
 import { downloadBlob, uid } from '../lib/misc'
 import { processSkinImage } from '../lib/colorExtract'
 import { listMeetings } from '../services/rtc'
+import { FeatureTour, filterExistingSteps } from '../components/FeatureTour'
+import type { TourStep } from '../components/FeatureTour'
 import { cloudAddFriend, cloudSendDm, cloudSendInvite, subscribeCommunityCloud } from '../services/communityCloud'
 import { startMeetingForPost } from './MeetingPage'
 import {
@@ -100,23 +102,40 @@ function CommunityList({ me }: { me: CommunityUser }) {
   const myCredits = getCredits(data, me.id)
   const unread = data.messages.filter((m) => m.to === me.id && !m.read).length
 
+  // 每次进入都显示新手引导(可随时点"跳过教程(已学会)")
+  const [tourOpen, setTourOpen] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setTourOpen(true), 500)
+    return () => window.clearTimeout(t)
+  }, [])
+
   return (
     <div className="page community">
+      {tourOpen && (
+        <FeatureTour
+          steps={filterExistingSteps(COMMUNITY_LIST_TOUR)}
+          onClose={() => setTourOpen(false)}
+        />
+      )}
       <section className="card">
         <div className="card-h">
           <b>问题社区</b>
-          <span className="chip chip-yellow num" title="悬赏积分:发布悬赏会扣除,被采纳后获得">
+          <span className="chip chip-yellow num" data-tour="credits" title="悬赏积分:发布悬赏会扣除,被采纳后获得">
             <Icon name="star" size={12} /> 我的积分 {myCredits}
           </span>
-          <button className="btn btn-sm" onClick={() => setFriendsOpen(true)}>
+          <button className="btn btn-sm" data-tour="friends" onClick={() => setFriendsOpen(true)}>
             <Icon name="users" size={14} /> 好友/私信{unread > 0 ? ` (${unread})` : ''}
           </button>
-          <button className="btn btn-sm btn-primary" onClick={() => setAskOpen(true)}>
+          <button className="btn btn-sm btn-primary" data-tour="ask" onClick={() => setAskOpen(true)}>
             <Icon name="plus" size={14} /> 提问
           </button>
         </div>
+        <p className="page-hint">
+          💡 三步用起来:点右上角<b>「提问」</b>发布问题(可配图+悬赏)→ 等别人回答后<b>采纳最佳答案</b>赚积分 →
+          不会的题点进详情<b>「发起会议讲题」</b>开白板一对一问。
+        </p>
 
-        <div className="community-toolbar">
+        <div className="community-toolbar" data-tour="filters">
           <div className="searchbox">
             <Icon name="search" size={15} />
             <input
@@ -173,7 +192,7 @@ function CommunityList({ me }: { me: CommunityUser }) {
         {posts.length === 0 ? (
           <EmptyState mood="think" title="没有符合条件的问题" desc="换个筛选条件,或者点击「提问」发起第一个问题。" action={<button className="btn btn-primary" onClick={() => setAskOpen(true)}>我要提问</button>} />
         ) : (
-          <ul className="post-list">
+          <ul className="post-list" data-tour="posts">
             {posts.map((p) => (
               <li key={p.id}>
                 <a className="post-card" href={`#/community/${p.id}`}>
@@ -454,9 +473,17 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
     toast('已提交举报,感谢维护社区环境', { kind: 'success' })
   }
 
+  // 每次进入详情页显示引导(可跳过)
+  const [tourOpen, setTourOpen] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setTourOpen(true), 500)
+    return () => window.clearTimeout(t)
+  }, [])
+
   return (
     <div className="page community detail">
       {confirmNode}
+      {tourOpen && <FeatureTour steps={filterExistingSteps(COMMUNITY_DETAIL_TOUR)} onClose={() => setTourOpen(false)} />}
       <a className="btn btn-sm back" href="#/community">
         <Icon name="left" size={14} /> 返回社区
       </a>
@@ -569,7 +596,7 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
           </div>
         )}
 
-        <div className="post-timeline num">
+        <div className="post-timeline num" data-tour="timeline">
           <span>
             <Icon name="timer" size={13} /> 提问 {fmtDateTime(post.createdAt)}
           </span>
@@ -586,7 +613,7 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
           {duration && <span className="chip chip-green">解决耗时 {duration}</span>}
         </div>
 
-        <div className="post-foot-ops">
+        <div className="post-foot-ops" data-tour="footops">
           <button
             className={`btn btn-sm${post.likedBy.includes(me.id) ? ' btn-primary' : ''}`}
             onClick={() => togglePostLike(post.id, me.id)}
@@ -626,7 +653,7 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
       <TutoringPanel post={post} me={me} tutorings={tutorings} />
 
       {/* 评论区 */}
-      <section className="card">
+      <section className="card" data-tour="comments">
         <div className="card-h">
           <b>回答与讨论({data.comments.filter((c) => c.postId === post.id).length})</b>
         </div>
@@ -663,7 +690,7 @@ function TutoringPanel({ post, me, tutorings }: { post: CommunityPost; me: Commu
   const finished = tutorings.filter((t) => t.status === 'finished')
 
   return (
-    <section className="card">
+    <section className="card" data-tour="tutor">
       <div className="card-h">
         <b>解答时间</b>
         <span className="muted">申请一对一解答 → 提问者接受 → 按约定时间开始/结束 → 双方互评</span>
@@ -1165,3 +1192,18 @@ function DmModal({ me, other, data, onClose }: { me: CommunityUser; other: Commu
     </Modal>
   )
 }
+
+const COMMUNITY_LIST_TOUR: TourStep[] = [
+  { sel: '[data-tour="ask"]', title: '第一步:发布问题', text: '点「提问」写清题目和你卡住的步骤,可上传题目图片、设置悬赏积分,也支持匿名发布。', prefer: 'bottom' },
+  { sel: '[data-tour="filters"]', title: '搜索与筛选', text: '按关键词/学科/标签找问题;"未解决"里全是等待回答的;排序可切最新、热门、悬赏。', prefer: 'bottom' },
+  { sel: '[data-tour="credits"]', title: '悬赏积分', text: '提问设悬赏会冻结积分,你的回答被采纳后自动赚积分;每个新账号自带 100 分。', prefer: 'bottom' },
+  { sel: '[data-tour="friends"]', title: '好友与私信', text: '添加好友后可跨设备私信交流;收到私信时这里会显示未读数。', prefer: 'left' },
+  { sel: '[data-tour="posts"]', title: '问题列表', text: '点卡片看详情。状态含义:待回答(没人答)→待采纳(有答案等提问者选)→已解决。', prefer: 'top' },
+]
+
+const COMMUNITY_DETAIL_TOUR: TourStep[] = [
+  { sel: '[data-tour="footops"]', title: '一键开白板讲题', text: '点「发起会议讲题」:原题自动带进会议,进入后点"题目贴到白板"即可开讲。', prefer: 'top' },
+  { sel: '[data-tour="tutor"]', title: '解答时间(一对一)', text: '点「申请解答」并约定时间 → 提问者接受 → 按时开始/结束 → 双方互评,全过程有记录。', prefer: 'bottom' },
+  { sel: '[data-tour="comments"]', title: '回答与讨论', text: '支持楼中楼回复和点赞;提问者可「采纳最佳答案」,悬赏积分自动转给回答者。', prefer: 'bottom' },
+  { sel: '[data-tour="timeline"]', title: '进度时间线', text: '提问时间/首次解答/完成时间与解决耗时一目了然。', prefer: 'top' },
+]

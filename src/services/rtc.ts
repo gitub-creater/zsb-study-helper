@@ -638,7 +638,7 @@ export class SupabaseRealtimeDriver implements RtcDriver {
         { event: 'INSERT', schema: 'public', table: 'rtc_message', filter: `room_id=eq.${meetingId}` },
         (ev) => {
           const wire = (ev.new as { payload?: RtcWireMessage })?.payload
-          if (!this.shouldProcess(wire)) return // 过滤自己的回声
+          if (!wire || !this.shouldProcess(wire)) return // 过滤自己的回声
           this.dispatch(wire)
         }
       )
