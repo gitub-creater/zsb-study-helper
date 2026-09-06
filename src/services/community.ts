@@ -374,7 +374,7 @@ export function addFriend(me: CommunityUser, other: CommunityUser): void {
   mutate((d) => {
     if (me.id === other.id) throw new Error('不能添加自己为好友')
     if (d.friends.some((f) => (f.a === me.id && f.b === other.id) || (f.a === other.id && f.b === me.id))) return
-    d.friends.push({ id: uid('f'), a: me.id, b: other.id, since: new Date().toISOString() })
+    d.friends.push({ id: uid('f'), a: me.id, b: other.id, since: new Date().toISOString(), aUser: me, bUser: other })
   }, true)
 }
 

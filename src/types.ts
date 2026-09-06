@@ -704,6 +704,9 @@ export interface FriendEdge {
   a: string
   b: string
   since: string
+  /** 便于跨设备好友在本地展示,不含敏感信息 */
+  aUser?: CommunityUser
+  bUser?: CommunityUser
 }
 
 /** 站内私信 */

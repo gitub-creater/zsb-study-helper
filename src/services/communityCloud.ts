@@ -51,7 +51,7 @@ function applyWire(data: CommunityData, wire: CommunityWire, meId: string): bool
     case 'friend_request': {
       if (!wire.from || wire.toId !== meId) return false
       if (data.friends.some((f) => (f.a === wire.from!.id && f.b === meId) || (f.a === meId && f.b === wire.from!.id))) return false
-      const edge: FriendEdge = { id: wire.id, a: wire.from.id, b: meId, since: wire.at }
+      const edge: FriendEdge = { id: wire.id, a: wire.from.id, b: meId, since: wire.at, aUser: wire.from }
       data.friends.push(edge)
       return true
     }

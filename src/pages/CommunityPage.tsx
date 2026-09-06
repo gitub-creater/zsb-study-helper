@@ -5,7 +5,8 @@ import { Avatar } from '../components/Avatar'
 import { Icon } from '../components/Icon'
 import { EmptyState, Field, Modal, Segmented, useConfirm, useToast } from '../components/ui'
 import { AVATAR_INFO } from '../lib/theme'
-import { listUsers } from '../lib/auth'
+import { getSession, listUsers } from '../lib/auth'
+import { findCloudUsers } from '../services/cloud'
 import { downloadBlob, uid } from '../lib/misc'
 import { processSkinImage } from '../lib/colorExtract'
 import { listMeetings } from '../services/rtc'
@@ -1075,6 +1076,10 @@ function PublicProfileModal({ user, data, me, onClose, onDm }: { user: Community
 
 function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: CommunityData; onClose: () => void }) {
   const [dmTo, setDmTo] = useState<CommunityUser | null>(null)
+  const [accountName, setAccountName] = useState('')
+  const [accountError, setAccountError] = useState('')
+  const [cloudMatches, setCloudMatches] = useState<CommunityUser[]>([])
+  const [lookupBusy, setLookupBusy] = useState(false)
   const known = new Map<string, CommunityUser>()
   for (const p of data.posts) if (!p.anonymous) known.set(p.author.id, p.author)
   for (const c of data.comments) if (!c.anonymous) known.set(c.author.id, c.author)
@@ -1082,16 +1087,65 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
     known.set(t.tutor.id, t.tutor)
     known.set(t.student.id, t.student)
   }
+  for (const f of data.friends) {
+    if (f.aUser) known.set(f.aUser.id, f.aUser)
+    if (f.bUser) known.set(f.bUser.id, f.bUser)
+  }
   known.delete(me.id)
   const friendIds = data.friends.filter((f) => f.a === me.id || f.b === me.id).map((f) => (f.a === me.id ? f.b : f.a))
   const friends = friendIds.map((id) => known.get(id)).filter(Boolean) as CommunityUser[]
-  const strangers = [...known.values()].filter((u) => !friendIds.includes(u.id))
+  const localAccounts = listUsers()
+    .filter((u) => u.id !== me.id)
+    .map((u) => ({ id: u.id, name: u.name, avatar: 'sprout' as const }))
+  for (const u of localAccounts) known.set(u.id, u)
+  for (const u of cloudMatches) known.set(u.id, u)
+  const strangers = [...new Map([...known.values()].map((u) => [u.id, u])).values()].filter((u) => !friendIds.includes(u.id))
   const unreadOf = (uid2: string) => data.messages.filter((m) => m.from === uid2 && m.to === me.id && !m.read).length
+
+  async function addByAccount() {
+    const value = accountName.trim()
+    setAccountError('')
+    if (!value) {
+      setAccountError('请输入对方注册账号')
+      return
+    }
+    const session = getSession()
+    if (!session?.cloudToken || !session.cloudApiUrl) {
+      setAccountError('请先登录云端账号，才能查找全部用户')
+      return
+    }
+    setLookupBusy(true)
+    const matches = await findCloudUsers({ token: session.cloudToken, apiUrl: session.cloudApiUrl }, value)
+    setLookupBusy(false)
+    setCloudMatches(matches.map((u) => ({ ...u, avatar: 'sprout' as const })))
+    const account = matches[0]
+    if (!account) {
+      setAccountError('未找到该账号，请确认对方已注册且账号拼写正确')
+      return
+    }
+    const other: CommunityUser = { id: account.id, name: account.name, avatar: 'sprout' }
+    try {
+      addFriend(me, other)
+      cloudAddFriend(me, other)
+      setAccountName('')
+      setAccountError('已发送好友申请')
+    } catch (e) {
+      setAccountError(e instanceof Error ? e.message : '操作失败')
+    }
+  }
 
   return (
     <Modal open title="好友 / 私信" onClose={onClose} width={620}>
       <div className="friends-grid">
         <div className="friends-list">
+          <div className="friend-search">
+            <label className="muted fs12" htmlFor="friend-account">按账号添加好友</label>
+            <div className="inline-form">
+              <input id="friend-account" className="input" value={accountName} maxLength={40} placeholder="输入对方账号" onChange={(e) => { setAccountName(e.target.value); setAccountError('') }} onKeyDown={(e) => { if (e.key === 'Enter') void addByAccount() }} />
+              <button className="btn btn-sm btn-primary" type="button" disabled={lookupBusy} onClick={() => void addByAccount()}>{lookupBusy ? '查找中' : '添加'}</button>
+            </div>
+            {accountError && <span className="fs12" style={{ color: accountError === '已发送好友申请' ? 'var(--success)' : 'var(--danger)' }}>{accountError}</span>}
+          </div>
           <b className="muted">好友({friends.length})</b>
           {friends.length === 0 && <p className="muted">还没有好友。在问题/回答的「主页」里可以添加。</p>}
           {friends.map((u) => (

@@ -266,6 +266,10 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
   const eraserCursorRef = useRef<HTMLDivElement>(null)
   const imgInput = useRef<HTMLInputElement>(null)
   const bgInput = useRef<HTMLInputElement>(null)
+  const pageRef = useRef(page)
+  useEffect(() => {
+    pageRef.current = page
+  }, [page])
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current
@@ -336,10 +340,14 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
       const it = page.items[i]
       const xs = it.pts.filter((_, idx) => idx % 2 === 0)
       const ys = it.pts.filter((_, idx) => idx % 2 === 1)
+      const textLines = it.type === 'text' ? (it.text ?? '').split('\n') : []
+      // 文本元素只保存左上角锚点,命中区域按渲染字号和最长一行估算。
+      const textW = it.type === 'text' ? Math.max(0.08, Math.max(...textLines.map((line) => line.length), 1) * it.width * 0.62) : 0
+      const textH = it.type === 'text' ? Math.max(0.06, textLines.length * it.width * 1.3) : 0
       const minX = Math.min(...xs) - r - it.width / 2
-      const maxX = Math.max(...xs) + r + it.width / 2
+      const maxX = Math.max(...xs) + r + it.width / 2 + textW
       const minY = Math.min(...ys) - r - it.width / 2
-      const maxY = Math.max(...ys) + r + it.width / 2
+      const maxY = Math.max(...ys) + r + it.width / 2 + textH
       if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) return it
     }
     return null
@@ -403,19 +411,23 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
 
   function eraseAt(p: { x: number; y: number }) {
     const r = 0.02
-    const hits = page.items.filter((i) => {
+    const currentPage = pageRef.current
+    const hits = currentPage.items.filter((i) => {
       if (i.type === 'image') return false // 题目图片用选择工具删除,防误擦
       const xs = i.pts.filter((_, idx) => idx % 2 === 0)
       const ys = i.pts.filter((_, idx) => idx % 2 === 1)
+      const textLines = i.type === 'text' ? (i.text ?? '').split('\n') : []
+      const textW = i.type === 'text' ? Math.max(0.08, Math.max(...textLines.map((line) => line.length), 1) * i.width * 0.62) : 0
+      const textH = i.type === 'text' ? Math.max(0.06, textLines.length * i.width * 1.3) : 0
       const minX = Math.min(...xs) - r - i.width / 2
-      const maxX = Math.max(...xs) + r + i.width / 2
+      const maxX = Math.max(...xs) + r + i.width / 2 + textW
       const minY = Math.min(...ys) - r - i.width / 2
-      const maxY = Math.max(...ys) + r + i.width / 2
+      const maxY = Math.max(...ys) + r + i.width / 2 + textH
       return p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY
     })
     if (hits.length === 0) return
     for (const h of hits) removedIds.current.add(h.id)
-    onReplaceItems(page.items.filter((i) => !removedIds.current.has(i.id)))
+    onReplaceItems(currentPage.items.filter((i) => !removedIds.current.has(i.id)))
   }
 
   function onPointerMove(e: React.PointerEvent) {

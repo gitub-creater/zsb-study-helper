@@ -29,8 +29,13 @@ function parseHash(): { roomId: string | null; query: URLSearchParams } {
 }
 
 export function MeetingPage({ me }: { me: MeInfo }) {
-  const { roomId } = parseHash()
-  if (roomId) return <MeetingRoom meetingId={roomId} me={me} />
+  const { roomId, query } = parseHash()
+  if (roomId) {
+    if (!getMeeting(roomId) && query.get('title')) {
+      upsertMeeting({ id: roomId, title: query.get('title') || '答疑会议', hostId: query.get('host') || 'shared-host', hostName: query.get('hostName') || '主讲人', postId: query.get('post') || undefined, startAt: query.get('start') || new Date().toISOString(), plannedMinutes: Math.max(5, Number(query.get('mins')) || 60), status: 'scheduled', createdAt: new Date().toISOString() })
+    }
+    return <MeetingRoom meetingId={roomId} me={me} />
+  }
   return <MeetingList me={me} />
 }
 
@@ -437,11 +442,25 @@ function RoomInner({
   }
 
   function copyLink() {
-    const link = `${location.origin}${location.pathname}#/meeting/${room!.meeting.id}`
+    const link = meetingLink()
     navigator.clipboard?.writeText(link).then(
       () => toast('会议链接已复制,发给对方即可加入', { kind: 'success' }),
       () => toast(`复制失败,请手动复制:${link}`, { kind: 'error' })
     )
+  }
+
+  function meetingLink(): string {
+    const m = room!.meeting
+    const base = `${location.origin}${location.pathname}${location.search}`.split('#')[0]
+    const params = new URLSearchParams({ title: m.title, host: m.hostId, hostName: m.hostName, start: m.startAt, mins: String(m.plannedMinutes) })
+    if (m.postId) params.set('post', m.postId)
+    return `${base}#/meeting/${encodeURIComponent(m.id)}?${params.toString()}`
+  }
+
+  function shareLink() {
+    const link = meetingLink()
+    if (navigator.share) void navigator.share({ title: room!.meeting.title, text: '加入在线讲题会议', url: link }).catch(() => {})
+    else copyLink()
   }
 
   function exportPng() {
@@ -534,6 +553,8 @@ function RoomInner({
           <button className="btn btn-sm" onClick={copyLink}>
             <Icon name="copy" size={13} /> 复制会议链接
           </button>
+          <button className="btn btn-sm" onClick={shareLink}><Icon name="upload" size={13} /> 分享给同学</button>
+          <a className="btn btn-sm" href={meetingLink()}><Icon name="video" size={13} /> 打开链接</a>
         </div>
       </div>
 

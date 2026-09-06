@@ -10,6 +10,20 @@ export interface CloudUser {
   name: string
 }
 
+export async function findCloudUsers(session: CloudSession, query: string): Promise<CloudUser[]> {
+  const value = query.trim()
+  if (!value) return []
+  try {
+    const encoded = encodeURIComponent(value)
+    const { data } = await request<{ users: CloudUser[] }>(`/api/auth/users?q=${encoded}`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+    }, session.apiUrl)
+    return data.users ?? []
+  } catch {
+    return []
+  }
+}
+
 export type CloudLoginResult =
   | { kind: 'ok'; user: CloudUser; session: CloudSession }
   | { kind: 'not_found' }
