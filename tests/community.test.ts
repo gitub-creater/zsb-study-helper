@@ -20,8 +20,12 @@ vi.stubGlobal('window', {
 
 import {
   addComment,
+  addGroupMembers,
   applyForTutoring,
   commentTree,
+  createGroup,
+  groupMessages,
+  sendGroupMessage,
   createPost,
   getCredits,
   hotScore,
@@ -106,6 +110,19 @@ describe('社区:发帖与悬赏', () => {
     togglePostLike(post.id, other.id)
     togglePostLike(post.id, other.id)
     expect(loadCommunity().posts.find((p) => p.id === post.id)!.likes).toBe(0)
+  })
+})
+
+describe('社区:学习群组', () => {
+  it('创建群组、邀请成员并发送群消息', () => {
+    freshData()
+    const group = createGroup(me, '高数冲刺', '一起练习极限')
+    expect(group.memberIds).toEqual([me.id])
+    expect(() => sendGroupMessage(group.id, other, '未加入')).toThrow(/不是该群组成员/)
+    const updated = addGroupMembers(group.id, me.id, [other.id, other.id])
+    expect(updated.memberIds).toEqual([me.id, other.id])
+    const message = sendGroupMessage(group.id, other, '今天练二阶导数')
+    expect(groupMessages(loadCommunity(), group.id, other.id)).toEqual([message])
   })
 })
 

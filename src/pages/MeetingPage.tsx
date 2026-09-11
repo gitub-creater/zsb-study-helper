@@ -9,7 +9,7 @@ import { Whiteboard, renderPageToCanvas, pageBounds } from '../components/Whiteb
 import { FeatureTour, filterExistingSteps } from '../components/FeatureTour'
 import type { TourStep } from '../components/FeatureTour'
 import { MeetingSession, createMeeting, getMeeting, listMeetings, upsertMeeting } from '../services/rtc'
-import { createInvite, loadCommunity, respondInvite, subscribeCommunity } from '../services/community'
+import { createInvite, getUserGroups, groupMessages, loadCommunity, respondInvite, subscribeCommunity } from '../services/community'
 import { cloudSendInvite } from '../services/communityCloud'
 import { exportCanvasesToPdf } from '../lib/pdf'
 import { downloadBlob, uid } from '../lib/misc'
@@ -221,8 +221,8 @@ function CreateMeetingModal({
                 postId: prefill.postId || undefined,
               })
               if (invite && prefill.to) {
-                createInvite({ meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: prefill.to })
-                cloudSendInvite({ id: uid('inv'), meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: prefill.to, at: new Date().toISOString(), status: 'pending' }, prefill.to)
+                const inviteRecord = createInvite({ meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: prefill.to })
+                cloudSendInvite(inviteRecord, prefill.to)
                 toast('已创建会议并发送站内邀请', { kind: 'success' })
               } else {
                 toast('会议已创建', { kind: 'success' })
@@ -252,6 +252,75 @@ function CreateMeetingModal({
       ) : null}
     </Modal>
   )
+}
+
+function InviteFriendsGroupsButton({
+  meeting,
+  me,
+  participants,
+  toast,
+}: {
+  meeting: MeetingInfo
+  me: MeInfo
+  participants: MeetingRoomState['participants']
+  toast: (msg: string, opts?: { kind?: 'info' | 'success' | 'error' }) => void
+}) {
+  const [open, setOpen] = useState(false)
+  return <>
+    <button className="btn btn-sm btn-primary" onClick={() => setOpen(true)}><Icon name="users" size={13} /> 邀请好友/群组</button>
+    {open && <InviteFriendsGroupsModal meeting={meeting} me={me} participants={participants} toast={toast} onClose={() => setOpen(false)} onCopied={() => {
+      const base = `${location.origin}${location.pathname}${location.search}`.split('#')[0]
+      const params = new URLSearchParams({ title: meeting.title, host: meeting.hostId, hostName: meeting.hostName, start: meeting.startAt, mins: String(meeting.plannedMinutes) })
+      if (meeting.postId) params.set('post', meeting.postId)
+      const link = `${base}#/meeting/${encodeURIComponent(meeting.id)}?${params.toString()}`
+      navigator.clipboard?.writeText(link).then(() => toast('会议链接已复制', { kind: 'success' }))
+    }} />}
+  </>
+}
+
+function InviteFriendsGroupsModal({
+  meeting, me, participants, toast, onClose, onCopied,
+}: {
+  meeting: MeetingInfo
+  me: MeInfo
+  participants: MeetingRoomState['participants']
+  toast: (msg: string, opts?: { kind?: 'info' | 'success' | 'error' }) => void
+  onClose: () => void
+  onCopied: () => void
+}) {
+  const data = loadCommunity()
+  const joined = new Set(participants.map((participant) => participant.userId))
+  const friends = data.friends.flatMap((edge) => {
+    const otherId = edge.a === me.id ? edge.b : edge.b === me.id ? edge.a : ''
+    if (!otherId || joined.has(otherId)) return []
+    const user = edge.a === otherId ? edge.aUser : edge.bUser
+    return user && user.id !== me.id ? [user] : []
+  })
+  const groups = getUserGroups(data, me.id)
+  const [tab, setTab] = useState<'friends' | 'groups'>('friends')
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([])
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([])
+  const send = () => {
+    const recipients = new Set(selectedFriends)
+    for (const groupId of selectedGroups) {
+      const group = groups.find((item) => item.id === groupId)
+      group?.memberIds.forEach((id) => { if (id !== me.id && !joined.has(id)) recipients.add(id) })
+    }
+    if (recipients.size === 0) { toast('请选择好友或群组', { kind: 'error' }); return }
+    for (const to of recipients) {
+      const from = { id: me.id, name: me.name, avatar: 'sprout' as const }
+      const invite = createInvite({ meetingId: meeting.id, meetingTitle: meeting.title, from, to })
+      cloudSendInvite({ ...invite, at: new Date().toISOString(), status: 'pending' }, to)
+    }
+    toast(`已向 ${recipients.size} 位成员发送会议邀请`, { kind: 'success' })
+    onClose()
+  }
+  return <Modal open title="邀请好友/群组进入会议" onClose={onClose} width={460} footer={<><button className="btn" onClick={onClose}>取消</button><button className="btn" onClick={onCopied}>复制会议链接</button><button className="btn btn-primary" onClick={send}>发送邀请</button></>}>
+    <div className="seg" role="tablist"><button className={tab === 'friends' ? 'on' : ''} onClick={() => setTab('friends')}>好友 ({friends.length})</button><button className={tab === 'groups' ? 'on' : ''} onClick={() => setTab('groups')}>群组 ({groups.length})</button></div>
+    <div className="invite-select-list">
+      {tab === 'friends' ? (friends.length ? friends.map((friend) => <label className="check-row" key={friend.id}><input type="checkbox" checked={selectedFriends.includes(friend.id)} onChange={(event) => setSelectedFriends((ids) => event.target.checked ? [...ids, friend.id] : ids.filter((id) => id !== friend.id))} /><Avatar kind={friend.avatar} color={AVATAR_INFO[friend.avatar].color} size={26} />{friend.name}</label>) : <p className="muted">暂无可邀请好友，请先在问题社区添加好友。</p>) : (groups.length ? groups.map((group) => <label className="check-row" key={group.id}><input type="checkbox" checked={selectedGroups.includes(group.id)} onChange={(event) => setSelectedGroups((ids) => event.target.checked ? [...ids, group.id] : ids.filter((id) => id !== group.id))} /><span><b>{group.name}</b><small className="muted">{group.memberIds.filter((id) => id !== me.id && !joined.has(id)).length} 位成员可邀请</small></span></label>) : <p className="muted">暂无群组，请先创建学习群组。</p>)}
+    </div>
+  </Modal>
 }
 
 // ---------- 房间 ----------
@@ -550,6 +619,7 @@ function RoomInner({
           </span>
         </div>
         <div className="meet-head-ops">
+          {isHost && <InviteFriendsGroupsButton meeting={room.meeting} me={me} participants={room.participants} toast={toast} />}
           <button className="btn btn-sm" onClick={copyLink}>
             <Icon name="copy" size={13} /> 复制会议链接
           </button>

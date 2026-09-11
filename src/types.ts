@@ -730,6 +730,25 @@ export interface MeetingInvite {
   status: 'pending' | 'accepted' | 'declined'
 }
 
+/** 学习群组(成员以稳定账号 id 为准) */
+export interface CommunityGroup {
+  id: string
+  name: string
+  description: string
+  ownerId: string
+  memberIds: string[]
+  createdAt: string
+}
+
+/** 群组学习消息 */
+export interface GroupMessage {
+  id: string
+  groupId: string
+  from: CommunityUser
+  body: string
+  at: string
+}
+
 /** 社区共享数据(本机所有账号共用的"社区",跨设备同步需后端,见 services/community.ts 说明) */
 export interface CommunityData {
   version: number
@@ -739,6 +758,8 @@ export interface CommunityData {
   friends: FriendEdge[]
   messages: DirectMessage[]
   invites: MeetingInvite[]
+  groups?: CommunityGroup[]
+  groupMessages?: GroupMessage[]
   /** 用户积分(悬赏经济) */
   credits: Record<string, number>
   /** 已播种示例数据 */

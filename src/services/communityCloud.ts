@@ -5,13 +5,13 @@ import { getSupabase, supabaseConfigured } from './supabaseClient'
 
 /** 构建时是否包含 Supabase 配置(决定是否启用云端驱动) */
 export const communityCloudConfigured = supabaseConfigured
-import type { CommunityData, CommunityUser, FriendEdge, MeetingInvite } from '../types'
+import type { CommunityData, CommunityGroup, CommunityUser, FriendEdge, GroupMessage, MeetingInvite } from '../types'
 import { uid } from '../lib/misc'
 import { flush, loadCommunity, subscribeCommunity } from './community'
 
 const COMMUNITY_ROOM = 'community'
 
-export type CommunityWireKind = 'friend_request' | 'meeting_invite' | 'dm'
+export type CommunityWireKind = 'friend_request' | 'meeting_invite' | 'dm' | 'group_upsert' | 'group_invite' | 'group_message'
 
 export interface CommunityWire {
   kind: CommunityWireKind
@@ -24,8 +24,11 @@ export interface CommunityWire {
   toId?: string
   /** meeting_invite:完整邀请对象 */
   invite?: MeetingInvite
-  /** dm:消息内容 */
+  /** dm/group_message:消息内容 */
   body?: string
+  /** group_upsert/group_invite/group_message:群组和群消息 */
+  group?: CommunityGroup
+  groupMessage?: GroupMessage
 }
 
 const myClientId = uid('cli')
@@ -63,7 +66,33 @@ function applyWire(data: CommunityData, wire: CommunityWire, meId: string): bool
     }
     case 'dm': {
       if (!wire.from || wire.toId !== meId || !wire.body) return false
+      if (data.messages.some((message) => message.id === wire.id)) return false
       data.messages.push({ id: wire.id, from: wire.from.id, to: wire.toId, body: wire.body, at: wire.at })
+      return true
+    }
+    case 'group_upsert': {
+      const group = wire.group
+      if (!group || (!group.memberIds.includes(meId) && group.ownerId !== meId)) return false
+      const current = data.groups ?? (data.groups = [])
+      const index = current.findIndex((item) => item.id === group.id)
+      if (index >= 0) current[index] = group
+      else current.push(group)
+      return true
+    }
+    case 'group_invite': {
+      const group = wire.group
+      if (!group || wire.toId !== meId) return false
+      const current = data.groups ?? (data.groups = [])
+      if (!current.some((item) => item.id === group.id)) current.push(group)
+      return true
+    }
+    case 'group_message': {
+      const message = wire.groupMessage
+      const group = message ? (data.groups ?? []).find((item) => item.id === message.groupId) : undefined
+      if (!message || !group || !group.memberIds.includes(meId)) return false
+      const current = data.groupMessages ?? (data.groupMessages = [])
+      if (current.some((item) => item.id === message.id)) return false
+      current.push(message)
       return true
     }
     default:
@@ -113,6 +142,18 @@ export function cloudSendDm(me: CommunityUser, to: CommunityUser, body: string, 
   void sendCommunityEvent({ kind: 'dm', id, at, from: me, toId: to.id, body })
 }
 
+export function cloudUpsertGroup(group: CommunityGroup): void {
+  void sendCommunityEvent({ kind: 'group_upsert', id: group.id, at: group.createdAt, group })
+}
+
+export function cloudInviteToGroup(group: CommunityGroup, toId: string): void {
+  void sendCommunityEvent({ kind: 'group_invite', id: uid('gi'), at: new Date().toISOString(), group, toId })
+}
+
+export function cloudSendGroupMessage(message: GroupMessage): void {
+  void sendCommunityEvent({ kind: 'group_message', id: message.id, at: message.at, groupMessage: message })
+}
+
 /** 供外部读取频道订阅状态(F12 验证用) */
 export function communityChannelState(): string {
   const supabase = getSupabase()
@@ -125,5 +166,8 @@ export const communityCloudDriver = {
   addFriend: cloudAddFriend,
   sendInvite: cloudSendInvite,
   sendDm: cloudSendDm,
+  upsertGroup: cloudUpsertGroup,
+  inviteToGroup: cloudInviteToGroup,
+  sendGroupMessage: cloudSendGroupMessage,
   subscribe: subscribeCommunityCloud,
 }

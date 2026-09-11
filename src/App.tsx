@@ -39,6 +39,7 @@ import { ScheduleAlerts } from './components/ScheduleAlerts'
 import { PetWindow } from './components/PetWindow'
 import { ThemePage } from './pages/ThemePage'
 import { CommunityPage } from './pages/CommunityPage'
+import GroupsPage from './pages/GroupsPage'
 import { MeetingPage } from './pages/MeetingPage'
 import { ExamPage } from './pages/ExamPage'
 import { FormulasPage } from './pages/FormulasPage'
@@ -61,6 +62,7 @@ const NAV: NavItem[] = [
   { key: 'aioffice', label: 'AI 办公文档', icon: 'sparkle' },
   { key: 'english', label: '英语打卡', icon: 'mic' },
   { key: 'community', label: '问题社区', icon: 'chat' },
+  { key: 'groups', label: '学习群组', icon: 'users' },
   { key: 'meeting', label: '在线会议', icon: 'video' },
   { key: 'pet', label: '宠物园', icon: 'star' },
   { key: 'sources', label: '考试资料', icon: 'cap' },
@@ -152,7 +154,7 @@ function BottomNav({ route, onMore }: { route: string; onMore: () => void }) {
           )}
         </a>
       ))}
-      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings', 'pet', 'community', 'meeting', 'theme'].includes(base) ? 'on' : ''} onClick={onMore}>
+      <button type="button" className={['aimath', 'map', 'hot', 'stats', 'profile', 'settings', 'pet', 'community', 'groups', 'meeting', 'theme'].includes(base) ? 'on' : ''} onClick={onMore}>
         <Icon name="dots" size={20} />
         更多
       </button>
@@ -276,6 +278,7 @@ function Router() {
     profile: <ProfilePage />,
     settings: <SettingsPage />,
     community: <CommunityPage me={me} />,
+    groups: <GroupsPage me={me} />,
     meeting: <MeetingPage me={me} />,
     theme: <ThemePage />,
     exam: <ExamPage />,

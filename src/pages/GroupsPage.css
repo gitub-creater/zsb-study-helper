@@ -1,0 +1,22 @@
+.groups-page { max-width: 1120px; margin: 0 auto; }
+.groups-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
+.groups-head-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.invite-select-list { display:grid; gap:6px; max-height:280px; overflow:auto; margin-top:12px; }
+.groups-head h2 { margin:0 0 6px; }
+.groups-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+.group-card { display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left; cursor:pointer; color:var(--ink); }
+.group-card:hover { border-color:var(--accent); transform:translateY(-1px); }
+.group-avatar { flex:none; width:44px; height:44px; display:grid; place-items:center; border-radius:14px; background:var(--accent-soft); color:var(--accent); font-size:20px; font-weight:700; }
+.group-card-main { min-width:0; display:grid; gap:4px; }
+.group-card-main p { margin:2px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.groups-empty { display:grid; place-items:center; gap:8px; padding:42px 20px; text-align:center; }
+.groups-empty p { margin:0; }
+.group-chat { display:grid; gap:12px; min-width:0; }
+.group-chat-meta { display:flex; gap:12px; flex-wrap:wrap; padding-bottom:8px; border-bottom:1px solid var(--line); }
+.group-messages { display:grid; gap:10px; max-height:360px; overflow:auto; padding:4px; }
+.group-message { display:flex; gap:8px; align-items:flex-start; max-width:90%; }
+.group-message.mine { margin-left:auto; flex-direction:row-reverse; text-align:right; }
+.group-message p { margin:3px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.group-compose { display:flex; gap:8px; align-items:flex-end; }
+.group-compose .input { flex:1; resize:vertical; min-width:0; }
+@media (max-width:640px) { .groups-head { flex-direction:column; } .groups-head .btn { width:100%; } .groups-grid { grid-template-columns:1fr; } .group-compose { flex-direction:column; align-items:stretch; } .group-compose .btn { min-height:44px; } }

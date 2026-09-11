@@ -5,7 +5,7 @@
 // 跨设备/跨网络社区需要一个后端(如 Supabase 表 + api/ 下的 serverless 接口):
 // CommunityStore 接口已把全部操作抽象成方法,接后端时只需新增一个 RemoteDriver 实现
 // (表结构建议:posts / comments / tutoring / friends / messages / invites / credits),UI 层零改动。
-import type { CommunityComment, CommunityData, CommunityPost, CommunityUser, FriendEdge, MeetingInvite, PostStatus, TutoringSession } from '../types'
+import type { CommunityComment, CommunityData, CommunityGroup, CommunityPost, CommunityUser, FriendEdge, GroupMessage, MeetingInvite, PostStatus, TutoringSession } from '../types'
 import { uid } from '../lib/misc'
 
 const KEY = 'zsb_community_v1'
@@ -15,7 +15,7 @@ const DATA_VERSION = 1
 export const START_CREDITS = 100
 
 export function emptyCommunity(): CommunityData {
-  return { version: DATA_VERSION, posts: [], comments: [], tutoring: [], friends: [], messages: [], invites: [], credits: {}, seeded: false }
+  return { version: DATA_VERSION, posts: [], comments: [], tutoring: [], friends: [], messages: [], invites: [], groups: [], groupMessages: [], credits: {}, seeded: false }
 }
 
 export function loadCommunity(): CommunityData {
@@ -33,6 +33,8 @@ export function loadCommunity(): CommunityData {
         friends: parsed.friends ?? [],
         messages: parsed.messages ?? [],
         invites: parsed.invites ?? [],
+        groups: parsed.groups ?? [],
+        groupMessages: parsed.groupMessages ?? [],
       }
     }
   } catch {
@@ -388,6 +390,18 @@ export function isFriend(data: CommunityData, a: string, b: string): boolean {
   return data.friends.some((f) => (f.a === a && f.b === b) || (f.a === b && f.b === a))
 }
 
+export function friendsOf(data: CommunityData, userId: string): CommunityUser[] {
+  const users = new Map<string, CommunityUser>()
+  for (const edge of data.friends) {
+    if (edge.aUser) users.set(edge.aUser.id, edge.aUser)
+    if (edge.bUser) users.set(edge.bUser.id, edge.bUser)
+  }
+  return data.friends
+    .filter((edge) => edge.a === userId || edge.b === userId)
+    .map((edge) => users.get(edge.a === userId ? edge.b : edge.a))
+    .filter((user): user is CommunityUser => Boolean(user))
+}
+
 export function sendDm(from: CommunityUser, to: CommunityUser, body: string): void {
   mutate((d) => {
     const text = body.trim()
@@ -418,12 +432,83 @@ export function unreadDmCount(data: CommunityData, meId: string): number {
   return data.messages.filter((m) => m.to === meId && !m.read).length
 }
 
+// ---------- 学习群组 ----------
+
+export function createGroup(owner: CommunityUser, name: string, description = ''): CommunityGroup {
+  const cleanName = name.trim()
+  if (!cleanName) throw new Error('群组名称不能为空')
+  return mutate((d) => {
+    const group: CommunityGroup = {
+      id: uid('group'),
+      name: cleanName,
+      description: description.trim(),
+      ownerId: owner.id,
+      memberIds: [owner.id],
+      createdAt: new Date().toISOString(),
+    }
+    d.groups = [...(d.groups ?? []), group]
+    return group
+  }, true)
+}
+
+export function joinGroup(groupId: string, userId: string): void {
+  mutate((d) => {
+    const group = d.groups?.find((item) => item.id === groupId)
+    if (!group) throw new Error('群组不存在')
+    if (!group.memberIds.includes(userId)) group.memberIds.push(userId)
+  }, true)
+}
+
+export function addGroupMembers(groupId: string, ownerId: string, memberIds: string[]): CommunityGroup {
+  return mutate((d) => {
+    const group = d.groups?.find((item) => item.id === groupId)
+    if (!group) throw new Error('群组不存在')
+    if (group.ownerId !== ownerId) throw new Error('只有群主可以邀请成员')
+    group.memberIds = [...new Set([...group.memberIds, ...memberIds.filter((id) => id !== group.ownerId)])]
+    return group
+  }, true)
+}
+
+export function leaveGroup(groupId: string, userId: string): void {
+  mutate((d) => {
+    const group = d.groups?.find((item) => item.id === groupId)
+    if (!group) throw new Error('群组不存在')
+    if (group.ownerId === userId) throw new Error('群主不能直接退出，请先解散或移交群组')
+    group.memberIds = group.memberIds.filter((id) => id !== userId)
+  }, true)
+}
+
+export function getUserGroups(data: CommunityData, userId: string): CommunityGroup[] {
+  return (data.groups ?? []).filter((group) => group.memberIds.includes(userId))
+}
+
+export function groupMessages(data: CommunityData, groupId: string, userId: string): GroupMessage[] {
+  const group = data.groups?.find((item) => item.id === groupId)
+  if (!group || !group.memberIds.includes(userId)) return []
+  return (data.groupMessages ?? []).filter((message) => message.groupId === groupId).sort((a, b) => a.at.localeCompare(b.at))
+}
+
+export function sendGroupMessage(groupId: string, from: CommunityUser, body: string): GroupMessage {
+  const cleanBody = body.trim()
+  if (!cleanBody) throw new Error('消息内容不能为空')
+  return mutate((d) => {
+    const group = d.groups?.find((item) => item.id === groupId)
+    if (!group || !group.memberIds.includes(from.id)) throw new Error('你不是该群组成员')
+    const message: GroupMessage = { id: uid('gm'), groupId, from, body: cleanBody, at: new Date().toISOString() }
+    d.groupMessages = [...(d.groupMessages ?? []), message]
+    return message
+  }, true)
+}
+
 // ---------- 会议邀请(站内) ----------
 
-export function createInvite(invite: Omit<MeetingInvite, 'id' | 'at' | 'status'>): void {
-  mutate((d) => {
-    if (d.invites.some((i) => i.meetingId === invite.meetingId && i.to === invite.to && i.status === 'pending')) return
-    d.invites.unshift({ ...invite, id: uid('inv'), at: new Date().toISOString(), status: 'pending' })
+export function createInvite(invite: Omit<MeetingInvite, 'id' | 'at' | 'status'>): MeetingInvite {
+  return mutate((d) => {
+    const existing = d.invites.find((i) => i.meetingId === invite.meetingId && i.to === invite.to && i.status === 'pending')
+    if (existing) return existing
+    const created: MeetingInvite = { ...invite, id: uid('inv'), at: new Date().toISOString(), status: 'pending' }
+    d.invites.unshift(created)
+    return created
   }, true)
 }
 
