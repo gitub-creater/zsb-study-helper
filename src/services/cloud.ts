@@ -33,6 +33,12 @@ export type CloudLoginResult =
 
 const API_URL_KEY = 'zsb_cloud_api_url_v1'
 const DEFAULT_CLOUD_API_URL = 'https://shandong-zsb-study-helper.vercel.app'
+const GITHUB_PAGES_HOST = 'gitub-creater.github.io'
+const CLOUD_REQUEST_TIMEOUT_MS = 15000
+
+function isGithubPagesHost(): boolean {
+  return window.location.hostname === GITHUB_PAGES_HOST || window.location.hostname.endsWith(`.${GITHUB_PAGES_HOST}`)
+}
 
 /**
  * AI 服务密钥是设备私密配置，不能随着学习快照跨设备传播。
@@ -80,8 +86,12 @@ export function getCloudApiUrl(): string | null {
   const configured = normalizeUrl(import.meta.env.VITE_CLOUD_API_URL ?? '')
   if (configured) return configured
 
-  // Electron loads bundled files with the file: protocol. Its origin is not an API host,
-  // so native desktop builds must use the same cloud service as local/mobile builds.
+  // GitHub Pages is static hosting and has no /api serverless routes. Always use
+  // the Vercel API there, rather than the Pages origin.
+  if (isGithubPagesHost()) return DEFAULT_CLOUD_API_URL
+
+  // Vercel serves the API from the same origin. Electron loads bundled files with
+  // file:, so it falls through to the saved URL or the stable production API.
   if (
     window.location.protocol !== 'file:'
     && window.location.hostname !== 'localhost'
@@ -117,13 +127,18 @@ async function request<T>(
   if (!apiUrl) throw new CloudRequestError(0, 'not_configured', '未配置云端地址')
 
   let response: Response
+  const controller = new AbortController()
+  const timeout = globalThis.setTimeout(() => controller.abort(), CLOUD_REQUEST_TIMEOUT_MS)
   try {
     response = await fetch(`${apiUrl}${path}`, {
       ...init,
+      signal: init.signal ?? controller.signal,
       headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
     })
   } catch {
     throw new CloudRequestError(0, 'unavailable')
+  } finally {
+    globalThis.clearTimeout(timeout)
   }
 
   const body = await response.json().catch(() => ({})) as { error?: string; code?: string } & T
@@ -149,7 +164,7 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
     if (error.code === 'not_found') return { kind: 'not_found' }
     if (error.code === 'bad_password') return { kind: 'bad_password' }
-    if (error.status === 0 || error.code === 'not_configured') return { kind: 'unavailable' }
+    if (error.status === 0 || error.status === 503 || error.code === 'not_configured' || error.code === 'service_unavailable') return { kind: 'unavailable' }
     return { kind: 'error', message: error.message }
   }
 }
@@ -164,7 +179,7 @@ export async function registerCloud(id: string, name: string, password: string):
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
     if (error.code === 'name_taken') return { kind: 'error', message: '该账号已在云端注册，请直接登录' }
-    if (error.status === 0 || error.code === 'not_configured') return { kind: 'unavailable' }
+    if (error.status === 0 || error.status === 503 || error.code === 'not_configured' || error.code === 'service_unavailable') return { kind: 'unavailable' }
     return { kind: 'error', message: error.message }
   }
 }

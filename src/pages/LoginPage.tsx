@@ -78,7 +78,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
 
       const local = users.find((u) => u.name === normalized)
       if (!local) {
-        toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端不可用，且本机没有此账号', { kind: 'error' })
+        toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端服务暂时不可用；首次登录请稍后重试，已有本机账号可离线登录', { kind: 'error' })
         return
       }
       if (!(await verifyPassword(local.id, pw))) {
@@ -100,7 +100,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
         }
       }
       enter(local)
-      if (cloud.kind === 'unavailable') toast('当前离线登录，学习数据会在云端恢复后再同步')
+      if (cloud.kind === 'unavailable') toast('当前使用本机登录，云端服务恢复后会自动继续同步学习数据', { kind: 'info' })
     } finally {
       setBusy(false)
     }
