@@ -216,30 +216,24 @@ function pointSegmentDistance(p: { x: number; y: number }, a: { x: number; y: nu
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
 }
 
-function pointTextContains(item: BoardItem, p: { x: number; y: number }, radius: number): boolean {
-  const lines = (item.text ?? '').split('\n')
-  const width = Math.max(0.08, Math.max(...lines.map((line) => line.length), 1) * item.width * 0.62)
-  const height = Math.max(0.06, lines.length * item.width * 1.3)
-  return p.x >= item.pts[0] - radius && p.x <= item.pts[0] + width + radius && p.y >= item.pts[1] - radius && p.y <= item.pts[1] + height + radius
-}
-
 type EraserRadius = number | { x: number; y: number }
 
 function radiusValues(radius: EraserRadius): { x: number; y: number } {
   return typeof radius === 'number' ? { x: radius, y: radius } : radius
 }
 
+function pointTextContains(item: BoardItem, p: { x: number; y: number }, radius: EraserRadius): boolean {
+  const lines = (item.text ?? '').split('\n')
+  const width = Math.max(0.08, Math.max(...lines.map((line) => line.length), 1) * item.width * 0.62)
+  const height = Math.max(0.06, lines.length * item.width * 1.3)
+  const radii = radiusValues(radius)
+  return p.x >= item.pts[0] - radii.x && p.x <= item.pts[0] + width + radii.x && p.y >= item.pts[1] - radii.y && p.y <= item.pts[1] + height + radii.y
+}
+
 /** 按实际笔迹/图形轮廓判断橡皮擦是否碰到对象,而不是只命中整块包围盒。 */
 export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: number }, radius: EraserRadius = 0.02): boolean {
-  if (item.pts.length < 2) return false
+  if (item.type === 'image' || item.pts.length < 2) return false
   const radii = radiusValues(radius)
-  if (item.type === 'image') {
-    const x0 = Math.min(item.pts[0], item.pts[2])
-    const x1 = Math.max(item.pts[0], item.pts[2])
-    const y0 = Math.min(item.pts[1], item.pts[3])
-    const y1 = Math.max(item.pts[1], item.pts[3])
-    return p.x >= x0 - radii.x && p.x <= x1 + radii.x && p.y >= y0 - radii.y && p.y <= y1 + radii.y
-  }
   const hitRadius = Math.max(radii.x, radii.y)
   if (item.type === 'text') return pointTextContains(item, p, hitRadius)
   const strokeRadius = Math.max(0.001, item.width / 1080)

@@ -29,12 +29,12 @@ describe('白板橡皮擦局部擦除', () => {
     expect(eraseBoardItemsAt(items, { x: 0.05, y: 0.05 }).items).toEqual(items)
   })
 
-  it('图片和文字都支持局部擦除,不会被整块删除', () => {
+  it('图片不被橡皮擦误删,文字支持局部擦除', () => {
     const image: BoardItem = { id: 'img', type: 'image', pts: [0.1, 0.1, 0.6, 0.6], color: '#000', width: 0, src: 'data:image/png;base64,x', by: 'u_test', at: 1 }
     const text: BoardItem = { id: 'txt', type: 'text', pts: [0.1, 0.1], color: '#000', width: 0.03, text: '好友申请', by: 'u_test', at: 1 }
-    expect(boardItemContainsPoint(image, { x: 0.2, y: 0.2 })).toBe(true)
+    expect(boardItemContainsPoint(image, { x: 0.2, y: 0.2 })).toBe(false)
     expect(boardItemContainsPoint(text, { x: 0.15, y: 0.12 })).toBe(true)
-    expect(eraseBoardItemsAt([image], { x: 0.2, y: 0.2 }).items[0].erasePoints).toHaveLength(1)
+    expect(eraseBoardItemsAt([image], { x: 0.2, y: 0.2 }).items).toEqual([image])
     expect(eraseBoardItemsAt([text], { x: 0.15, y: 0.12 }).items[0].erasePoints).toHaveLength(1)
   })
 })
