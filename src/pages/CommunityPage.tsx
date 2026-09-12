@@ -96,6 +96,11 @@ function CommunityList({ me }: { me: CommunityUser }) {
   const [askOpen, setAskOpen] = useState(false)
   const [friendsOpen, setFriendsOpen] = useState(() => new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('friends') === '1')
   useEffect(() => subscribeCommunity(() => setTick((t) => t + 1)), [])
+  useEffect(() => {
+    const syncFriendsOpen = () => setFriendsOpen(new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('friends') === '1')
+    window.addEventListener('hashchange', syncFriendsOpen)
+    return () => window.removeEventListener('hashchange', syncFriendsOpen)
+  }, [])
   const data = useMemo(() => loadCommunity(), [tick])
   const posts = queryPosts(data, query)
   const tags = [...new Set(data.posts.flatMap((p) => p.tags))].slice(0, 20)
