@@ -42,7 +42,7 @@ class FakeDriver implements RtcDriver {
       for (const d of FakeDriver.all) if (d !== this) d.handlers?.onChat((action as { msg: never }).msg)
     } else if (action.kind === 'board') {
       for (const d of FakeDriver.all) {
-        if (d !== this) d.handlers?.onBoardDelta(action.pageId as string, action.items as never, !!action.replace)
+        if (d !== this) d.handlers?.onBoardDelta(action.pageId as string, (action.items as never) ?? [], !!action.replace, action.eraseUpdates as never)
       }
     } else {
       this.onIntent(action)
@@ -152,6 +152,31 @@ describe('会议实时层(主机权威)', () => {
     expect(ensureMeetingFromInvite(invite)).toBe(true)
     expect(ensureMeetingFromInvite({ meetingId: 'm_missing' })).toBe(false)
   })
+
+  it('擦除走增量通道:主机合并擦除点,授权参会者的增量同步到主机', async () => {
+    const { host, guest } = setup()
+    const pageId = host.snapshot.pages[0].id
+    const stroke = { id: 'stroke-1', type: 'pen' as const, pts: [0.1, 0.1, 0.5, 0.5], color: '#000', width: 3, by: HOST.id, at: Date.now() }
+    host.addBoardItems(pageId, [stroke])
+    const beforeErase = host.snapshot
+    // 主机本地擦除:立即新引用 + 只合并增量点
+    host.eraseBoardPoints(pageId, [{ itemId: 'stroke-1', points: [{ x: 0.3, y: 0.3, r: 0.02 }] }])
+    expect(host.snapshot).not.toBe(beforeErase)
+    expect(host.snapshot.pages[0].items[0].erasePoints).toHaveLength(1)
+    // 重复增量去重,不会无限膨胀
+    host.eraseBoardPoints(pageId, [{ itemId: 'stroke-1', points: [{ x: 0.3, y: 0.3, r: 0.02 }] }])
+    expect(host.snapshot.pages[0].items[0].erasePoints).toHaveLength(1)
+    // 授权参会者的擦除增量(100ms 尾随节流后)同步到主机
+    host.setParticipantEdit(GUEST.id, true)
+    guest.eraseBoardPoints(pageId, [{ itemId: 'stroke-1', points: [{ x: 0.2, y: 0.2, r: 0.02 }] }])
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    expect(host.snapshot.pages[0].items[0].erasePoints).toHaveLength(2)
+    // 未授权参会者被拒绝
+    host.setParticipantEdit(GUEST.id, false)
+    guest.eraseBoardPoints(pageId, [{ itemId: 'stroke-1', points: [{ x: 0.4, y: 0.4, r: 0.02 }] }])
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    expect(host.snapshot.pages[0].items[0].erasePoints).toHaveLength(2)
+  }, 10000)
 })
 
 

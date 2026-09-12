@@ -781,6 +781,7 @@ function RoomInner({
             canEdit={canEditBoard && !ended}
             onAddItems={(items) => sessionRef.current?.addBoardItems(activePage.id, items)}
             onReplaceItems={(items) => sessionRef.current?.replaceBoardPage(activePage.id, items)}
+            onErasePoints={(updates) => sessionRef.current?.eraseBoardPoints(activePage.id, updates)}
             onSetBg={(dataUrl) => sessionRef.current?.setPageBg(activePage.id, dataUrl)}
             onSetGrid={(grid) => sessionRef.current?.setPageGrid(activePage.id, grid)}
           />

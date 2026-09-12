@@ -3,7 +3,7 @@
 // 无限画布:所有元素存"世界坐标"(单位=一个视口宽/高),按住手型工具/中键拖动即可
 // 朝任意方向平移,想移多远移多远;滚轮上下平移(Shift+滚轮左右)。
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import type { BoardItem, BoardPage } from '../types'
+import type { BoardEraseUpdate, BoardItem, BoardPage } from '../types'
 import { Icon } from './Icon'
 import { uid } from '../lib/misc'
 import { processSkinImage } from '../lib/colorExtract'
@@ -270,13 +270,13 @@ export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: numbe
   return false
 }
 
-/** 橡皮擦一次命中的对象,返回带局部擦除点的新对象数组。 */
+/** 橡皮擦一次命中的对象,返回带局部擦除点的新对象数组与增量(网络只传增量)。 */
 export function eraseBoardItemsAt(
   items: BoardItem[],
   p: { x: number; y: number },
   radius: EraserRadius = 0.02,
   previous?: { x: number; y: number },
-): { items: BoardItem[]; hitIds: string[] } {
+): { items: BoardItem[]; hitIds: string[]; updates: BoardEraseUpdate[] } {
   const radii = radiusValues(radius)
   const distance = previous ? Math.hypot(p.x - previous.x, p.y - previous.y) : 0
   const steps = Math.max(1, Math.ceil(distance / Math.max(Math.max(radii.x, radii.y) * 0.55, 0.001)))
@@ -287,14 +287,19 @@ export function eraseBoardItemsAt(
       })
     : [p]
   const hitIds = items.filter((item) => samples.some((sample) => boardItemContainsPoint(item, sample, radius))).map((item) => item.id)
-  if (hitIds.length === 0) return { items, hitIds }
+  if (hitIds.length === 0) return { items, hitIds, updates: [] }
   const hitSet = new Set(hitIds)
+  const updates: BoardEraseUpdate[] = []
   const next = items.map((item) => {
     if (!hitSet.has(item.id)) return item
     const newPoints = samples.filter((sample) => boardItemContainsPoint(item, sample, radius)).map((sample) => ({ ...sample, r: Math.max(radii.x, radii.y), rx: radii.x, ry: radii.y }))
-    return newPoints.length ? { ...item, erasePoints: [...(item.erasePoints ?? []), ...newPoints] } : item
+    if (newPoints.length) {
+      updates.push({ itemId: item.id, points: newPoints })
+      return { ...item, erasePoints: [...(item.erasePoints ?? []), ...newPoints] }
+    }
+    return item
   })
-  return { items: next, hitIds }
+  return { items: next, hitIds, updates }
 }
 
 /** 选中项的虚线框(希沃式) */
@@ -357,11 +362,13 @@ interface WhiteboardProps {
   lockNote?: string
   onAddItems: (items: BoardItem[]) => void
   onReplaceItems: (items: BoardItem[]) => void
+  /** 擦除增量:只把新增擦除点发给会议通道,避免整页重发造成延迟 */
+  onErasePoints?: (updates: BoardEraseUpdate[]) => void
   onSetBg: (dataUrl?: string) => void
   onSetGrid?: (grid: 'grid' | 'lines' | undefined) => void
 }
 
-export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems, onSetBg, onSetGrid }: WhiteboardProps) {
+export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems, onErasePoints, onSetBg, onSetGrid }: WhiteboardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const [tool, setTool] = useState<BoardTool>('pen')
@@ -527,9 +534,11 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
     const result = eraseBoardItemsAt(currentPage.items, p, radius, eraserLastPoint.current ?? undefined)
     eraserLastPoint.current = p
     if (result.hitIds.length === 0) return
+    // 本地立即反映擦除;网络只发增量擦除点(无增量通道时回退整页)
     const nextPage = { ...currentPage, items: result.items }
     pageRef.current = nextPage
-    onReplaceItems(result.items)
+    if (result.updates.length && onErasePoints) onErasePoints(result.updates)
+    else onReplaceItems(result.items)
   }
 
   function onPointerMove(e: React.PointerEvent) {

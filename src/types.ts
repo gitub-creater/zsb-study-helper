@@ -817,6 +817,16 @@ export interface MeetingChatMsg {
   at: string
 }
 
+/** 局部橡皮擦留下的世界坐标擦除点(跨端同步的最小增量单位) */
+export interface BoardErasePoint {
+  x: number
+  y: number
+  r: number
+  /** 横纵半径:16:9 画布上保持屏幕圆形 */
+  rx?: number
+  ry?: number
+}
+
 /** 白板笔画/图形/图片元素 */
 export interface BoardItem {
   id: string
@@ -828,10 +838,16 @@ export interface BoardItem {
   text?: string
   /** 图片 dataURL */
   src?: string
-  /** 局部橡皮擦留下的世界坐标擦除点,旧数据缺失时表示未擦除;rx/ry 用于保持屏幕圆形 */
-  erasePoints?: { x: number; y: number; r: number; rx?: number; ry?: number }[]
+  /** 局部橡皮擦留下的世界坐标擦除点,旧数据缺失时表示未擦除 */
+  erasePoints?: BoardErasePoint[]
   by: string
   at: number
+}
+
+/** 橡皮擦增量:某对象新增的一批擦除点(远小于整页数据) */
+export interface BoardEraseUpdate {
+  itemId: string
+  points: BoardErasePoint[]
 }
 
 export interface BoardPage {

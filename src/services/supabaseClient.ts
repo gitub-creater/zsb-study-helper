@@ -13,7 +13,8 @@ export function getSupabase(): SupabaseClient | null {
   if (!client) {
     try {
       client = createClient(SUPABASE_URL, SUPABASE_KEY, {
-        realtime: { params: { eventsPerSecond: 20 } },
+        // 会议白板高频增量(擦除点/笔迹)需要更高吞吐,20 会导致事件被节流堆积成"延迟"
+        realtime: { params: { eventsPerSecond: 60 } },
       })
     } catch {
       return null

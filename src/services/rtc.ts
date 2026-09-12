@@ -5,7 +5,7 @@
 // 全流程真实联调:进会、静音、聊天、白板同步、结束会议。
 // 接入真实服务时实现 WebSocketDriver 或 WebRTCDriver(sendWebSocketDriver 骨架已给出,
 // 信令服务器建议:rooms/{id} 房间状态 + WebSocket 广播),UI 层零改动。
-import type { BoardItem, BoardPage, MeetingChatMsg, MeetingInfo, MeetingParticipant, MeetingRoomState } from '../types'
+import type { BoardEraseUpdate, BoardItem, BoardPage, MeetingChatMsg, MeetingInfo, MeetingParticipant, MeetingRoomState } from '../types'
 import { uid } from '../lib/misc'
 
 const REGISTRY_KEY = 'zsb_meetings_v1'
@@ -19,6 +19,7 @@ export interface RtcAction {
     | 'chat' // { msg }
     | 'board-add' // { pageId, items }
     | 'board-replace' // { pageId, items }
+    | 'board-erase' // { pageId, updates }: 局部擦除增量(远小于整页数据)
     | 'page-add' // { page }
     | 'page-remove' // { pageId }
     | 'page-active' // { pageId }
@@ -39,7 +40,7 @@ export interface RtcAction {
 export interface RtcHandlers {
   onRoomState: (s: MeetingRoomState) => void
   onChat: (m: MeetingChatMsg) => void
-  onBoardDelta: (pageId: string, items: BoardItem[], replace: boolean) => void
+  onBoardDelta: (pageId: string, items: BoardItem[], replace: boolean, eraseUpdates?: BoardEraseUpdate[]) => void
 }
 
 export interface RtcDriver {
@@ -190,10 +191,15 @@ export class MeetingSession {
         this.chatLog = [...this.chatLog, m]
         this.chatListeners.forEach((f) => f(this.chatLog))
       },
-      onBoardDelta: (pageId, items, replace) => {
+      onBoardDelta: (pageId, items, replace, eraseUpdates) => {
+        if (eraseUpdates?.length) {
+          this.applyBoard({ kind: 'board-erase', pageId, updates: eraseUpdates })
+          this.emit()
+          return
+        }
         const page = this.room.pages.find((p) => p.id === pageId)
         if (!page) return
-        const nextItems = replace ? [...items] : [...page.items, ...items.filter((i) => !page.items.some((x) => x.id === i.id))]
+        const nextItems = replace ? [...(items ?? [])] : [...page.items, ...(items ?? []).filter((i) => !page.items.some((x) => x.id === i.id))]
         this.room = {
           ...this.room,
           pages: this.room.pages.map((candidate) => candidate.id === pageId ? { ...candidate, items: nextItems } : candidate),
@@ -214,6 +220,11 @@ export class MeetingSession {
     this.driver?.disconnect()
     this.driver = null
     if (this.isHost) setIntentHandler(null)
+    if (this.eraseTimer !== undefined) {
+      window.clearTimeout(this.eraseTimer)
+      this.eraseTimer = undefined
+    }
+    this.flushEraseQueue()
     if (this.persistTimer) window.clearTimeout(this.persistTimer)
     this.persist()
   }
@@ -355,8 +366,21 @@ export class MeetingSession {
         room.endedAt = new Date().toISOString()
         this.pushSystemChat('会议已结束')
         break
-      default:
+      default: {
         this.applyBoard(action)
+        // 高频白板增量(add/replace/erase)已通过 board delta 单独下发;
+        // 若再广播整个房间快照,大 payload 会成为跨设备延迟的主要来源
+        if (!['board-add', 'board-replace', 'board-erase'].includes(action.kind)) this.broadcastRoom()
+        else if (action.kind === 'board-add' || action.kind === 'board-replace') {
+          // 主机把收到的白板增量转发给其他参会者(add 按 id 去重,replace 幂等)
+          const pageId = action.pageId as string
+          this.sendBoardDelta(pageId, action.items as BoardItem[], action.kind === 'board-replace')
+        } else if (action.kind === 'board-erase') {
+          const pageId = action.pageId as string
+          this.sendEraseDelta(pageId, action.updates as BoardEraseUpdate[])
+        }
+        return
+      }
     }
     this.broadcastRoom()
   }
@@ -387,6 +411,33 @@ export class MeetingSession {
               ? { ...candidate, items: [...(action.items as BoardItem[])] }
               : candidate),
           }
+        }
+        break
+      }
+      case 'board-erase': {
+        const updates = action.updates as BoardEraseUpdate[]
+        next = {
+          ...room,
+          pages: room.pages.map((candidate) => {
+            if (candidate.id !== action.pageId) return candidate
+            const byId = new Map(updates.map((u) => [u.itemId, u.points]))
+            return {
+              ...candidate,
+              items: candidate.items.map((item) => {
+                const incoming = byId.get(item.id)
+                if (!incoming?.length) return item
+                const existing = item.erasePoints ?? []
+                const seen = new Set(existing.map((p) => `${p.x},${p.y},${p.r}`))
+                const fresh = incoming.filter((p) => {
+                  const key = `${p.x},${p.y},${p.r}`
+                  if (seen.has(key)) return false
+                  seen.add(key)
+                  return true
+                })
+                return fresh.length ? { ...item, erasePoints: [...existing, ...fresh] } : item
+              }),
+            }
+          }),
         }
         break
       }
@@ -497,8 +548,8 @@ export class MeetingSession {
     if (!this.canEditBoard(this.me.id)) return
     if (this.isHost) {
       this.applyBoard({ kind: 'board-add', pageId, items })
-      this.broadcastRoom()
-      this.driver?.send({ kind: 'board', pageId, items, replace: false } as RtcAction)
+      this.sendBoardDelta(pageId, items, false)
+      this.emit()
     } else {
       this.driver?.send({ kind: 'board-add', pageId, items })
       // 本地立即生效,不等回包(主观感受一致,状态由主机收敛)
@@ -511,13 +562,58 @@ export class MeetingSession {
     if (!this.canEditBoard(this.me.id)) return
     if (this.isHost) {
       this.applyBoard({ kind: 'board-replace', pageId, items })
-      this.broadcastRoom()
-      this.driver?.send({ kind: 'board', pageId, items, replace: true } as RtcAction)
+      this.sendBoardDelta(pageId, items, true)
+      this.emit()
     } else {
       this.driver?.send({ kind: 'board-replace', pageId, items })
       this.applyBoard({ kind: 'board-replace', pageId, items })
       this.emit()
     }
+  }
+
+  /**
+   * 局部擦除增量:只传新增擦除点(几十字节),不重发整页。
+   * guest 端做尾随节流合并,把每帧一条消息压成每 100ms 一条,消除大延迟。
+   */
+  eraseBoardPoints(pageId: string, updates: BoardEraseUpdate[]): void {
+    if (!this.canEditBoard(this.me.id) || updates.length === 0) return
+    this.applyBoard({ kind: 'board-erase', pageId, updates })
+    if (this.isHost) this.sendEraseDelta(pageId, updates)
+    else this.queueEraseSend(pageId, updates)
+    this.emit()
+  }
+
+  private sendBoardDelta(pageId: string, items: BoardItem[], replace: boolean): void {
+    this.driver?.send({ kind: 'board', pageId, items, replace } as RtcAction)
+  }
+
+  private sendEraseDelta(pageId: string, updates: BoardEraseUpdate[]): void {
+    this.driver?.send({ kind: 'board', pageId, eraseUpdates: updates } as RtcAction)
+  }
+
+  private eraseQueue = new Map<string, BoardEraseUpdate[]>()
+  private eraseTimer: number | undefined
+
+  private queueEraseSend(pageId: string, updates: BoardEraseUpdate[]): void {
+    const queue = this.eraseQueue.get(pageId) ?? []
+    for (const update of updates) {
+      const hit = queue.find((entry) => entry.itemId === update.itemId)
+      if (hit) hit.points.push(...update.points)
+      else queue.push({ itemId: update.itemId, points: [...update.points] })
+    }
+    this.eraseQueue.set(pageId, queue)
+    if (this.eraseTimer !== undefined) return
+    this.eraseTimer = window.setTimeout(() => {
+      this.eraseTimer = undefined
+      this.flushEraseQueue()
+    }, 100)
+  }
+
+  private flushEraseQueue(): void {
+    for (const [pageId, updates] of this.eraseQueue) {
+      if (updates.length) this.sendEraseDelta(pageId, updates)
+    }
+    this.eraseQueue.clear()
   }
 
   addPage(): void {
@@ -582,7 +678,7 @@ export class MeetingSession {
 
 // ---------- BroadcastChannel 本机驱动 ----------
 
-type BcMessage = { t: 'intent'; action: RtcAction } | { t: 'room'; state: MeetingRoomState } | { t: 'chat'; msg: MeetingChatMsg } | { t: 'board'; pageId: string; items: BoardItem[]; replace: boolean }
+type BcMessage = { t: 'intent'; action: RtcAction } | { t: 'room'; state: MeetingRoomState } | { t: 'chat'; msg: MeetingChatMsg } | { t: 'board'; pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
 
 export class BroadcastChannelDriver implements RtcDriver {
   private ch: BroadcastChannel | null = null
@@ -597,7 +693,7 @@ export class BroadcastChannelDriver implements RtcDriver {
       const m = e.data
       if (m.t === 'room') handlers.onRoomState(m.state)
       else if (m.t === 'chat') handlers.onChat(m.msg)
-      else if (m.t === 'board') handlers.onBoardDelta(m.pageId, m.items, m.replace)
+      else if (m.t === 'board') handlers.onBoardDelta(m.pageId, m.items ?? [], !!m.replace, m.eraseUpdates)
       else if (m.t === 'intent') forwardIntent(m.action, handlers)
     }
   }
@@ -609,7 +705,8 @@ export class BroadcastChannelDriver implements RtcDriver {
     } else if (action.kind === 'chat') {
       this.ch.postMessage({ t: 'chat', msg: action.msg as MeetingChatMsg } satisfies BcMessage)
     } else if (action.kind === 'board') {
-      this.ch.postMessage({ t: 'board', pageId: action.pageId as string, items: action.items as BoardItem[], replace: !!action.replace } satisfies BcMessage)
+      const a = action as unknown as { pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
+      this.ch.postMessage({ t: 'board', pageId: a.pageId, items: a.items, replace: a.replace, eraseUpdates: a.eraseUpdates } satisfies BcMessage)
     } else {
       this.ch.postMessage({ t: 'intent', action } satisfies BcMessage)
     }
@@ -653,6 +750,8 @@ export interface RtcWireMessage {
   pageId?: string
   items?: BoardItem[]
   replace?: boolean
+  /** board 增量擦除:只传新增擦除点 */
+  eraseUpdates?: BoardEraseUpdate[]
   action?: RtcAction
 }
 
@@ -697,7 +796,7 @@ export class SupabaseRealtimeDriver implements RtcDriver {
     if (!h) return
     if (wire.t === 'room' && wire.state) h.onRoomState(wire.state)
     else if (wire.t === 'chat' && wire.msg) h.onChat(wire.msg)
-    else if (wire.t === 'board' && wire.pageId) h.onBoardDelta(wire.pageId, wire.items ?? [], !!wire.replace)
+    else if (wire.t === 'board' && wire.pageId) h.onBoardDelta(wire.pageId, wire.items ?? [], !!wire.replace, wire.eraseUpdates)
     else if (wire.t === 'intent' && wire.action) forwardIntent(wire.action, h)
   }
 
@@ -717,8 +816,8 @@ export class SupabaseRealtimeDriver implements RtcDriver {
     } else if (action.kind === 'chat') {
       void this.publish({ t: 'chat', client_id: this.clientId, msg: action.msg as MeetingChatMsg })
     } else if (action.kind === 'board') {
-      const a = action as unknown as { pageId: string; items: BoardItem[]; replace: boolean }
-      void this.publish({ t: 'board', client_id: this.clientId, pageId: a.pageId, items: a.items, replace: a.replace })
+      const a = action as unknown as { pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
+      void this.publish({ t: 'board', client_id: this.clientId, pageId: a.pageId, items: a.items, replace: a.replace, eraseUpdates: a.eraseUpdates })
     } else {
       void this.publish({ t: 'intent', client_id: this.clientId, action })
     }
