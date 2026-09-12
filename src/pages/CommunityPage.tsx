@@ -94,7 +94,7 @@ function CommunityList({ me }: { me: CommunityUser }) {
   const [tick, setTick] = useState(0)
   const [query, setQuery] = useState<PostQuery>({ sort: 'latest', status: 'all' })
   const [askOpen, setAskOpen] = useState(false)
-  const [friendsOpen, setFriendsOpen] = useState(false)
+  const [friendsOpen, setFriendsOpen] = useState(() => new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('friends') === '1')
   useEffect(() => subscribeCommunity(() => setTick((t) => t + 1)), [])
   const data = useMemo(() => loadCommunity(), [tick])
   const posts = queryPosts(data, query)
@@ -486,9 +486,14 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
     <div className="page community detail">
       {confirmNode}
       {tourOpen && <FeatureTour steps={filterExistingSteps(COMMUNITY_DETAIL_TOUR)} onClose={() => setTourOpen(false)} />}
-      <a className="btn btn-sm back" href="#/community">
-        <Icon name="left" size={14} /> 返回社区
-      </a>
+      <div className="community-detail-nav">
+        <a className="btn btn-sm back" href="#/community">
+          <Icon name="left" size={14} /> 返回社区
+        </a>
+        <a className="btn btn-sm" href="#/community?friends=1">
+          <Icon name="users" size={14} /> 好友/私信
+        </a>
+      </div>
 
       <section className="card post-detail">
         <div className="post-detail-h">

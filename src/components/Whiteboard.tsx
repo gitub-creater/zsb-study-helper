@@ -18,7 +18,7 @@ interface Pan {
 const TOOL_META: { key: BoardTool; label: string; icon: React.ReactNode }[] = [
   { key: 'pen', label: '画笔', icon: <Icon name="edit" size={15} /> },
   { key: 'highlight', label: '荧光笔', icon: <Icon name="sparkle" size={15} /> },
-  { key: 'eraser', label: '橡皮擦(整笔擦除)', icon: <span className="wb-eraser-ico" aria-hidden /> },
+  { key: 'eraser', label: '橡皮擦(局部擦除)', icon: <span className="wb-eraser-ico" aria-hidden /> },
   { key: 'select', label: '选择/移动', icon: <span className="wb-select-ico" aria-hidden /> },
   { key: 'hand', label: '手型:按住拖动,画板无限大', icon: <span className="wb-hand-ico" aria-hidden /> },
   { key: 'line', label: '直线(Shift 吸附 15°)', icon: <span className="wb-line-ico" aria-hidden /> },
@@ -80,11 +80,12 @@ export function drawBoard(ctx: CanvasRenderingContext2D, page: BoardPage, w: num
   for (const item of page.items) drawItem(ctx, item, w, h, pan)
 }
 
-export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, w: number, h: number, pan: Pan): void {
+function drawItemBase(ctx: CanvasRenderingContext2D, item: BoardItem, w: number, h: number, pan: Pan): void {
   const px = (n: number) => sx(n, pan, w)
   const py = (n: number) => sy(n, pan, h)
   // 笔迹宽度:滑杆值按 1080p 基准等比缩放(直接乘 h 会把 3px 变成上千px)
   const lw = Math.max(1.2, (item.width * h) / 1080)
+  ctx.save()
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   ctx.strokeStyle = item.color
@@ -164,7 +165,31 @@ export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, w: numb
       break
     }
   }
-  ctx.globalAlpha = 1
+  ctx.restore()
+}
+
+/** 绘制单个对象并仅从该对象自身抠除擦除点,不影响下方对象。 */
+export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, w: number, h: number, pan: Pan): void {
+  if (!item.erasePoints?.length) {
+    drawItemBase(ctx, item, w, h, pan)
+    return
+  }
+  const layer = document.createElement('canvas')
+  layer.width = Math.max(1, Math.ceil(w * (window.devicePixelRatio || 1)))
+  layer.height = Math.max(1, Math.ceil(h * (window.devicePixelRatio || 1)))
+  const layerCtx = layer.getContext('2d')!
+  const dpr = window.devicePixelRatio || 1
+  layerCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  drawItemBase(layerCtx, { ...item, erasePoints: undefined }, w, h, pan)
+  layerCtx.save()
+  layerCtx.globalCompositeOperation = 'destination-out'
+  for (const ep of item.erasePoints) {
+    layerCtx.beginPath()
+    layerCtx.arc(sx(ep.x, pan, w), sy(ep.y, pan, h), Math.max(1.5, ep.r * Math.min(w, h)), 0, Math.PI * 2)
+    layerCtx.fill()
+  }
+  layerCtx.restore()
+  ctx.drawImage(layer, 0, 0, w, h)
 }
 
 const bgImageCache = new Map<string, HTMLImageElement>()
@@ -175,6 +200,83 @@ export function prefetchBoardImage(src: string, onReady?: () => void): void {
   img.onload = () => onReady?.()
   img.src = src
   bgImageCache.set(src, img)
+}
+
+/** 点到线段的世界坐标距离。 */
+function pointSegmentDistance(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const len2 = dx * dx + dy * dy
+  if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y)
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2))
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+}
+
+function pointTextContains(item: BoardItem, p: { x: number; y: number }, radius: number): boolean {
+  const lines = (item.text ?? '').split('\n')
+  const width = Math.max(0.08, Math.max(...lines.map((line) => line.length), 1) * item.width * 0.62)
+  const height = Math.max(0.06, lines.length * item.width * 1.3)
+  return p.x >= item.pts[0] - radius && p.x <= item.pts[0] + width + radius && p.y >= item.pts[1] - radius && p.y <= item.pts[1] + height + radius
+}
+
+/** 按实际笔迹/图形轮廓判断橡皮擦是否碰到对象,而不是只命中整块包围盒。 */
+export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: number }, radius = 0.02): boolean {
+  if (item.type === 'image' || item.pts.length < 2) return false
+  if (item.type === 'text') return pointTextContains(item, p, radius)
+  const strokeRadius = Math.max(0.001, item.width / 1080)
+  const threshold = radius + strokeRadius
+  const point = (idx: number) => ({ x: item.pts[idx], y: item.pts[idx + 1] })
+  if (item.type === 'pen' || item.type === 'highlight') {
+    for (let i = 0; i + 3 < item.pts.length; i += 2) {
+      if (pointSegmentDistance(p, point(i), point(i + 2)) <= threshold) return true
+    }
+    return pointSegmentDistance(p, point(0), point(0)) <= threshold
+  }
+  if (item.type === 'line' || item.type === 'arrow') return pointSegmentDistance(p, point(0), point(2)) <= threshold
+  if (item.type === 'rect') {
+    const x0 = Math.min(item.pts[0], item.pts[2])
+    const x1 = Math.max(item.pts[0], item.pts[2])
+    const y0 = Math.min(item.pts[1], item.pts[3])
+    const y1 = Math.max(item.pts[1], item.pts[3])
+    const edges = [[{ x: x0, y: y0 }, { x: x1, y: y0 }], [{ x: x1, y: y0 }, { x: x1, y: y1 }], [{ x: x1, y: y1 }, { x: x0, y: y1 }], [{ x: x0, y: y1 }, { x: x0, y: y0 }]]
+    return edges.some(([a, b]) => pointSegmentDistance(p, a, b) <= threshold)
+  }
+  if (item.type === 'circle') {
+    const cx = (item.pts[0] + item.pts[2]) / 2
+    const cy = (item.pts[1] + item.pts[3]) / 2
+    const rx = Math.abs(item.pts[2] - item.pts[0]) / 2
+    const ry = Math.abs(item.pts[3] - item.pts[1]) / 2
+    if (rx === 0 || ry === 0) return Math.hypot(p.x - cx, p.y - cy) <= threshold
+    const normalized = Math.hypot((p.x - cx) / rx, (p.y - cy) / ry)
+    return Math.abs(normalized - 1) * Math.min(rx, ry) <= threshold
+  }
+  return false
+}
+
+/** 橡皮擦一次命中的对象,图片始终保留给选择工具删除。 */
+export function eraseBoardItemsAt(
+  items: BoardItem[],
+  p: { x: number; y: number },
+  radius = 0.02,
+  previous?: { x: number; y: number },
+): { items: BoardItem[]; hitIds: string[] } {
+  const distance = previous ? Math.hypot(p.x - previous.x, p.y - previous.y) : 0
+  const steps = Math.max(1, Math.ceil(distance / Math.max(radius * 0.55, 0.001)))
+  const samples = previous
+    ? Array.from({ length: steps + 1 }, (_, i) => {
+        const t = i / steps
+        return { x: previous.x + (p.x - previous.x) * t, y: previous.y + (p.y - previous.y) * t }
+      })
+    : [p]
+  const hitIds = items.filter((item) => samples.some((sample) => boardItemContainsPoint(item, sample, radius))).map((item) => item.id)
+  if (hitIds.length === 0) return { items, hitIds }
+  const hitSet = new Set(hitIds)
+  const next = items.map((item) => {
+    if (!hitSet.has(item.id)) return item
+    const newPoints = samples.filter((sample) => boardItemContainsPoint(item, sample, radius)).map((sample) => ({ ...sample, r: radius }))
+    return newPoints.length ? { ...item, erasePoints: [...(item.erasePoints ?? []), ...newPoints] } : item
+  })
+  return { items: next, hitIds }
 }
 
 /** 选中项的虚线框(希沃式) */
@@ -260,10 +362,10 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
   const startW = useRef<{ x: number; y: number } | null>(null)
   const panDrag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
   const dragOrigin = useRef<{ item: BoardItem; x: number; y: number } | null>(null)
-  const removedIds = useRef<Set<string>>(new Set())
   const undoStack = useRef<BoardItem[][]>([])
   const redoStack = useRef<BoardItem[][]>([])
   const eraserCursorRef = useRef<HTMLDivElement>(null)
+  const eraserLastPoint = useRef<{ x: number; y: number } | null>(null)
   const imgInput = useRef<HTMLInputElement>(null)
   const bgInput = useRef<HTMLInputElement>(null)
   const pageRef = useRef(page)
@@ -335,20 +437,8 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
 
   /** 命中测试:返回最上层(数组末尾)的包含点 */
   function hitTest(p: { x: number; y: number }): BoardItem | null {
-    const r = 0.015
     for (let i = page.items.length - 1; i >= 0; i--) {
-      const it = page.items[i]
-      const xs = it.pts.filter((_, idx) => idx % 2 === 0)
-      const ys = it.pts.filter((_, idx) => idx % 2 === 1)
-      const textLines = it.type === 'text' ? (it.text ?? '').split('\n') : []
-      // 文本元素只保存左上角锚点,命中区域按渲染字号和最长一行估算。
-      const textW = it.type === 'text' ? Math.max(0.08, Math.max(...textLines.map((line) => line.length), 1) * it.width * 0.62) : 0
-      const textH = it.type === 'text' ? Math.max(0.06, textLines.length * it.width * 1.3) : 0
-      const minX = Math.min(...xs) - r - it.width / 2
-      const maxX = Math.max(...xs) + r + it.width / 2 + textW
-      const minY = Math.min(...ys) - r - it.width / 2
-      const maxY = Math.max(...ys) + r + it.width / 2 + textH
-      if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) return it
+      if (boardItemContainsPoint(page.items[i], p, 0.015)) return page.items[i]
     }
     return null
   }
@@ -383,7 +473,7 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
     if (tool === 'eraser') {
       pushUndo()
       drawing.current = true
-      removedIds.current = new Set()
+      eraserLastPoint.current = null
       eraseAt(p)
       return
     }
@@ -410,24 +500,16 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
   }
 
   function eraseAt(p: { x: number; y: number }) {
-    const r = 0.02
     const currentPage = pageRef.current
-    const hits = currentPage.items.filter((i) => {
-      if (i.type === 'image') return false // 题目图片用选择工具删除,防误擦
-      const xs = i.pts.filter((_, idx) => idx % 2 === 0)
-      const ys = i.pts.filter((_, idx) => idx % 2 === 1)
-      const textLines = i.type === 'text' ? (i.text ?? '').split('\n') : []
-      const textW = i.type === 'text' ? Math.max(0.08, Math.max(...textLines.map((line) => line.length), 1) * i.width * 0.62) : 0
-      const textH = i.type === 'text' ? Math.max(0.06, textLines.length * i.width * 1.3) : 0
-      const minX = Math.min(...xs) - r - i.width / 2
-      const maxX = Math.max(...xs) + r + i.width / 2 + textW
-      const minY = Math.min(...ys) - r - i.width / 2
-      const maxY = Math.max(...ys) + r + i.width / 2 + textH
-      return p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY
-    })
-    if (hits.length === 0) return
-    for (const h of hits) removedIds.current.add(h.id)
-    onReplaceItems(currentPage.items.filter((i) => !removedIds.current.has(i.id)))
+    const rect = canvasRef.current?.getBoundingClientRect()
+    // 光圈直径为 34px,换算成世界坐标后保证“看到哪里擦哪里”。
+    const radius = rect ? Math.max(0.01, 17 / Math.min(rect.width, rect.height)) : 0.02
+    const result = eraseBoardItemsAt(currentPage.items, p, radius, eraserLastPoint.current ?? undefined)
+    eraserLastPoint.current = p
+    if (result.hitIds.length === 0) return
+    const nextPage = { ...currentPage, items: result.items }
+    pageRef.current = nextPage
+    onReplaceItems(result.items)
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -500,6 +582,7 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
     }
     if (!drawing.current) return
     drawing.current = false
+    eraserLastPoint.current = null
     startW.current = null
     // 选择拖动:提交移动(ref 为准,不吃状态时序亏)
     if (tool === 'select' && dragOrigin.current) {

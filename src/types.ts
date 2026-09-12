@@ -826,6 +826,8 @@ export interface BoardItem {
   text?: string
   /** 图片 dataURL */
   src?: string
+  /** 局部橡皮擦留下的世界坐标擦除点,旧数据缺失时表示未擦除 */
+  erasePoints?: { x: number; y: number; r: number }[]
   by: string
   at: number
 }
