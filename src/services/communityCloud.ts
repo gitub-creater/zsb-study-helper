@@ -5,13 +5,13 @@ import { getSupabase, supabaseConfigured } from './supabaseClient'
 
 /** 构建时是否包含 Supabase 配置(决定是否启用云端驱动) */
 export const communityCloudConfigured = supabaseConfigured
-import type { CommunityData, CommunityGroup, CommunityUser, FriendEdge, GroupMessage, MeetingInvite } from '../types'
+import type { CommunityData, CommunityGroup, CommunityUser, FriendRequest, GroupMessage, MeetingInvite } from '../types'
 import { uid } from '../lib/misc'
-import { flush, loadCommunity, subscribeCommunity } from './community'
+import { applyFriendRequestResult, flush, isFriend, loadCommunity, subscribeCommunity } from './community'
 
 const COMMUNITY_ROOM = 'community'
 
-export type CommunityWireKind = 'friend_request' | 'meeting_invite' | 'dm' | 'group_upsert' | 'group_invite' | 'group_message'
+export type CommunityWireKind = 'friend_request' | 'friend_request_result' | 'meeting_invite' | 'dm' | 'group_upsert' | 'group_invite' | 'group_message'
 
 export interface CommunityWire {
   kind: CommunityWireKind
@@ -22,6 +22,11 @@ export interface CommunityWire {
   from?: CommunityUser
   /** friend_request / meeting_invite / dm:接收者账号 id */
   toId?: string
+  /** friend_request:接收者公开资料,用于跨设备好友列表展示 */
+  to?: CommunityUser
+  /** friend_request_result:申请处理结果 */
+  accepted?: boolean
+  handledAt?: string
   /** meeting_invite:完整邀请对象 */
   invite?: MeetingInvite
   /** dm/group_message:消息内容 */
@@ -49,14 +54,19 @@ export async function sendCommunityEvent(wire: Omit<CommunityWire, 'client_id'>)
 }
 
 /** 接收侧:把云端事件合并进本地共享数据(去重) */
-function applyWire(data: CommunityData, wire: CommunityWire, meId: string): boolean {
+export function applyCommunityWire(data: CommunityData, wire: CommunityWire, meId: string): boolean {
   switch (wire.kind) {
     case 'friend_request': {
       if (!wire.from || wire.toId !== meId) return false
-      if (data.friends.some((f) => (f.a === wire.from!.id && f.b === meId) || (f.a === meId && f.b === wire.from!.id))) return false
-      const edge: FriendEdge = { id: wire.id, a: wire.from.id, b: meId, since: wire.at, aUser: wire.from }
-      data.friends.push(edge)
+      if (isFriend(data, wire.from.id, meId)) return false
+      const requests = data.friendRequests ?? (data.friendRequests = [])
+      if (requests.some((request) => request.id === wire.id || (request.status === 'pending' && request.from.id === wire.from!.id && request.to.id === meId))) return false
+      requests.unshift({ id: wire.id, from: wire.from, to: wire.to ?? { id: meId, name: '本账号', avatar: 'sprout' }, status: 'pending', at: wire.at })
       return true
+    }
+    case 'friend_request_result': {
+      if (wire.toId !== meId || typeof wire.accepted !== 'boolean') return false
+      return applyFriendRequestResult(data, wire.id, wire.accepted, wire.handledAt ?? wire.at)
     }
     case 'meeting_invite': {
       if (!wire.invite || wire.toId !== meId) return false
@@ -114,7 +124,7 @@ export function subscribeCommunityCloud(meId: string): () => void {
         const wire = (ev.new as { payload?: CommunityWire })?.payload
         if (!wire || wire.client_id === myClientId) return
         const data = loadCommunity()
-        if (applyWire(data, wire, myId)) flush(data)
+        if (applyCommunityWire(data, wire, myId)) flush(data)
       }
     )
     .subscribe()
@@ -130,8 +140,19 @@ export function setCommunityCloudMe(meId: string): void {
 
 // —— 本地事件的云端镜像(在现有业务函数成功后调用) ——
 
-export function cloudAddFriend(me: CommunityUser, other: CommunityUser): void {
-  void sendCommunityEvent({ kind: 'friend_request', id: uid('f'), at: new Date().toISOString(), from: me, toId: other.id })
+export function cloudAddFriend(me: CommunityUser, other: CommunityUser, requestId: string): void {
+  void sendCommunityEvent({ kind: 'friend_request', id: requestId, at: new Date().toISOString(), from: me, toId: other.id, to: other })
+}
+
+export function cloudRespondFriendRequest(request: FriendRequest, accept: boolean): void {
+  void sendCommunityEvent({
+    kind: 'friend_request_result',
+    id: request.id,
+    at: request.handledAt ?? new Date().toISOString(),
+    toId: request.from.id,
+    accepted: accept,
+    handledAt: request.handledAt,
+  })
 }
 
 export function cloudSendInvite(invite: MeetingInvite, toId: string): void {

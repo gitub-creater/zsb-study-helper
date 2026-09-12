@@ -5,7 +5,7 @@
 // 跨设备/跨网络社区需要一个后端(如 Supabase 表 + api/ 下的 serverless 接口):
 // CommunityStore 接口已把全部操作抽象成方法,接后端时只需新增一个 RemoteDriver 实现
 // (表结构建议:posts / comments / tutoring / friends / messages / invites / credits),UI 层零改动。
-import type { CommunityComment, CommunityData, CommunityGroup, CommunityPost, CommunityUser, FriendEdge, GroupMessage, MeetingInvite, PostStatus, TutoringSession } from '../types'
+import type { CommunityComment, CommunityData, CommunityGroup, CommunityPost, CommunityUser, FriendEdge, FriendRequest, GroupMessage, MeetingInvite, PostStatus, TutoringSession } from '../types'
 import { uid } from '../lib/misc'
 
 const KEY = 'zsb_community_v1'
@@ -15,7 +15,7 @@ const DATA_VERSION = 1
 export const START_CREDITS = 100
 
 export function emptyCommunity(): CommunityData {
-  return { version: DATA_VERSION, posts: [], comments: [], tutoring: [], friends: [], messages: [], invites: [], groups: [], groupMessages: [], credits: {}, seeded: false }
+  return { version: DATA_VERSION, posts: [], comments: [], tutoring: [], friends: [], friendRequests: [], messages: [], invites: [], groups: [], groupMessages: [], credits: {}, seeded: false }
 }
 
 export function loadCommunity(): CommunityData {
@@ -31,6 +31,7 @@ export function loadCommunity(): CommunityData {
         comments: parsed.comments ?? [],
         tutoring: parsed.tutoring ?? [],
         friends: parsed.friends ?? [],
+        friendRequests: parsed.friendRequests ?? [],
         messages: parsed.messages ?? [],
         invites: parsed.invites ?? [],
         groups: parsed.groups ?? [],
@@ -372,12 +373,46 @@ export function solveDuration(post: CommunityPost): string | null {
 
 // ---------- 好友与私信 ----------
 
-export function addFriend(me: CommunityUser, other: CommunityUser): void {
-  mutate((d) => {
+export function addFriend(me: CommunityUser, other: CommunityUser): FriendRequest {
+  return mutate((d) => {
     if (me.id === other.id) throw new Error('不能添加自己为好友')
-    if (d.friends.some((f) => (f.a === me.id && f.b === other.id) || (f.a === other.id && f.b === me.id))) return
-    d.friends.push({ id: uid('f'), a: me.id, b: other.id, since: new Date().toISOString(), aUser: me, bUser: other })
+    if (isFriend(d, me.id, other.id)) throw new Error('你们已经是好友')
+    const requests = d.friendRequests ?? (d.friendRequests = [])
+    const pending = requests.find((request) => request.status === 'pending' && ((request.from.id === me.id && request.to.id === other.id) || (request.from.id === other.id && request.to.id === me.id)))
+    if (pending) throw new Error(pending.from.id === me.id ? '好友申请已发送,请等待对方接受' : '对方已向你发送好友申请,请在待处理申请中接受')
+    const request: FriendRequest = { id: uid('fr'), from: me, to: other, status: 'pending', at: new Date().toISOString() }
+    requests.unshift(request)
+    return request
   }, true)
+}
+
+export function pendingFriendRequests(data: CommunityData, userId: string): FriendRequest[] {
+  return (data.friendRequests ?? []).filter((request) => request.status === 'pending' && (request.from.id === userId || request.to.id === userId))
+}
+
+export function respondFriendRequest(meId: string, requestId: string, accept: boolean): FriendRequest {
+  return mutate((d) => {
+    const request = (d.friendRequests ?? []).find((item) => item.id === requestId)
+    if (!request || request.status !== 'pending') throw new Error('好友申请不存在或已处理')
+    if (request.to.id !== meId) throw new Error('只有申请接收方可以处理好友申请')
+    request.status = accept ? 'accepted' : 'declined'
+    request.handledAt = new Date().toISOString()
+    if (accept && !isFriend(d, request.from.id, request.to.id)) {
+      d.friends.push({ id: uid('f'), a: request.from.id, b: request.to.id, since: request.handledAt, aUser: request.from, bUser: request.to })
+    }
+    return { ...request }
+  }, true)
+}
+
+export function applyFriendRequestResult(data: CommunityData, requestId: string, accepted: boolean, handledAt: string): boolean {
+  const request = (data.friendRequests ?? []).find((item) => item.id === requestId)
+  if (!request || request.status !== 'pending') return false
+  request.status = accepted ? 'accepted' : 'declined'
+  request.handledAt = handledAt
+  if (accepted && !isFriend(data, request.from.id, request.to.id)) {
+    data.friends.push({ id: uid('f'), a: request.from.id, b: request.to.id, since: handledAt, aUser: request.from, bUser: request.to })
+  }
+  return true
 }
 
 export function removeFriend(meId: string, otherId: string): void {

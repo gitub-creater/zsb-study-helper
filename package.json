@@ -1,7 +1,7 @@
 {
   "name": "zsb-study-helper",
   "private": true,
-  "version": "1.0.35",
+  "version": "1.0.37",
   "type": "module",
   "description": "山东专升本学习助手 - 可爱校园冒险风备考工具",
   "scripts": {
@@ -48,7 +48,10 @@
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "专升本学习助手"
     },
     "publish": [
       {

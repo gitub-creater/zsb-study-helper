@@ -20,11 +20,14 @@ vi.stubGlobal('window', {
 
 import {
   addComment,
+  addFriend,
   addGroupMembers,
   applyForTutoring,
   commentTree,
   createGroup,
   groupMessages,
+  isFriend,
+  pendingFriendRequests,
   sendGroupMessage,
   createPost,
   getCredits,
@@ -32,10 +35,12 @@ import {
   loadCommunity,
   markBestAnswer,
   queryPosts,
+  respondFriendRequest,
   solveDuration,
   tutoringAction,
   togglePostLike,
 } from '../src/services/community'
+import { applyCommunityWire } from '../src/services/communityCloud'
 
 const me = { id: 'u_me', name: '测试生', avatar: 'sprout' as const }
 const other = { id: 'u_other', name: '帮手同学', avatar: 'cat' as const }
@@ -110,6 +115,42 @@ describe('社区:发帖与悬赏', () => {
     togglePostLike(post.id, other.id)
     togglePostLike(post.id, other.id)
     expect(loadCommunity().posts.find((p) => p.id === post.id)!.likes).toBe(0)
+  })
+})
+
+describe('社区:好友申请', () => {
+  it('发送申请不建立好友关系,接收方接受后才建立且重复事件幂等', () => {
+    freshData()
+    const request = addFriend(me, other)
+    let data = loadCommunity()
+    expect(isFriend(data, me.id, other.id)).toBe(false)
+    expect(pendingFriendRequests(data, me.id)).toHaveLength(1)
+    expect(() => addFriend(me, other)).toThrow(/已发送/)
+
+    const received = { ...data, friendRequests: [] }
+    const wire = { kind: 'friend_request' as const, client_id: 'remote', id: request.id, at: request.at, from: me, toId: other.id }
+    expect(applyCommunityWire(received, wire, other.id)).toBe(true)
+    expect(applyCommunityWire(received, wire, other.id)).toBe(false)
+    expect(isFriend(received, me.id, other.id)).toBe(false)
+
+    const accepted = respondFriendRequest(other.id, request.id, true)
+    data = loadCommunity()
+    expect(accepted.status).toBe('accepted')
+    expect(isFriend(data, me.id, other.id)).toBe(true)
+  })
+
+  it('拒绝申请不建立好友,非接收方不能处理', () => {
+    freshData()
+    const request = addFriend(me, other)
+    expect(() => respondFriendRequest(me.id, request.id, true)).toThrow(/接收方/)
+    const declined = respondFriendRequest(other.id, request.id, false)
+    expect(declined.status).toBe('declined')
+    expect(isFriend(loadCommunity(), me.id, other.id)).toBe(false)
+  })
+
+  it('旧社区数据缺少申请数组时仍可加载', () => {
+    mem.set('zsb_community_v1', JSON.stringify({ version: 1, posts: [], comments: [], tutoring: [], friends: [], messages: [], invites: [], credits: {} }))
+    expect(loadCommunity().friendRequests).toEqual([])
   })
 })
 

@@ -709,6 +709,16 @@ export interface FriendEdge {
   bUser?: CommunityUser
 }
 
+/** 好友申请:只有接收方接受后才会生成 FriendEdge */
+export interface FriendRequest {
+  id: string
+  from: CommunityUser
+  to: CommunityUser
+  status: 'pending' | 'accepted' | 'declined'
+  at: string
+  handledAt?: string
+}
+
 /** 站内私信 */
 export interface DirectMessage {
   id: string
@@ -756,6 +766,8 @@ export interface CommunityData {
   comments: CommunityComment[]
   tutoring: TutoringSession[]
   friends: FriendEdge[]
+  /** 好友申请(旧数据缺失时按空数组兼容) */
+  friendRequests?: FriendRequest[]
   messages: DirectMessage[]
   invites: MeetingInvite[]
   groups?: CommunityGroup[]

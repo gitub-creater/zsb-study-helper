@@ -12,11 +12,11 @@ import { processSkinImage } from '../lib/colorExtract'
 import { listMeetings } from '../services/rtc'
 import { FeatureTour, filterExistingSteps } from '../components/FeatureTour'
 import type { TourStep } from '../components/FeatureTour'
-import { cloudAddFriend, cloudSendDm, cloudSendInvite, subscribeCommunityCloud } from '../services/communityCloud'
+import { cloudAddFriend, cloudRespondFriendRequest, cloudSendDm, cloudSendInvite, subscribeCommunityCloud } from '../services/communityCloud'
 import { startMeetingForPost } from './MeetingPage'
 import {
   addComment, addFriend, applyForTutoring, commentTree, createPost, deletePost, dmThread, getCredits, isFriend, loadCommunity,
-  markBestAnswer, markDmRead, openPost, queryPosts, rateTutoring, reportPost, sendDm, solveDuration, subscribeCommunity,
+  markBestAnswer, markDmRead, openPost, pendingFriendRequests, queryPosts, rateTutoring, reportPost, respondFriendRequest, sendDm, solveDuration, subscribeCommunity,
   toggleBookmark, toggleCommentLike, togglePostLike, tutoringAction,
 } from '../services/community'
 import type { PostQuery } from '../services/community'
@@ -516,9 +516,9 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
                   className="btn btn-xs"
                   onClick={() => {
                     try {
-                      addFriend(me, post.author)
-                      cloudAddFriend(me, post.author)
-                      toast(`已向「${post.author.name}」发送好友请求(本机好友关系已建立)`, { kind: 'success' })
+                      const request = addFriend(me, post.author)
+                      cloudAddFriend(me, post.author, request.id)
+                      toast(`已向「${post.author.name}」发送好友申请,等待对方同意`, { kind: 'success' })
                     } catch (e) {
                       toast(e instanceof Error ? e.message : '操作失败', { kind: 'error' })
                     }
@@ -1019,6 +1019,8 @@ function PublicProfileModal({ user, data, me, onClose, onDm }: { user: Community
   const avgStars = tutorRatings.length ? (tutorRatings.reduce((s, x) => s + x, 0) / tutorRatings.length).toFixed(1) : null
   const account = listUsers().find((u) => u.id === user.id)
   const friended = isFriend(data, me.id, user.id)
+  const request = (data.friendRequests ?? []).find((item) => item.status === 'pending' && ((item.from.id === me.id && item.to.id === user.id) || (item.from.id === user.id && item.to.id === me.id)))
+  const waiting = request?.from.id === me.id
 
   return (
     <Modal open title="公开资料" onClose={onClose} width={420}>
@@ -1049,18 +1051,18 @@ function PublicProfileModal({ user, data, me, onClose, onDm }: { user: Community
           <div className="modal-actions">
             <button
               className="btn"
-              disabled={friended}
+              disabled={friended || !!request}
               onClick={() => {
                 try {
-                  addFriend(me, user)
-                  cloudAddFriend(me, user)
-                  alert('好友已添加')
+                  const next = addFriend(me, user)
+                  cloudAddFriend(me, user, next.id)
+                  alert('好友申请已发送,等待对方同意')
                 } catch (e) {
                   alert(e instanceof Error ? e.message : '操作失败')
                 }
               }}
             >
-              {friended ? '已是好友' : '添加好友'}
+              {friended ? '已是好友' : request ? (waiting ? '等待对方同意' : '对方已申请') : '添加好友'}
             </button>
             <button className="btn btn-primary" onClick={() => onDm(user)}>
               <Icon name="chat" size={14} /> 发私信
@@ -1073,6 +1075,54 @@ function PublicProfileModal({ user, data, me, onClose, onDm }: { user: Community
 }
 
 // ---------- 好友与私信 ----------
+
+function FriendRequestList({ me, data }: { me: CommunityUser; data: CommunityData }) {
+  const toast = useToast()
+  const requests = pendingFriendRequests(data, me.id)
+  const incoming = requests.filter((request) => request.to.id === me.id)
+  const outgoing = requests.filter((request) => request.from.id === me.id)
+
+  function respond(requestId: string, accept: boolean) {
+    try {
+      const updated = respondFriendRequest(me.id, requestId, accept)
+      cloudRespondFriendRequest(updated, accept)
+      toast(accept ? `已接受「${updated.from.name}」的好友申请` : '已拒绝好友申请', { kind: accept ? 'success' : 'info' })
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '处理好友申请失败', { kind: 'error' })
+    }
+  }
+
+  if (requests.length === 0) return null
+  return (
+    <section className="friend-requests" aria-label="好友申请">
+      {incoming.length > 0 && (
+        <>
+          <b className="muted">收到的好友申请({incoming.length})</b>
+          {incoming.map((request) => (
+            <div className="friend-row" key={request.id}>
+              <Avatar kind={request.from.avatar} color={AVATAR_INFO[request.from.avatar].color} size={26} />
+              <span>{request.from.name}</span>
+              <button className="btn btn-xs btn-primary" onClick={() => respond(request.id, true)}>接受</button>
+              <button className="btn btn-xs" onClick={() => respond(request.id, false)}>拒绝</button>
+            </div>
+          ))}
+        </>
+      )}
+      {outgoing.length > 0 && (
+        <>
+          <b className="muted" style={{ marginTop: 8 }}>我发出的申请({outgoing.length})</b>
+          {outgoing.map((request) => (
+            <div className="friend-row" key={request.id}>
+              <Avatar kind={request.to.avatar} color={AVATAR_INFO[request.to.avatar].color} size={26} />
+              <span>{request.to.name}</span>
+              <span className="muted fs12">等待对方同意</span>
+            </div>
+          ))}
+        </>
+      )}
+    </section>
+  )
+}
 
 function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: CommunityData; onClose: () => void }) {
   const [dmTo, setDmTo] = useState<CommunityUser | null>(null)
@@ -1125,10 +1175,10 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
     }
     const other: CommunityUser = { id: account.id, name: account.name, avatar: 'sprout' }
     try {
-      addFriend(me, other)
-      cloudAddFriend(me, other)
+      const request = addFriend(me, other)
+      cloudAddFriend(me, other, request.id)
       setAccountName('')
-      setAccountError('已发送好友申请')
+      setAccountError('已发送好友申请,等待对方同意')
     } catch (e) {
       setAccountError(e instanceof Error ? e.message : '操作失败')
     }
@@ -1144,8 +1194,9 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
               <input id="friend-account" className="input" value={accountName} maxLength={40} placeholder="输入对方账号" onChange={(e) => { setAccountName(e.target.value); setAccountError('') }} onKeyDown={(e) => { if (e.key === 'Enter') void addByAccount() }} />
               <button className="btn btn-sm btn-primary" type="button" disabled={lookupBusy} onClick={() => void addByAccount()}>{lookupBusy ? '查找中' : '添加'}</button>
             </div>
-            {accountError && <span className="fs12" style={{ color: accountError === '已发送好友申请' ? 'var(--success)' : 'var(--danger)' }}>{accountError}</span>}
+            {accountError && <span className="fs12" style={{ color: accountError.startsWith('已发送好友申请') ? 'var(--success)' : 'var(--danger)' }}>{accountError}</span>}
           </div>
+          <FriendRequestList me={me} data={data} />
           <b className="muted">好友({friends.length})</b>
           {friends.length === 0 && <p className="muted">还没有好友。在问题/回答的「主页」里可以添加。</p>}
           {friends.map((u) => (
@@ -1166,9 +1217,9 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
                 className="btn btn-xs"
                 onClick={() => {
                   try {
-                    addFriend(me, u)
-                    cloudAddFriend(me, u)
-                    alert(`已添加「${u.name}」为好友`)
+                    const request = addFriend(me, u)
+                    cloudAddFriend(me, u, request.id)
+                    alert(`已向「${u.name}」发送好友申请,等待对方同意`)
                   } catch (e) {
                     alert(e instanceof Error ? e.message : '操作失败')
                   }
