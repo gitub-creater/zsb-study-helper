@@ -462,6 +462,7 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
   }
 
   const isAsker = post.author.id === me.id
+  const friendRequest = (data.friendRequests ?? []).find((item) => item.status === 'pending' && ((item.from.id === me.id && item.to.id === post.author.id) || (item.from.id === post.author.id && item.to.id === me.id)))
   const tree = commentTree(data, postId)
   const tutorings = data.tutoring.filter((t) => t.postId === postId)
   const duration = solveDuration(post)
@@ -514,6 +515,7 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
                 </button>
                 <button
                   className="btn btn-xs"
+                  disabled={isFriend(data, me.id, post.author.id) || !!friendRequest}
                   onClick={() => {
                     try {
                       const request = addFriend(me, post.author)
@@ -524,7 +526,7 @@ function PostDetail({ postId, me }: { postId: string; me: CommunityUser }) {
                     }
                   }}
                 >
-                  <Icon name="plus" size={12} /> 加好友
+                  <Icon name="plus" size={12} /> {isFriend(data, me.id, post.author.id) ? '已是好友' : friendRequest ? (friendRequest.from.id === me.id ? '等待对方同意' : '对方已申请') : '加好友'}
                 </button>
                 <button className="btn btn-xs" onClick={() => setDmTo(post.author)}>
                   <Icon name="chat" size={12} /> 私信
@@ -1149,7 +1151,8 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
     .map((u) => ({ id: u.id, name: u.name, avatar: 'sprout' as const }))
   for (const u of localAccounts) known.set(u.id, u)
   for (const u of cloudMatches) known.set(u.id, u)
-  const strangers = [...new Map([...known.values()].map((u) => [u.id, u])).values()].filter((u) => !friendIds.includes(u.id))
+  const pendingIds = new Set((data.friendRequests ?? []).filter((request) => request.status === 'pending' && (request.from.id === me.id || request.to.id === me.id)).map((request) => (request.from.id === me.id ? request.to.id : request.from.id)))
+  const strangers = [...new Map([...known.values()].map((u) => [u.id, u])).values()].filter((u) => !friendIds.includes(u.id) && !pendingIds.has(u.id))
   const unreadOf = (uid2: string) => data.messages.filter((m) => m.from === uid2 && m.to === me.id && !m.read).length
 
   async function addByAccount() {
