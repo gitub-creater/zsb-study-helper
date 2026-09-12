@@ -45,7 +45,8 @@ import { ExamPage } from './pages/ExamPage'
 import { FormulasPage } from './pages/FormulasPage'
 import { loadCommunity, respondInvite, subscribeCommunity } from './services/community'
 import { subscribeCommunityCloud } from './services/communityCloud'
-import { useToast } from './components/ui'
+import { ensureMeetingFromInvite } from './services/rtc'
+import type { MeetingInvite } from './types'
 
 interface NavItem {
   key: string
@@ -291,37 +292,62 @@ function Router() {
   return <Shell route={route}>{pages[base] ?? <Today />}</Shell>
 }
 
-/** 全局社区云桥:登录后任何页面都能收到好友申请/结果/会议邀请/私信;新会议邀请弹窗提醒 */
+/** 全局社区云桥:登录后任何页面都能收到好友申请/结果/会议邀请/私信;新会议邀请弹"来电卡片" */
 function CommunityBridge({ meId }: { meId: string }) {
-  const toast = useToast()
   const seenInvites = useRef<Set<string>>(new Set())
   const [tick, setTick] = useState(0)
+  const [call, setCall] = useState<MeetingInvite | null>(null)
+  const [callError, setCallError] = useState('')
 
   // 云端频道订阅 + 离线历史回放(不依赖社区页面挂载)
   useEffect(() => subscribeCommunityCloud(meId), [meId])
   useEffect(() => subscribeCommunity(() => setTick((t) => t + 1)), [])
 
-  // 未处理的会议邀请:24 小时内的新邀请弹一次全局提示
+  // 未处理的会议邀请:24 小时内的新邀请弹一次"来电卡片"
   useEffect(() => {
     const cutoff = Date.now() - 24 * 3600 * 1000
     for (const invite of loadCommunity().invites) {
       if (invite.to !== meId || invite.status !== 'pending') continue
       if (seenInvites.current.has(invite.id) || new Date(invite.at).getTime() < cutoff) continue
       seenInvites.current.add(invite.id)
-      toast(`${invite.from.name} 邀请你参加「${invite.meetingTitle}」`, {
-        kind: 'info',
-        action: {
-          label: '接受进入',
-          onClick: () => {
-            respondInvite(invite.id, true)
-            window.location.hash = `#/meeting/${invite.meetingId}`
-          },
-        },
-      })
+      setCall((current) => current ?? invite)
     }
-  }, [tick, meId, toast])
+  }, [tick, meId])
 
-  return null
+  function acceptCall(invite: MeetingInvite) {
+    if (!ensureMeetingFromInvite(invite)) {
+      setCallError('邀请缺少会议信息,请让邀请人重新发起,或使用"复制会议链接"入会')
+      return
+    }
+    respondInvite(invite.id, true)
+    setCall(null)
+    setCallError('')
+    window.location.hash = `#/meeting/${invite.meetingId}`
+  }
+
+  return (
+    <>
+      {call && (
+        <div className="call-overlay" role="dialog" aria-label="会议来电">
+          <div className="call-card">
+            <Avatar kind={call.from.avatar} color={AVATAR_INFO[call.from.avatar].color} size={72} />
+            <b className="call-name">{call.from.name}</b>
+            <span className="call-sub">邀请你参加视频会议</span>
+            <span className="call-title">{call.meetingTitle}</span>
+            {callError && <span className="call-error">{callError}</span>}
+            <div className="call-actions">
+              <button type="button" className="call-btn call-decline" onClick={() => { respondInvite(call.id, false); setCall(null); setCallError('') }}>
+                拒绝
+              </button>
+              <button type="button" className="call-btn call-accept" onClick={() => acceptCall(call)}>
+                接受进入
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
 
 export default function App() {

@@ -117,6 +117,18 @@ export function createMeeting(input: { title: string; hostId: string; hostName: 
   return meeting
 }
 
+/**
+ * 接受邀请前在本机确保会议存在(跨设备邀请的会议列表存在各设备本机)。
+ * 邀请携带完整会议信息时直接重建(未开始的标记为进行中,主讲人进会后由主机收敛);
+ * 旧邀请缺失会议信息时返回 false,由调用方提示。
+ */
+export function ensureMeetingFromInvite(invite: { meetingId: string; meeting?: MeetingInfo }): boolean {
+  if (getMeeting(invite.meetingId)) return true
+  if (!invite.meeting) return false
+  upsertMeeting({ ...invite.meeting, status: invite.meeting.status === 'ended' ? 'ended' : 'live' })
+  return true
+}
+
 // ---------- 会议会话(主机权威模型) ----------
 
 /** 首页 id 由会议 id 确定性推导:参会者在主机首次持久化前进入,两端页面 id 也能对上 */

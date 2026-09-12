@@ -4494,6 +4494,53 @@ button.star-btn { cursor: pointer; }
 .wb-canvas-wrap:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; border: 0; }
 .wb-canvas-wrap:fullscreen .wb-canvas { height: 100%; }
 
+/* ---------- 会议来电卡片(钉钉式) ---------- */
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.call-card {
+  width: 320px;
+  max-width: 92vw;
+  background: #fff;
+  border-radius: 22px;
+  padding: 28px 22px 24px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.35);
+  animation: call-pop 0.22s ease-out;
+}
+@keyframes call-pop {
+  from { transform: scale(0.86); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.call-name { font-size: 17px; margin-top: 4px; }
+.call-sub { color: var(--ink-2); font-size: 12.5px; }
+.call-title { font-size: 14px; font-weight: 700; color: var(--primary); max-width: 100%; overflow-wrap: anywhere; }
+.call-error { color: var(--danger); font-size: 12px; max-width: 100%; }
+.call-actions { display: flex; gap: 14px; margin-top: 12px; }
+.call-btn {
+  min-width: 108px;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+.call-accept { background: #07c160; color: #fff; }
+.call-accept:hover { background: #06ad56; }
+.call-decline { background: #eef1f6; color: var(--ink-2); }
+.call-decline:hover { background: #e2e7ef; }
+
 /* ---------- 移动端 ---------- */
 @media (max-width: 880px) {
   .skin-editor { grid-template-columns: 1fr; }

@@ -8,7 +8,7 @@ import { Modal, Field, useToast, useConfirm, EmptyState } from '../components/ui
 import { Whiteboard, renderPageToCanvas, pageBounds } from '../components/Whiteboard'
 import { FeatureTour, filterExistingSteps } from '../components/FeatureTour'
 import type { TourStep } from '../components/FeatureTour'
-import { MeetingSession, createMeeting, getMeeting, listMeetings, upsertMeeting } from '../services/rtc'
+import { MeetingSession, createMeeting, ensureMeetingFromInvite, getMeeting, listMeetings, upsertMeeting } from '../services/rtc'
 import { createInvite, getUserGroups, groupMessages, loadCommunity, respondInvite, subscribeCommunity } from '../services/community'
 import { cloudSendInvite } from '../services/communityCloud'
 import { exportCanvasesToPdf } from '../lib/pdf'
@@ -38,6 +38,9 @@ export function MeetingPage({ me }: { me: MeInfo }) {
   }
   return <MeetingList me={me} />
 }
+
+/** 接受邀请前的入会保障:见 services/rtc.ensureMeetingFromInvite(此处 re-export 供 App 使用) */
+export { ensureMeetingFromInvite }
 
 function fmtTime(iso: string): string {
   const d = new Date(iso)
@@ -91,6 +94,10 @@ function MeetingList({ me }: { me: MeInfo }) {
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={() => {
+                    if (!ensureMeetingFromInvite(i)) {
+                      toast('邀请缺少会议信息,请让邀请人重新发起或使用会议链接', { kind: 'error' })
+                      return
+                    }
                     respondInvite(i.id, true)
                     window.location.hash = `#/meeting/${i.meetingId}`
                   }}
@@ -221,7 +228,7 @@ function CreateMeetingModal({
                 postId: prefill.postId || undefined,
               })
               if (invite && prefill.to) {
-                const inviteRecord = createInvite({ meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: prefill.to })
+                const inviteRecord = createInvite({ meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: prefill.to, meeting: m })
                 cloudSendInvite(inviteRecord, prefill.to)
                 toast('已创建会议并发送站内邀请', { kind: 'success' })
               } else {
@@ -309,7 +316,7 @@ function InviteFriendsGroupsModal({
     if (recipients.size === 0) { toast('请选择好友或群组', { kind: 'error' }); return }
     for (const to of recipients) {
       const from = { id: me.id, name: me.name, avatar: 'sprout' as const }
-      const invite = createInvite({ meetingId: meeting.id, meetingTitle: meeting.title, from, to })
+      const invite = createInvite({ meetingId: meeting.id, meetingTitle: meeting.title, from, to, meeting })
       cloudSendInvite({ ...invite, at: new Date().toISOString(), status: 'pending' }, to)
     }
     toast(`已向 ${recipients.size} 位成员发送会议邀请`, { kind: 'success' })
@@ -874,7 +881,7 @@ export function startMeetingForPost(me: MeInfo, postId: string, invitee: { id: s
     plannedMinutes: 30,
     postId,
   })
-  const invite: MeetingInvite = { id: uid('inv'), meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: invitee.id, at: new Date().toISOString(), status: 'pending' }
+  const invite: MeetingInvite = { id: uid('inv'), meetingId: m.id, meetingTitle: m.title, from: { id: me.id, name: me.name, avatar: 'sprout' }, to: invitee.id, at: new Date().toISOString(), status: 'pending', meeting: m }
   createInvite(invite)
   cloudSendInvite(invite, invitee.id)
   upsertMeeting(m)

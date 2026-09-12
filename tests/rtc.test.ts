@@ -1,6 +1,6 @@
 // 会议实时层测试:用内存总线驱动 host/guest 两个会话,验证主机权威同步
 import { describe, expect, it, vi } from 'vitest'
-import { MeetingSession, createMeeting, setIntentHandler } from '../src/services/rtc'
+import { MeetingSession, createMeeting, ensureMeetingFromInvite, getMeeting, setIntentHandler } from '../src/services/rtc'
 import type { RtcAction, RtcDriver, RtcHandlers } from '../src/services/rtc'
 import type { MeetingInfo } from '../src/types'
 
@@ -137,6 +137,20 @@ describe('会议实时层(主机权威)', () => {
     guest.shareFrameToBoard('data:image/jpeg;base64,xxx', 0.5, 0.5)
     const img = host.snapshot.pages[0].items.find((i) => i.type === 'image')
     expect(img?.pts[0]).toBe(0.5)
+  })
+
+  it('跨设备接受邀请:用邀请内会议信息在本机重建会议,旧邀请缺失时明确失败', () => {
+    const meeting = createMeeting({ title: '跨设备讲题', hostId: HOST.id, hostName: HOST.name, startAt: new Date().toISOString(), plannedMinutes: 30 })
+    // 模拟另一台设备:本机没有这场会议的记录
+    localStorage.clear()
+    expect(getMeeting(meeting.id)).toBeNull()
+    const invite = { meetingId: meeting.id, meeting }
+    expect(ensureMeetingFromInvite(invite)).toBe(true)
+    expect(getMeeting(meeting.id)?.title).toBe('跨设备讲题')
+    expect(getMeeting(meeting.id)?.status).toBe('live')
+    // 已存在时不重复重建;旧邀请缺失会议信息时明确失败
+    expect(ensureMeetingFromInvite(invite)).toBe(true)
+    expect(ensureMeetingFromInvite({ meetingId: 'm_missing' })).toBe(false)
   })
 })
 

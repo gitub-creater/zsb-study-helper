@@ -738,6 +738,8 @@ export interface MeetingInvite {
   to: string
   at: string
   status: 'pending' | 'accepted' | 'declined'
+  /** 完整会议信息:跨设备接受邀请时在本机重建会议,避免"会议不存在" */
+  meeting?: MeetingInfo
 }
 
 /** 学习群组(成员以稳定账号 id 为准) */
