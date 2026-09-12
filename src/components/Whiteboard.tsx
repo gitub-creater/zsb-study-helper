@@ -185,7 +185,11 @@ export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, w: numb
   layerCtx.globalCompositeOperation = 'destination-out'
   for (const ep of item.erasePoints) {
     layerCtx.beginPath()
-    layerCtx.arc(sx(ep.x, pan, w), sy(ep.y, pan, h), Math.max(1.5, ep.r * Math.min(w, h)), 0, Math.PI * 2)
+    const cx = sx(ep.x, pan, w)
+    const cy = sy(ep.y, pan, h)
+    const rx = Math.max(1.5, (ep.rx ?? ep.r) * w)
+    const ry = Math.max(1.5, (ep.ry ?? ep.r) * h)
+    layerCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
     layerCtx.fill()
   }
   layerCtx.restore()
@@ -219,12 +223,27 @@ function pointTextContains(item: BoardItem, p: { x: number; y: number }, radius:
   return p.x >= item.pts[0] - radius && p.x <= item.pts[0] + width + radius && p.y >= item.pts[1] - radius && p.y <= item.pts[1] + height + radius
 }
 
+type EraserRadius = number | { x: number; y: number }
+
+function radiusValues(radius: EraserRadius): { x: number; y: number } {
+  return typeof radius === 'number' ? { x: radius, y: radius } : radius
+}
+
 /** 按实际笔迹/图形轮廓判断橡皮擦是否碰到对象,而不是只命中整块包围盒。 */
-export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: number }, radius = 0.02): boolean {
-  if (item.type === 'image' || item.pts.length < 2) return false
-  if (item.type === 'text') return pointTextContains(item, p, radius)
+export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: number }, radius: EraserRadius = 0.02): boolean {
+  if (item.pts.length < 2) return false
+  const radii = radiusValues(radius)
+  if (item.type === 'image') {
+    const x0 = Math.min(item.pts[0], item.pts[2])
+    const x1 = Math.max(item.pts[0], item.pts[2])
+    const y0 = Math.min(item.pts[1], item.pts[3])
+    const y1 = Math.max(item.pts[1], item.pts[3])
+    return p.x >= x0 - radii.x && p.x <= x1 + radii.x && p.y >= y0 - radii.y && p.y <= y1 + radii.y
+  }
+  const hitRadius = Math.max(radii.x, radii.y)
+  if (item.type === 'text') return pointTextContains(item, p, hitRadius)
   const strokeRadius = Math.max(0.001, item.width / 1080)
-  const threshold = radius + strokeRadius
+  const threshold = hitRadius + strokeRadius
   const point = (idx: number) => ({ x: item.pts[idx], y: item.pts[idx + 1] })
   if (item.type === 'pen' || item.type === 'highlight') {
     for (let i = 0; i + 3 < item.pts.length; i += 2) {
@@ -253,15 +272,16 @@ export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: numbe
   return false
 }
 
-/** 橡皮擦一次命中的对象,图片始终保留给选择工具删除。 */
+/** 橡皮擦一次命中的对象,返回带局部擦除点的新对象数组。 */
 export function eraseBoardItemsAt(
   items: BoardItem[],
   p: { x: number; y: number },
-  radius = 0.02,
+  radius: EraserRadius = 0.02,
   previous?: { x: number; y: number },
 ): { items: BoardItem[]; hitIds: string[] } {
+  const radii = radiusValues(radius)
   const distance = previous ? Math.hypot(p.x - previous.x, p.y - previous.y) : 0
-  const steps = Math.max(1, Math.ceil(distance / Math.max(radius * 0.55, 0.001)))
+  const steps = Math.max(1, Math.ceil(distance / Math.max(Math.max(radii.x, radii.y) * 0.55, 0.001)))
   const samples = previous
     ? Array.from({ length: steps + 1 }, (_, i) => {
         const t = i / steps
@@ -273,7 +293,7 @@ export function eraseBoardItemsAt(
   const hitSet = new Set(hitIds)
   const next = items.map((item) => {
     if (!hitSet.has(item.id)) return item
-    const newPoints = samples.filter((sample) => boardItemContainsPoint(item, sample, radius)).map((sample) => ({ ...sample, r: radius }))
+    const newPoints = samples.filter((sample) => boardItemContainsPoint(item, sample, radius)).map((sample) => ({ ...sample, r: Math.max(radii.x, radii.y), rx: radii.x, ry: radii.y }))
     return newPoints.length ? { ...item, erasePoints: [...(item.erasePoints ?? []), ...newPoints] } : item
   })
   return { items: next, hitIds }
@@ -503,7 +523,7 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
     const currentPage = pageRef.current
     const rect = canvasRef.current?.getBoundingClientRect()
     // 光圈直径为 34px,换算成世界坐标后保证“看到哪里擦哪里”。
-    const radius = rect ? Math.max(0.01, 17 / Math.min(rect.width, rect.height)) : 0.02
+    const radius = rect ? { x: Math.max(0.01, 17 / rect.width), y: Math.max(0.01, 17 / rect.height) } : 0.02
     const result = eraseBoardItemsAt(currentPage.items, p, radius, eraserLastPoint.current ?? undefined)
     eraserLastPoint.current = p
     if (result.hitIds.length === 0) return
@@ -525,7 +545,13 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
     const p = toWorld(e)
     if (tool === 'select' && dragOrigin.current) {
       const { item, x, y } = dragOrigin.current
-      const moved: BoardItem = { ...item, pts: item.pts.map((v, idx) => (idx % 2 === 0 ? v + (p.x - x) : v + (p.y - y))) }
+      const dx = p.x - x
+      const dy = p.y - y
+      const moved: BoardItem = {
+        ...item,
+        pts: item.pts.map((v, idx) => (idx % 2 === 0 ? v + dx : v + dy)),
+        erasePoints: item.erasePoints?.map((ep) => ({ ...ep, x: ep.x + dx, y: ep.y + dy })),
+      }
       setDragItem(moved)
       return
     }

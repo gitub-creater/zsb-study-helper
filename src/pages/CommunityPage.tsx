@@ -1197,9 +1197,9 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
       <div className="friends-grid">
         <div className="friends-list">
           <div className="friend-search">
-            <label className="muted fs12" htmlFor="friend-account">按账号添加好友</label>
+            <label className="muted fs12" htmlFor="friend-account">按帐号添加好友</label>
             <div className="inline-form">
-              <input id="friend-account" className="input" value={accountName} maxLength={40} placeholder="输入对方账号" onChange={(e) => { setAccountName(e.target.value); setAccountError('') }} onKeyDown={(e) => { if (e.key === 'Enter') void addByAccount() }} />
+              <input id="friend-account" className="input" value={accountName} maxLength={40} placeholder="输入对方帐号" onChange={(e) => { setAccountName(e.target.value); setAccountError('') }} onKeyDown={(e) => { if (e.key === 'Enter') void addByAccount() }} />
               <button className="btn btn-sm btn-primary" type="button" disabled={lookupBusy} onClick={() => void addByAccount()}>{lookupBusy ? '查找中' : '添加'}</button>
             </div>
             {accountError && <span className="fs12" style={{ color: accountError.startsWith('已发送好友申请') ? 'var(--success)' : 'var(--danger)' }}>{accountError}</span>}

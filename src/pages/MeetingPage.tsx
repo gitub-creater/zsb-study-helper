@@ -892,7 +892,7 @@ const MEETING_ROOM_TOUR: TourStep[] = [
   { sel: '[data-tour="gallery"]', title: '参会者宫格', text: '谁在会、麦克风开关、谁在举手,一眼可见。', prefer: 'bottom' },
   { sel: '[data-tour="question"]', title: '待讲题目', text: '从社区带来的原题在这里;点「题目贴到白板」把题目和图片放上画布。', prefer: 'right' },
   { sel: '[data-tour="pages"]', title: '多页白板', text: '可新增/切换多页;支持保存、导出 PNG 和 PDF。', prefer: 'bottom' },
-  { sel: '.wb-toolbar', title: '希沃式白板工具', text: '画笔/荧光笔/橡皮/图形/文字;「手型」按住拖动=无限画布;方格纸/横线底纹;双击文字可改;全屏讲课。', prefer: 'bottom' },
+  { sel: '.wb-toolbar', title: '希沃式白板工具', text: '画笔/荧光笔/局部橡皮擦/图形/文字;「手型」按住拖动=无限画布;方格纸/横线底纹;双击文字可改;全屏讲课。', prefer: 'bottom' },
   { sel: '[data-tour="parts"]', title: '参会管理(主讲人)', text: '对单个参会者:静音/解除静音、允许发言、允许编辑白板;普通参会者默认只读。', prefer: 'left' },
   { sel: '[data-tour="quick"]', title: '聊天与快捷短语', text: '「听不懂/再讲一遍/懂了」一键发送;输入框实时聊天。', prefer: 'top' },
 ]
