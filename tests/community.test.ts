@@ -25,6 +25,7 @@ import {
   applyForTutoring,
   commentTree,
   createGroup,
+  emptyCommunity,
   groupMessages,
   isFriend,
   pendingFriendRequests,
@@ -40,7 +41,7 @@ import {
   tutoringAction,
   togglePostLike,
 } from '../src/services/community'
-import { applyCommunityWire } from '../src/services/communityCloud'
+import { applyCommunityWire, replayCommunityWires } from '../src/services/communityCloud'
 
 const me = { id: 'u_me', name: '测试生', avatar: 'sprout' as const }
 const other = { id: 'u_other', name: '帮手同学', avatar: 'cat' as const }
@@ -151,6 +152,27 @@ describe('社区:好友申请', () => {
   it('旧社区数据缺少申请数组时仍可加载', () => {
     mem.set('zsb_community_v1', JSON.stringify({ version: 1, posts: [], comments: [], tutoring: [], friends: [], messages: [], invites: [], credits: {} }))
     expect(loadCommunity().friendRequests).toEqual([])
+  })
+
+  it('离线回放:历史申请与结果按序合并,发起方最终建立好友', () => {
+    freshData()
+    const request = addFriend(me, other)
+    // 接收方是另一台设备:本地没有这条申请,回放后出现待处理申请
+    const receiver = emptyCommunity()
+    const wires = [
+      { kind: 'friend_request' as const, client_id: 'sender_cli', id: request.id, at: request.at, from: me, toId: other.id, to: other },
+      { kind: 'friend_request_result' as const, client_id: 'receiver_cli', id: request.id, at: new Date().toISOString(), toId: me.id, accepted: true, handledAt: new Date().toISOString() },
+    ]
+    expect(replayCommunityWires(receiver, wires, other.id)).toBe(1)
+    expect(receiver.friendRequests?.[0].status).toBe('pending')
+    // 接收方接受后,发起方设备回放结果:申请标记 accepted 并建立好友
+    const sender = loadCommunity()
+    expect(replayCommunityWires(sender, [wires[1]], me.id)).toBe(1)
+    expect(sender.friendRequests?.find((r) => r.id === request.id)?.status).toBe('accepted')
+    expect(isFriend(sender, me.id, other.id)).toBe(true)
+    // 重复回放幂等,不会重复建边
+    expect(replayCommunityWires(sender, [wires[1]], me.id)).toBe(0)
+    expect(sender.friends.filter((f) => (f.a === me.id && f.b === other.id) || (f.a === other.id && f.b === me.id))).toHaveLength(1)
   })
 })
 

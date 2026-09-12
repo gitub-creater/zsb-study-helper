@@ -110,11 +110,36 @@ export function applyCommunityWire(data: CommunityData, wire: CommunityWire, meI
   }
 }
 
-/** 订阅社区频道:收到别人的事件就并入本地存储(供页面挂载时启动) */
+/** 把一批云端事件按顺序合并进本地数据(历史回放与实时订阅共用,纯函数可测) */
+export function replayCommunityWires(data: CommunityData, wires: CommunityWire[], meId: string): number {
+  let applied = 0
+  for (const wire of wires) {
+    if (applyCommunityWire(data, wire, meId)) applied++
+  }
+  return applied
+}
+
+/** 订阅社区频道:收到别人的事件就并入本地存储;挂载时先回放最近历史,离线期间的申请/邀请不丢 */
 export function subscribeCommunityCloud(meId: string): () => void {
   const supabase = getSupabase()
   if (!supabase) return () => {}
   let myId = meId
+  // 离线回放:订阅前先拉最近 200 条社区频道消息,补上本端不在线时错过的好友申请/结果/会议邀请/私信
+  void supabase
+    .from('rtc_message')
+    .select('payload')
+    .eq('room_id', COMMUNITY_ROOM)
+    .order('created_at', { ascending: false })
+    .limit(200)
+    .then(({ data: rows }) => {
+      if (!rows?.length) return
+      const wires = rows
+        .map((row) => (row as { payload?: CommunityWire }).payload)
+        .filter((wire): wire is CommunityWire => !!wire && wire.client_id !== myClientId)
+        .reverse()
+      const local = loadCommunity()
+      if (replayCommunityWires(local, wires, myId)) flush(local)
+    })
   const channel = supabase
     .channel(COMMUNITY_ROOM)
     .on(

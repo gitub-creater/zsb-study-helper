@@ -12,7 +12,7 @@ import { processSkinImage } from '../lib/colorExtract'
 import { listMeetings } from '../services/rtc'
 import { FeatureTour, filterExistingSteps } from '../components/FeatureTour'
 import type { TourStep } from '../components/FeatureTour'
-import { cloudAddFriend, cloudRespondFriendRequest, cloudSendDm, cloudSendInvite, subscribeCommunityCloud } from '../services/communityCloud'
+import { cloudAddFriend, cloudRespondFriendRequest, cloudSendDm, cloudSendInvite } from '../services/communityCloud'
 import { startMeetingForPost } from './MeetingPage'
 import {
   addComment, addFriend, applyForTutoring, commentTree, createPost, deletePost, dmThread, getCredits, isFriend, loadCommunity,
@@ -81,8 +81,7 @@ export function CommunityPage({ me }: { me: CommunityUser }) {
     return () => window.removeEventListener('hashchange', h)
   }, [])
 
-  // 云端频道:跨设备好友/邀请/私信(配置了 Supabase 环境变量时启用)
-  useEffect(() => subscribeCommunityCloud(me.id), [me.id])
+  // 云端频道订阅已提升到 App 全局(CommunityBridge):社区页外也能收到好友申请/会议邀请
 
   return sub ? <PostDetail postId={sub} me={me} /> : <CommunityList me={me} />
 }
@@ -107,6 +106,7 @@ function CommunityList({ me }: { me: CommunityUser }) {
   const subjects = [...new Set(data.posts.map((p) => p.subject))]
   const myCredits = getCredits(data, me.id)
   const unread = data.messages.filter((m) => m.to === me.id && !m.read).length
+  const incomingRequests = (data.friendRequests ?? []).filter((request) => request.status === 'pending' && request.to.id === me.id).length
 
   // 每次进入都显示新手引导(可随时点"跳过教程(已学会)")
   const [tourOpen, setTourOpen] = useState(false)
@@ -130,7 +130,7 @@ function CommunityList({ me }: { me: CommunityUser }) {
             <Icon name="star" size={12} /> 我的积分 {myCredits}
           </span>
           <button className="btn btn-sm" data-tour="friends" onClick={() => setFriendsOpen(true)}>
-            <Icon name="users" size={14} /> 好友/私信{unread > 0 ? ` (${unread})` : ''}
+            <Icon name="users" size={14} /> 好友/私信{incomingRequests > 0 ? ` (${incomingRequests}条申请)` : unread > 0 ? ` (${unread})` : ''}
           </button>
           <button className="btn btn-sm btn-primary" data-tour="ask" onClick={() => setAskOpen(true)}>
             <Icon name="plus" size={14} /> 提问

@@ -1,5 +1,5 @@
 // 应用壳:路由 / 侧边导航(电脑) / 底部导航(手机) / 主题 / 错误边界
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { useStore } from './store/store'
 import { StoreProvider } from './store/store'
@@ -43,6 +43,9 @@ import GroupsPage from './pages/GroupsPage'
 import { MeetingPage } from './pages/MeetingPage'
 import { ExamPage } from './pages/ExamPage'
 import { FormulasPage } from './pages/FormulasPage'
+import { loadCommunity, respondInvite, subscribeCommunity } from './services/community'
+import { subscribeCommunityCloud } from './services/communityCloud'
+import { useToast } from './components/ui'
 
 interface NavItem {
   key: string
@@ -288,6 +291,39 @@ function Router() {
   return <Shell route={route}>{pages[base] ?? <Today />}</Shell>
 }
 
+/** 全局社区云桥:登录后任何页面都能收到好友申请/结果/会议邀请/私信;新会议邀请弹窗提醒 */
+function CommunityBridge({ meId }: { meId: string }) {
+  const toast = useToast()
+  const seenInvites = useRef<Set<string>>(new Set())
+  const [tick, setTick] = useState(0)
+
+  // 云端频道订阅 + 离线历史回放(不依赖社区页面挂载)
+  useEffect(() => subscribeCommunityCloud(meId), [meId])
+  useEffect(() => subscribeCommunity(() => setTick((t) => t + 1)), [])
+
+  // 未处理的会议邀请:24 小时内的新邀请弹一次全局提示
+  useEffect(() => {
+    const cutoff = Date.now() - 24 * 3600 * 1000
+    for (const invite of loadCommunity().invites) {
+      if (invite.to !== meId || invite.status !== 'pending') continue
+      if (seenInvites.current.has(invite.id) || new Date(invite.at).getTime() < cutoff) continue
+      seenInvites.current.add(invite.id)
+      toast(`${invite.from.name} 邀请你参加「${invite.meetingTitle}」`, {
+        kind: 'info',
+        action: {
+          label: '接受进入',
+          onClick: () => {
+            respondInvite(invite.id, true)
+            window.location.hash = `#/meeting/${invite.meetingId}`
+          },
+        },
+      })
+    }
+  }, [tick, meId, toast])
+
+  return null
+}
+
 export default function App() {
   const [splashDone, setSplashDone] = useState(false)
   const [session, setSession] = useState(() => getSession())
@@ -309,6 +345,8 @@ export default function App() {
       <StoreProvider key={session.userId} storageKey={dataKey(session.userId)}>
         <ToastProvider>
           <Router />
+          {/* 全局社区云桥:好友申请/会议邀请任何页面都收得到 */}
+          <CommunityBridge meId={session.userId} />
           {/* 全局调度器:任何页面都能收到到点提醒 */}
           <ScheduleAlerts />
           {/* 桌面宠物芽芽:静音悬浮窗,单实例 */}
