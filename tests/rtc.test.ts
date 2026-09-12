@@ -105,6 +105,19 @@ describe('会议实时层(主机权威)', () => {
     expect(host.snapshot.participants.find((p) => p.userId === GUEST.id)?.micOn).toBe(false)
   })
 
+  it('主机本地替换白板立即产生新快照,橡皮擦不会依赖 React 原地变更', () => {
+    const { host } = setup()
+    const pageId = host.snapshot.pages[0].id
+    const beforeRoom = host.snapshot
+    host.addBoardItems(pageId, [{ id: 'erase-target', type: 'pen', pts: [0.1, 0.1, 0.5, 0.5], color: '#000', width: 3, by: HOST.id, at: Date.now() }])
+    const beforeReplace = host.snapshot
+    const partial = { id: 'erase-target', type: 'pen' as const, pts: [0.1, 0.1, 0.5, 0.5], color: '#000', width: 3, erasePoints: [{ x: 0.3, y: 0.3, r: 0.02 }], by: HOST.id, at: Date.now() }
+    host.replaceBoardPage(pageId, [partial])
+    expect(host.snapshot).not.toBe(beforeRoom)
+    expect(host.snapshot).not.toBe(beforeReplace)
+    expect(host.snapshot.pages[0].items[0].erasePoints).toHaveLength(1)
+  })
+
   it('主机授权编辑后 guest 才能改白板;结束会议全员可见', () => {
     const { host, guest } = setup()
     const pageId = guest.snapshot.pages[0].id

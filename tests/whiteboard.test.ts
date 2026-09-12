@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { boardItemContainsPoint, eraseBoardItemsAt } from '../src/components/Whiteboard'
+import { readFileSync } from 'node:fs'
 import type { BoardItem } from '../src/types'
 
 const pen = (id: string, pts = [0.2, 0.2, 0.5, 0.5]): BoardItem => ({
@@ -13,6 +14,14 @@ const pen = (id: string, pts = [0.2, 0.2, 0.5, 0.5]): BoardItem => ({
 })
 
 describe('白板橡皮擦局部擦除', () => {
+  it('画布拥有单组放大还原控制,并复用 fullscreen 状态', () => {
+    const source = readFileSync(new URL('../src/components/Whiteboard.tsx', import.meta.url), 'utf8')
+    expect(source).toContain('className="wb-zoom-toggle"')
+    expect(source).toContain('放大画板至全屏')
+    expect(source).toContain('还原画板大小')
+    expect(source).toContain('toggleFullscreen()')
+  })
+
   it('擦到笔迹局部会保留对象并记录擦除点', () => {
     const result = eraseBoardItemsAt([pen('p1'), pen('p2', [0.8, 0.8, 0.9, 0.9])], { x: 0.3, y: 0.3 })
     expect(result.hitIds).toEqual(['p1'])

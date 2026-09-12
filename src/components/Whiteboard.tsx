@@ -397,9 +397,11 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
     if (!canvas || !wrap) return
     const rect = wrap.getBoundingClientRect()
     const dpr = window.devicePixelRatio || 1
-    if (canvas.width !== Math.round(rect.width * dpr)) {
-      canvas.width = Math.round(rect.width * dpr)
-      canvas.height = Math.round(rect.height * dpr)
+    const nextWidth = Math.round(rect.width * dpr)
+    const nextHeight = Math.round(rect.height * dpr)
+    if (canvas.width !== nextWidth || canvas.height !== nextHeight) {
+      canvas.width = nextWidth
+      canvas.height = nextHeight
     }
     const ctx = canvas.getContext('2d')!
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -739,7 +741,7 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
       if (document.fullscreenElement) {
         await document.exitFullscreen()
       } else {
-        await wrapRef.current?.parentElement?.requestFullscreen()
+          await wrapRef.current?.requestFullscreen()
       }
     } catch {
       // 部分浏览器(如 iOS Safari)不支持元素全屏,忽略
@@ -838,9 +840,6 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
           ))}
         </span>
         <span className="wb-sep" />
-        <button type="button" className="btn btn-icon" title={fullscreen ? '退出全屏讲课' : '全屏讲课'} aria-label={fullscreen ? '退出全屏讲课' : '全屏讲课'} onClick={() => void toggleFullscreen()}>
-          <Icon name="eye" size={15} />
-        </button>
         <span className="wb-sep" />
         <button type="button" className="btn btn-sm" disabled={!canEdit} onClick={() => imgInput.current?.click()}>
           <Icon name="image" size={14} /> 插入题目图片
@@ -859,11 +858,21 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={() => onPointerUp()}
+          onPointerCancel={() => onPointerUp()}
           onPointerLeave={() => onPointerUp()}
           onDoubleClick={onDoubleClickText}
           aria-label="白板画布(无限画布:滚轮或手型工具平移)"
         />
         <div ref={eraserCursorRef} className="wb-eraser-cursor" aria-hidden style={{ display: 'none' }} />
+        <button
+          type="button"
+          className="wb-zoom-toggle"
+          title={fullscreen ? '还原画板大小' : '放大画板至全屏'}
+          aria-label={fullscreen ? '还原画板大小' : '放大画板至全屏'}
+          onClick={() => void toggleFullscreen()}
+        >
+          <Icon name={fullscreen ? 'compress' : 'expand'} size={17} />
+        </button>
         {textInput && (
           <div className="wb-text-input" style={{ left: `${(textInput.x - pan.x) * 100}%`, top: `${(textInput.y - pan.y) * 100}%` }}>
             <textarea

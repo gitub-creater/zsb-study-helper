@@ -4431,6 +4431,25 @@ button.star-btn { cursor: pointer; }
   touch-action: none;
 }
 .wb-canvas.readonly { cursor: default; }
+.wb-zoom-toggle {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 6;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(38, 49, 62, 0.18);
+  cursor: pointer;
+}
+.wb-zoom-toggle:hover { background: var(--primary); color: #fff; }
+.wb-canvas-wrap:fullscreen .wb-zoom-toggle { right: 18px; bottom: 18px; }
 .wb-text-input {
   position: absolute;
   transform: translateY(-8px);
@@ -4472,6 +4491,8 @@ button.star-btn { cursor: pointer; }
 .wb-select-ico { border: 1.6px dashed currentColor; border-radius: 3px; }
 .meet-board-col:fullscreen { overflow: auto; padding: 10px; background: var(--bg); }
 .meet-board-col:fullscreen .wb-canvas-wrap { height: calc(100vh - 160px); aspect-ratio: auto; }
+.wb-canvas-wrap:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; border: 0; }
+.wb-canvas-wrap:fullscreen .wb-canvas { height: 100%; }
 
 /* ---------- 移动端 ---------- */
 @media (max-width: 880px) {

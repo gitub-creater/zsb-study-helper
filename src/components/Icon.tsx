@@ -54,6 +54,8 @@ const P: Record<string, string[]> = {
   users: ['M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z', 'M2.5 20c1.2-3 4-4.5 6.5-4.5s5.3 1.5 6.5 4.5', 'M16 4.5a3 3 0 0 1 0 6', 'M18 15.6c1.6.7 2.9 2 3.5 4.4'],
   undo: ['M4 10h9a5 5 0 0 1 0 10h-3', 'M4 10l4-4', 'M4 10l4 4'],
   redo: ['M20 10h-9a5 5 0 0 0 0 10h3', 'M20 10l-4-4', 'M20 10l-4 4'],
+  expand: ['M4 9V4h5', 'M4 4l6 6', 'M20 15v5h-5', 'M20 20l-6-6'],
+  compress: ['M9 4H4v5', 'M4 4l6 6', 'M15 20h5v-5', 'M20 20l-6-6'],
 }
 
 const FILLED = new Set(['play', 'pause', 'sparkle', 'stop'])

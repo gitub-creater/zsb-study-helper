@@ -181,7 +181,11 @@ export class MeetingSession {
       onBoardDelta: (pageId, items, replace) => {
         const page = this.room.pages.find((p) => p.id === pageId)
         if (!page) return
-        page.items = replace ? items : [...page.items, ...items.filter((i) => !page.items.some((x) => x.id === i.id))]
+        const nextItems = replace ? [...items] : [...page.items, ...items.filter((i) => !page.items.some((x) => x.id === i.id))]
+        this.room = {
+          ...this.room,
+          pages: this.room.pages.map((candidate) => candidate.id === pageId ? { ...candidate, items: nextItems } : candidate),
+        }
         this.emit()
       },
     }
@@ -347,43 +351,63 @@ export class MeetingSession {
 
   private applyBoard(action: RtcAction): void {
     const room = this.room
+    let next: MeetingRoomState | null = null
     switch (action.kind) {
       case 'board-add': {
         const page = room.pages.find((p) => p.id === action.pageId)
-        if (page) page.items = [...page.items, ...(action.items as BoardItem[])]
+        if (page) {
+          const additions = action.items as BoardItem[]
+          next = {
+            ...room,
+            pages: room.pages.map((candidate) => candidate.id === action.pageId
+              ? { ...candidate, items: [...candidate.items, ...additions] }
+              : candidate),
+          }
+        }
         break
       }
       case 'board-replace': {
         const page = room.pages.find((p) => p.id === action.pageId)
-        if (page) page.items = action.items as BoardItem[]
+        if (page) {
+          next = {
+            ...room,
+            pages: room.pages.map((candidate) => candidate.id === action.pageId
+              ? { ...candidate, items: [...(action.items as BoardItem[])] }
+              : candidate),
+          }
+        }
         break
       }
       case 'page-add': {
         const page = action.page as BoardPage
-        if (!room.pages.some((p) => p.id === page.id)) room.pages.push(page)
-        room.activePageId = page.id
+        if (!room.pages.some((candidate) => candidate.id === page.id)) {
+          next = { ...room, pages: [...room.pages, page], activePageId: page.id }
+        }
         break
       }
       case 'page-remove': {
         if (room.pages.length <= 1) return
-        room.pages = room.pages.filter((p) => p.id !== action.pageId)
-        if (room.activePageId === action.pageId) room.activePageId = room.pages[0].id
+        const pages = room.pages.filter((candidate) => candidate.id !== action.pageId)
+        next = { ...room, pages, activePageId: room.activePageId === action.pageId ? pages[0].id : room.activePageId }
         break
       }
       case 'page-active':
-        if (room.pages.some((p) => p.id === action.pageId)) room.activePageId = action.pageId as string
+        if (room.pages.some((candidate) => candidate.id === action.pageId)) next = { ...room, activePageId: action.pageId as string }
         break
       case 'page-bg': {
-        const page = room.pages.find((p) => p.id === action.pageId)
-        if (page) page.bgImage = action.bgImage as string | undefined
+        if (room.pages.some((candidate) => candidate.id === action.pageId)) {
+          next = { ...room, pages: room.pages.map((candidate) => candidate.id === action.pageId ? { ...candidate, bgImage: action.bgImage as string | undefined } : candidate) }
+        }
         break
       }
       case 'page-grid': {
-        const page = room.pages.find((p) => p.id === action.pageId)
-        if (page) page.grid = action.grid as 'grid' | 'lines' | undefined
+        if (room.pages.some((candidate) => candidate.id === action.pageId)) {
+          next = { ...room, pages: room.pages.map((candidate) => candidate.id === action.pageId ? { ...candidate, grid: action.grid as 'grid' | 'lines' | undefined } : candidate) }
+        }
         break
       }
     }
+    if (next) this.room = next
   }
 
   private broadcastRoom(): void {
