@@ -216,6 +216,10 @@ function pointSegmentDistance(p: { x: number; y: number }, a: { x: number; y: nu
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
 }
 
+function pointSegmentDistanceScaled(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }, scale: { x: number; y: number }): number {
+  return pointSegmentDistance({ x: p.x / scale.x, y: p.y / scale.y }, { x: a.x / scale.x, y: a.y / scale.y }, { x: b.x / scale.x, y: b.y / scale.y })
+}
+
 type EraserRadius = number | { x: number; y: number }
 
 function radiusValues(radius: EraserRadius): { x: number; y: number } {
@@ -234,34 +238,34 @@ function pointTextContains(item: BoardItem, p: { x: number; y: number }, radius:
 export function boardItemContainsPoint(item: BoardItem, p: { x: number; y: number }, radius: EraserRadius = 0.02): boolean {
   if (item.type === 'image' || item.pts.length < 2) return false
   const radii = radiusValues(radius)
-  const hitRadius = Math.max(radii.x, radii.y)
-  if (item.type === 'text') return pointTextContains(item, p, hitRadius)
+  if (item.type === 'text') return pointTextContains(item, p, radii)
   const strokeRadius = Math.max(0.001, item.width / 1080)
-  const threshold = hitRadius + strokeRadius
+  const threshold = 1 + strokeRadius / Math.max(0.001, Math.min(radii.x, radii.y))
   const point = (idx: number) => ({ x: item.pts[idx], y: item.pts[idx + 1] })
   if (item.type === 'pen' || item.type === 'highlight') {
     for (let i = 0; i + 3 < item.pts.length; i += 2) {
-      if (pointSegmentDistance(p, point(i), point(i + 2)) <= threshold) return true
+      if (pointSegmentDistanceScaled(p, point(i), point(i + 2), radii) <= threshold) return true
     }
-    return pointSegmentDistance(p, point(0), point(0)) <= threshold
+    return pointSegmentDistanceScaled(p, point(0), point(0), radii) <= threshold
   }
-  if (item.type === 'line' || item.type === 'arrow') return pointSegmentDistance(p, point(0), point(2)) <= threshold
+  if (item.type === 'line' || item.type === 'arrow') return pointSegmentDistanceScaled(p, point(0), point(2), radii) <= threshold
   if (item.type === 'rect') {
     const x0 = Math.min(item.pts[0], item.pts[2])
     const x1 = Math.max(item.pts[0], item.pts[2])
     const y0 = Math.min(item.pts[1], item.pts[3])
     const y1 = Math.max(item.pts[1], item.pts[3])
     const edges = [[{ x: x0, y: y0 }, { x: x1, y: y0 }], [{ x: x1, y: y0 }, { x: x1, y: y1 }], [{ x: x1, y: y1 }, { x: x0, y: y1 }], [{ x: x0, y: y1 }, { x: x0, y: y0 }]]
-    return edges.some(([a, b]) => pointSegmentDistance(p, a, b) <= threshold)
+    return edges.some(([a, b]) => pointSegmentDistanceScaled(p, a, b, radii) <= threshold)
   }
   if (item.type === 'circle') {
     const cx = (item.pts[0] + item.pts[2]) / 2
     const cy = (item.pts[1] + item.pts[3]) / 2
     const rx = Math.abs(item.pts[2] - item.pts[0]) / 2
     const ry = Math.abs(item.pts[3] - item.pts[1]) / 2
-    if (rx === 0 || ry === 0) return Math.hypot(p.x - cx, p.y - cy) <= threshold
+    const brushRadius = Math.max(radii.x, radii.y)
+    if (rx === 0 || ry === 0) return Math.hypot(p.x - cx, p.y - cy) <= brushRadius + strokeRadius
     const normalized = Math.hypot((p.x - cx) / rx, (p.y - cy) / ry)
-    return Math.abs(normalized - 1) * Math.min(rx, ry) <= threshold
+    return Math.abs(normalized - 1) * Math.min(rx, ry) <= brushRadius + strokeRadius
   }
   return false
 }
