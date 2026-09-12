@@ -309,7 +309,7 @@ export class MeetingSession {
         const editors = room.editorsAccess ?? []
         const uid2 = action.userId as string
         const next = editors.includes(uid2) ? editors.filter((x) => x !== uid2) : [...editors, uid2]
-        room.editorsAccess = next
+        this.room = { ...room, editorsAccess: next }
         break
       }
       case 'chat':

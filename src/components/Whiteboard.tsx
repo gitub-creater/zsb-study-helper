@@ -859,7 +859,6 @@ export function Whiteboard({ page, canEdit, lockNote, onAddItems, onReplaceItems
           onPointerMove={onPointerMove}
           onPointerUp={() => onPointerUp()}
           onPointerCancel={() => onPointerUp()}
-          onPointerLeave={() => onPointerUp()}
           onDoubleClick={onDoubleClickText}
           aria-label="白板画布(无限画布:滚轮或手型工具平移)"
         />
