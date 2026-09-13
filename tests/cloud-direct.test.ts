@@ -49,6 +49,36 @@ beforeEach(() => stubStorage())
 afterEach(() => vi.unstubAllGlobals())
 
 describe('国内直连通道', () => {
+  it('新注册直连优先成功时不请求 Vercel', async () => {
+    const { calls } = stubFetch({ zsb_register: { user: { id: 'u_fast1', name: '快速用户' }, token: 'tok_fast1' } })
+    const { registerCloud } = await import('../src/services/cloud')
+    const { DIRECT_API_URL } = await import('../src/services/cloudDirect')
+
+    const result = await registerCloud('u_fast1', '快速用户', 'pw1234', true)
+    expect(result.kind).toBe('ok')
+    expect(result.kind === 'ok' && result.session.apiUrl).toBe(DIRECT_API_URL)
+    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_register`])
+  })
+
+  it('新注册直连失败时才回退到 Vercel 主通道', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {
+      const href = typeof url === 'string' ? url : url.toString()
+      calls.push(href)
+      if (href.startsWith(`${SUPABASE_URL}/rest/v1/rpc/`)) throw new TypeError('直连失败')
+      return new Response(JSON.stringify({ user: { id: 'u_fast2', name: '回退用户' }, token: 'tok_fast2' }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    const { registerCloud } = await import('../src/services/cloud')
+
+    const result = await registerCloud('u_fast2', '回退用户', 'pw1234', true)
+    expect(result.kind).toBe('ok')
+    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_register`)
+    expect(calls.some((url) => url.endsWith('/api/auth/register'))).toBe(true)
+  })
+
   it('主通道被封时注册自动改走直连,并记住直连入口', async () => {
     stubFetch({ zsb_register: { user: { id: 'u_a1', name: '小明' }, token: 'tok_a1' }, zsb_adopt_password: { ok: true } })
     const { registerCloud } = await import('../src/services/cloud')

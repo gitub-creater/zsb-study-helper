@@ -91,9 +91,25 @@ export function hashPassword(password: string, salt = randomBytes(16).toString('
 }
 
 export function passwordMatches(password: string, salt: string, expected: string): boolean {
+  if (salt === 'bf') return false
   const actual = Buffer.from(hashPassword(password, salt).hash, 'hex')
   const stored = Buffer.from(expected, 'hex')
   return actual.length === stored.length && timingSafeEqual(actual, stored)
+}
+
+/** Supabase 直连账号使用 pgcrypto bcrypt;只能在服务端通过 service-role RPC 校验。 */
+export async function passwordMatchesAsync(password: string, salt: string, expected: string): Promise<boolean> {
+  if (salt !== 'bf') return passwordMatches(password, salt, expected)
+  try {
+    const { data, error } = await db().rpc('zsb_password_ok', {
+      p_password: password,
+      p_salt: salt,
+      p_hash: expected,
+    })
+    return !error && data === true
+  } catch {
+    return false
+  }
 }
 
 function tokenHash(token: string): string {

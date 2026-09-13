@@ -390,7 +390,19 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
   }
 }
 
-export async function registerCloud(id: string, name: string, password: string): Promise<CloudLoginResult> {
+export async function registerCloud(id: string, name: string, password: string, preferDirect = false): Promise<CloudLoginResult> {
+  if (preferDirect && cloudDirectConfigured) {
+    try {
+      const mapped = directResultToLogin(await directRegister(id, name, password))
+      if (mapped) {
+        setCloudNetworkState('online', DIRECT_API_URL)
+        return mapped
+      }
+    } catch {
+      // 直连不可用时再走主通道,兼容开启代理或旧环境。
+    }
+  }
+
   try {
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/register', {
       method: 'POST',

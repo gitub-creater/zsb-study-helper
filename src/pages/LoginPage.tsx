@@ -136,7 +136,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       const id = uid()
       // 先建立本机账号，网络中断时保留同一个稳定 ID 供后续安全补注册。
       const u = await createUser(account, regPw, id)
-      const cloud = await registerCloud(id, u.name, regPw)
+      const cloud = await registerCloud(id, u.name, regPw, true)
       if (cloud.kind === 'error') {
         // 账号已占用等确定性错误不是网络待办；移除本次本机占位，避免列表留下错误账号。
         removeUser(u.id)

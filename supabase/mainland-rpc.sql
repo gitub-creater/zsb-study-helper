@@ -60,6 +60,9 @@ begin
     if v_row.id <> p_id then
       return json_build_object('code','name_taken','error','该账号已存在');
     end if;
+    if v_row.password_salt <> 'bf' then
+      return json_build_object('code','legacy_account','error','该账号需要先在主通道登录一次完成升级');
+    end if;
     if not public.zsb_password_ok(p_password, v_row.password_salt, v_row.password_hash) then
       return json_build_object('code','name_taken','error','该账号已存在');
     end if;

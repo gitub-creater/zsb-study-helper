@@ -1,5 +1,5 @@
 import {
-  db, getBody, handleOptions, hashPassword, passwordMatches, sendError, sessionUser, setCors, validPassword,
+  db, getBody, handleOptions, hashPassword, passwordMatchesAsync, sendError, sessionUser, setCors, validPassword,
 } from '../../server/cloud-api.js'
 
 export default async function handler(req: import('../../server/cloud-api.js').ApiRequest, res: import('../../server/cloud-api.js').ApiResponse) {
@@ -14,7 +14,7 @@ export default async function handler(req: import('../../server/cloud-api.js').A
     if (!oldPassword || !newPassword || !validPassword(newPassword)) {
       return sendError(res, 400, 'invalid_input', '密码格式不正确')
     }
-    if (!passwordMatches(oldPassword, user.password_salt, user.password_hash)) {
+    if (!(await passwordMatchesAsync(oldPassword, user.password_salt, user.password_hash))) {
       return sendError(res, 401, 'bad_password', '旧密码不正确')
     }
 

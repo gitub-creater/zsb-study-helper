@@ -1,5 +1,5 @@
 import {
-  createSession, db, getBody, handleOptions, normalizedName, passwordMatches, publicUser, sendError, setCors,
+  createSession, db, getBody, handleOptions, normalizedName, passwordMatchesAsync, publicUser, sendError, setCors,
 } from '../../server/cloud-api.js'
 
 export default async function handler(req: import('../../server/cloud-api.js').ApiRequest, res: import('../../server/cloud-api.js').ApiResponse) {
@@ -18,7 +18,7 @@ export default async function handler(req: import('../../server/cloud-api.js').A
       .maybeSingle()
     if (error) throw error
     if (!user) return sendError(res, 404, 'not_found', '账号不存在')
-    if (!passwordMatches(password, user.password_salt, user.password_hash)) {
+    if (!(await passwordMatchesAsync(password, user.password_salt, user.password_hash))) {
       return sendError(res, 401, 'bad_password', '密码不正确')
     }
 

@@ -22,12 +22,13 @@ function isDirectError(value: unknown): value is DirectError {
   return Boolean(value && typeof value === 'object' && typeof (value as DirectError).code === 'string')
 }
 
-const DIRECT_TIMEOUT_MS = 30000
+const DIRECT_REQUEST_TIMEOUT_MS = 30000
+const DIRECT_AUTH_TIMEOUT_MS = 10000
 
-async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
+async function rpc<T>(name: string, args: Record<string, unknown>, timeoutMs = DIRECT_REQUEST_TIMEOUT_MS): Promise<T> {
   if (!cloudDirectConfigured) throw new Error('direct_not_configured')
   const controller = new AbortController()
-  const timer = globalThis.setTimeout(() => controller.abort(), DIRECT_TIMEOUT_MS)
+  const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
       method: 'POST',
@@ -54,11 +55,11 @@ export interface DirectAuthOk {
 export type DirectAuthResult = DirectAuthOk | DirectError
 
 export async function directRegister(id: string, name: string, password: string): Promise<DirectAuthResult> {
-  return rpc<DirectAuthResult>('zsb_register', { p_id: id, p_name: name, p_password: password })
+  return rpc<DirectAuthResult>('zsb_register', { p_id: id, p_name: name, p_password: password }, DIRECT_AUTH_TIMEOUT_MS)
 }
 
 export async function directLogin(name: string, password: string): Promise<DirectAuthResult> {
-  return rpc<DirectAuthResult>('zsb_login', { p_name: name, p_password: password })
+  return rpc<DirectAuthResult>('zsb_login', { p_name: name, p_password: password }, DIRECT_AUTH_TIMEOUT_MS)
 }
 
 export function directAuthFailed(value: DirectAuthResult): value is DirectError {
