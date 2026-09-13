@@ -98,4 +98,12 @@ describe('WebSocket 信令驱动', () => {
     d.disconnect()
     expect(d.channelState).toBe('closed')
   })
+
+  it('驱动工厂无注入时正常返回驱动(防 main.tsx 自引用递归复发)', async () => {
+    const { createDefaultDriver } = await import('../src/services/rtc')
+    const d = createDefaultDriver()
+    expect(d).toBeTruthy()
+    expect(typeof d.connect).toBe('function')
+    d.disconnect()
+  })
 })
