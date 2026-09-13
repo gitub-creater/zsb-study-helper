@@ -5,12 +5,25 @@
 // - 纯内存房间表,服务重启后客户端自动重连并从主机重新拉取房间快照,无需持久化
 // - 同一 clientId 重连(页面刷新)时挤占旧连接,防止双开互踢
 // - 30s 协议层心跳,死连接及时清理
-// - 部署:任意 Node 18+ 宿主(Render/Railway/学生机),PORT 环境变量可覆盖端口
+// - GET /healthz 返回 200,供 Render/Railway 等平台健康检查(同时保持免费实例活跃判定)
+// - 部署:任意 Node 18+ 宿主,PORT 环境变量可覆盖端口(默认 8787)
+import http from 'node:http'
 import { WebSocketServer } from 'ws'
 
 const PORT = Number(process.env.PORT || 8787)
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/healthz') {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end('{"ok":true}')
+    return
+  }
+  res.writeHead(426, { 'content-type': 'text/plain' })
+  res.end('websocket endpoint: use ws(s):// upgrade')
+})
+
 // eslint-disable-next-line no-new
-const wss = new WebSocketServer({ port: PORT })
+const wss = new WebSocketServer({ server })
 
 /** roomId -> Map<clientId, WebSocket> */
 const rooms = new Map()
@@ -95,6 +108,6 @@ const heartbeat = setInterval(() => {
   }
 }, 30000)
 
-wss.on('close', () => clearInterval(heartbeat))
-
-console.log(`[rtc-server] websocket signaling listening on :${PORT}`)
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[rtc-server] websocket signaling listening on :${PORT}`)
+})

@@ -1,0 +1,13 @@
+# Render Blueprint:一键部署会议 WebSocket 信令服务器
+# 用户操作:render.com → New + → Blueprint → 选择 zsb-study-helper 仓库 → Apply
+# 部署完成后得到 https://zsb-rtc-server-xxxx.onrender.com,WebSocket 地址为 wss:// 同域
+services:
+  - type: web
+    name: zsb-rtc-server
+    runtime: node
+    plan: free
+    rootDir: rtc-server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
