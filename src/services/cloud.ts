@@ -71,9 +71,15 @@ const DEFAULT_CLOUD_API_URLS = [
   'https://zsb-study-helper.vercel.app',
 ]
 const GITHUB_PAGES_HOST = 'gitub-creater.github.io'
-const CLOUD_REQUEST_TIMEOUT_MS = 5000
-const CLOUD_TOTAL_TIMEOUT_MS = 18000
-const RETRY_DELAYS_MS = [120, 360]
+// 实测生产注册接口耗时 2.0-4.2 秒(Vercel Serverless 冷启动 + Supabase 跨区往返,
+// 一次注册要串行完成查重/哈希/写账号/建会话)。原来的 5 秒预算刚好卡在这个区间,
+// 稍慢的网络就会被中止并误判成"云端不可用",于是只建本机账号、好友搜不到。
+const CLOUD_REQUEST_TIMEOUT_MS = 20000
+/** 注册/登录这类一次性关键请求允许更久,写库成功却超时会让账号两边不一致。 */
+const CLOUD_AUTH_REQUEST_TIMEOUT_MS = 30000
+const CLOUD_TOTAL_TIMEOUT_MS = 45000
+const CLOUD_AUTH_TOTAL_TIMEOUT_MS = 75000
+const RETRY_DELAYS_MS = [400, 1200]
 
 function isGithubPagesHost(): boolean {
   return typeof window !== 'undefined'
@@ -208,18 +214,21 @@ async function request<T>(
   init: RequestInit = {},
   preferredApiUrl?: string,
   validate?: (body: T) => boolean,
+  /** 注册/登录用更宽的预算:超时会让云端写成功而本机认为失败。 */
+  slow = false,
 ): Promise<{ data: T; apiUrl: string }> {
   const urls = getCloudApiUrls(preferredApiUrl)
   if (urls.length === 0) throw new CloudRequestError(0, 'not_configured', '未配置云端地址')
 
   let lastError: CloudRequestError | null = null
-  const deadline = Date.now() + CLOUD_TOTAL_TIMEOUT_MS
+  const perRequestTimeout = slow ? CLOUD_AUTH_REQUEST_TIMEOUT_MS : CLOUD_REQUEST_TIMEOUT_MS
+  const deadline = Date.now() + (slow ? CLOUD_AUTH_TOTAL_TIMEOUT_MS : CLOUD_TOTAL_TIMEOUT_MS)
   for (const apiUrl of urls) {
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
       if (Date.now() >= deadline) break
 
       try {
-        const remaining = Math.min(CLOUD_REQUEST_TIMEOUT_MS, deadline - Date.now())
+        const remaining = Math.min(perRequestTimeout, deadline - Date.now())
         if (remaining <= 0) break
         const response = await fetchWithTimeout(`${apiUrl}${path}`, init, remaining)
         const body = await response.json().catch(() => null) as ({ error?: string; code?: string } & T) | null
@@ -325,7 +334,7 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
-    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token))
+    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true)
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
@@ -341,7 +350,7 @@ export async function registerCloud(id: string, name: string, password: string):
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ id, name, password }),
-    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token))
+    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true)
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }

@@ -9,6 +9,7 @@ import {
 } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
 import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl } from '../services/cloud'
+import { queueCloudRegistration } from '../services/cloudRegistrationQueue'
 
 export function LoginGate({ onSession }: { onSession: () => void }) {
   const toast = useToast()
@@ -104,9 +105,11 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
         }
         setCloudRegistrationPending(loginLocal.id, true)
         refresh()
+        // 已核对过本机密码，可安全地在后台继续补注册；密码不落盘。
+        queueCloudRegistration({ id: loginLocal.id, name: loginLocal.name, password: pw })
       }
       enter(loginLocal)
-      if (cloud.kind === 'unavailable') toast('当前使用本机登录，云端注册待网络恢复后重试；好友暂时搜不到此账号', { kind: 'info', duration: 10000 })
+      if (cloud.kind === 'unavailable') toast('已用本机账号登录，正在后台继续同步到云端；同步完成前好友暂时搜不到此账号', { kind: 'info', duration: 10000 })
     } catch (error) {
       toast(error instanceof Error ? error.message : '登录失败，请稍后重试', { kind: 'error' })
     } finally {
@@ -149,7 +152,10 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       } else {
         setCloudRegistrationPending(u.id, true)
         refresh()
-        toast(`账号「${u.name}」已保存在本机，但云端注册尚未完成，好友暂时搜不到。网络恢复后，请在登录页输入同一账号和密码重试。`, { kind: 'info', duration: 12000 })
+        // 网络慢时首个请求可能刚好超时。密码只留在内存里，由后台继续重试补注册，
+        // 用户不必自己回到登录页重来一遍。
+        queueCloudRegistration({ id: u.id, name: u.name, password: regPw })
+        toast(`账号「${u.name}」已保存在本机，正在后台继续同步到云端。同步完成前好友暂时搜不到，请保持应用打开。`, { kind: 'info', duration: 12000 })
         enter(u)
       }
     } catch (e) {
