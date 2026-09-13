@@ -1185,7 +1185,7 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
     } catch (error) {
       setLookupBusy(false)
       const status = error instanceof CloudRequestError ? error.status : 0
-      if (status === 401) setAccountError('你的云端登录已过期，请退出后重新登录再查找')
+      if (status === 401) setAccountError('云端连接还没就绪或登录已过期：请等几秒再点一次查找；多次失败请退出后重新登录')
       else if (status === 0) setAccountError('网络异常，暂时无法查找，请稍后重试')
       else setAccountError(error instanceof Error ? error.message : '查找失败，请稍后重试')
       return
@@ -1194,7 +1194,7 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
     setCloudMatches(matches.map((u) => ({ ...u, avatar: 'sprout' as const })))
     const account = matches[0]
     if (!account) {
-      setAccountError('云端没有这个账号。若对方刚注册，请对方退出后用同一账号密码重新登录一次完成云端同步')
+      setAccountError('云端没有这个账号。若对方刚注册，请对方退出后用同一账号密码重新登录一次完成云端同步；也可稍等几秒再试')
       return
     }
     const other: CommunityUser = { id: account.id, name: account.name, avatar: 'sprout' }
