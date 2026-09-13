@@ -1,5 +1,5 @@
 // Service Worker:让 PWA 可安装 + 基础离线缓存
-const CACHE = 'zsb-v20';
+const CACHE = 'zsb-v21';
 const CORE = ['./', './index.html', './manifest.json', './favicon.svg'];
 
 self.addEventListener('install', (e) => {
@@ -14,6 +14,13 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+
+  // 私有账号/学习接口不能进入静态缓存，否则不同账号可能复用旧响应。
+  const requestUrl = new URL(e.request.url);
+  if (requestUrl.pathname.startsWith('/api/')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
 
   // Always refresh the HTML shell first so an installed desktop app receives new bundles after deployment.
   if (e.request.mode === 'navigate') {
