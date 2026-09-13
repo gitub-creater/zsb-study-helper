@@ -1,12 +1,16 @@
 node_modules
 dist
 release
+release-*
 release-fresh
 desktop-build
 release-codex
 release-codex-verify
 android
 rtc-server
+scripts/_asar-*
+base64_key.txt
+nul
 *.jks
 .git
 .cache
