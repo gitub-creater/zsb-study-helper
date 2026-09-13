@@ -277,3 +277,10 @@ grant execute on function public.zsb_adopt_password(text,text) to anon, authenti
 -- 主通道(Vercel)需要能校验直连通道写入的 bcrypt 摘要,否则同一账号换通道就登不上。
 grant execute on function public.zsb_password_ok(text,text,text) to service_role;
 grant execute on function public.zsb_session_user(text) to service_role;
+
+-- 辅助函数不需要对外暴露:上面的 SECURITY DEFINER 函数以属主身份执行,
+-- 内部调用不依赖调用者的权限。PostgreSQL 默认把 EXECUTE 授予 PUBLIC,这里收回。
+revoke all on function public.zsb_token_hash(text) from public, anon, authenticated;
+revoke all on function public.zsb_normalize_name(text) from public, anon, authenticated;
+revoke all on function public.zsb_password_ok(text,text,text) from public, anon, authenticated;
+grant execute on function public.zsb_password_ok(text,text,text) to service_role;
