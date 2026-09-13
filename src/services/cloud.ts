@@ -1,5 +1,9 @@
 import { getSession, setSession } from '../lib/auth'
 import type { State } from '../types'
+import {
+  DIRECT_API_URL, cloudDirectConfigured, directAdoptPassword, directAuthFailed, directChangePassword,
+  directFindUsers, directGetState, directLogin, directPutState, directRegister, isDirectApiUrl,
+} from './cloudDirect'
 
 export interface CloudSession {
   token: string
@@ -47,13 +51,25 @@ function setCloudNetworkState(network: CloudNetworkState, apiUrl?: string, messa
 export async function findCloudUsers(session: CloudSession, query: string): Promise<CloudUser[]> {
   const value = query.trim()
   if (!value) return []
+  // 会话本身就是直连签发的,不必再撞一次被封的主通道。
+  if (isDirectApiUrl(session.apiUrl)) return directFindUsers(session.token, value)
+
   const encoded = encodeURIComponent(value)
-  const { data, apiUrl } = await request<{ users: CloudUser[] }>(`/api/auth/users?q=${encoded}`, {
-    headers: { Authorization: `Bearer ${session.token}` },
-  }, session.apiUrl, (body) => Array.isArray(body.users) && body.users.every((user) => user && typeof user.id === 'string' && typeof user.name === 'string'))
-  session.apiUrl = apiUrl
-  saveCloudApiUrl(apiUrl)
-  return data.users
+  try {
+    const { data, apiUrl } = await request<{ users: CloudUser[] }>(`/api/auth/users?q=${encoded}`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+    }, session.apiUrl, (body) => Array.isArray(body.users) && body.users.every((user) => user && typeof user.id === 'string' && typeof user.name === 'string'))
+    session.apiUrl = apiUrl
+    saveCloudApiUrl(apiUrl)
+    return data.users
+  } catch (error) {
+    // 好友搜索在国内最容易撞到 vercel.app 被封;两条通道共用 app_sessions,令牌可直接复用。
+    if (!cloudDirectConfigured || !(error instanceof CloudRequestError) || !isUnavailable(error)) throw error
+    const users = await directFindUsers(session.token, value)
+    session.apiUrl = DIRECT_API_URL
+    setCloudNetworkState('online', DIRECT_API_URL)
+    return users
+  }
 }
 
 export type CloudLoginResult =
@@ -329,17 +345,46 @@ function isUnavailable(error: CloudRequestError): boolean {
     || error.code === 'invalid_response'
 }
 
+/** 直连 RPC 的业务错误码 → 统一登录结果。 */
+function directResultToLogin(result: Awaited<ReturnType<typeof directLogin>>): CloudLoginResult | null {
+  if (!directAuthFailed(result)) {
+    return { kind: 'ok', user: result.user, session: { token: result.token, apiUrl: DIRECT_API_URL } }
+  }
+  if (result.code === 'not_found') return { kind: 'not_found' }
+  if (result.code === 'bad_password') return { kind: 'bad_password' }
+  if (result.code === 'name_taken') return { kind: 'error', message: '该账号已在云端注册，请直接登录' }
+  // legacy_account 表示该账号的密码摘要只有主通道能校验,交给调用方继续等主通道。
+  if (result.code === 'legacy_account') return null
+  return { kind: 'error', message: result.error }
+}
+
 export async function loginCloud(name: string, password: string): Promise<CloudLoginResult> {
   try {
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
     }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true)
-    return toLoginResult(data, apiUrl)
+    const ok = toLoginResult(data, apiUrl)
+    // 主通道可达时顺手把旧账号的密码摘要补写成数据库可校验的格式,
+    // 之后在没有代理的国内网络也能直接登录。失败不影响本次登录。
+    if (ok.kind === 'ok' && cloudDirectConfigured) void directAdoptPassword(ok.session.token, password)
+    return ok
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
     if (error.code === 'not_found') return { kind: 'not_found' }
     if (error.code === 'bad_password') return { kind: 'bad_password' }
+    if (isUnavailable(error) && cloudDirectConfigured) {
+      // 主通道在国内被封锁时改走 supabase.co 直连,账号数据仍是同一张表。
+      try {
+        const mapped = directResultToLogin(await directLogin(name, password))
+        if (mapped) {
+          setCloudNetworkState('online', DIRECT_API_URL)
+          return mapped
+        }
+      } catch {
+        // 直连也失败则按原来的不可达处理
+      }
+    }
     if (isUnavailable(error)) return { kind: 'unavailable' }
     return { kind: 'error', message: error.message }
   }
@@ -351,10 +396,25 @@ export async function registerCloud(id: string, name: string, password: string):
       method: 'POST',
       body: JSON.stringify({ id, name, password }),
     }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true)
-    return toLoginResult(data, apiUrl)
+    const ok = toLoginResult(data, apiUrl)
+    if (ok.kind === 'ok' && cloudDirectConfigured) void directAdoptPassword(ok.session.token, password)
+    return ok
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
     if (error.code === 'name_taken') return { kind: 'error', message: '该账号已在云端注册，请直接登录' }
+    if (isUnavailable(error) && cloudDirectConfigured) {
+      // 国内网络连不上主通道时直接写库,注册因此不再依赖 vercel.app 是否可达。
+      // RPC 与主通道同样是"同 ID 同密码可安全复用",重试不会建出重复账号。
+      try {
+        const mapped = directResultToLogin(await directRegister(id, name, password))
+        if (mapped) {
+          setCloudNetworkState('online', DIRECT_API_URL)
+          return mapped
+        }
+      } catch {
+        // 直连也失败则按原来的不可达处理
+      }
+    }
     if (isUnavailable(error)) return { kind: 'unavailable' }
     return { kind: 'error', message: error.message }
   }
@@ -365,12 +425,24 @@ export async function updateCloudPassword(
   oldPassword: string,
   newPassword: string
 ): Promise<void> {
-  const { apiUrl } = await request('/api/auth/password', {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${session.token}` },
-    body: JSON.stringify({ oldPassword, newPassword }),
-  }, session.apiUrl)
-  session.apiUrl = apiUrl
+  if (isDirectApiUrl(session.apiUrl)) {
+    await directChangePassword(session.token, oldPassword, newPassword)
+    return
+  }
+  try {
+    const { apiUrl } = await request('/api/auth/password', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${session.token}` },
+      body: JSON.stringify({ oldPassword, newPassword }),
+    }, session.apiUrl)
+    session.apiUrl = apiUrl
+  } catch (error) {
+    const cloudError = error instanceof CloudRequestError ? error : null
+    if (!(cloudDirectConfigured && cloudError && isUnavailable(cloudError))) throw error
+    await directChangePassword(session.token, oldPassword, newPassword)
+    session.apiUrl = DIRECT_API_URL
+    setCloudNetworkState('online', DIRECT_API_URL)
+  }
 }
 
 export type CloudDownloadResult =
@@ -378,7 +450,22 @@ export type CloudDownloadResult =
   | { kind: 'empty'; apiUrl: string }
   | { kind: 'error'; message: string; expired: boolean }
 
+/** 直连通道的快照结果 → 统一下载结果。 */
+async function directDownload(session: CloudSession): Promise<CloudDownloadResult> {
+  try {
+    const result = await directGetState(session.token)
+    if (result.kind === 'expired') return { kind: 'error', message: '登录已过期，请重新登录', expired: true }
+    session.apiUrl = DIRECT_API_URL
+    setCloudNetworkState('online', DIRECT_API_URL)
+    if (result.kind === 'empty') return { kind: 'empty', apiUrl: DIRECT_API_URL }
+    return { kind: 'state', state: removeAiApiKeyFromCloudState(result.state)!, apiUrl: DIRECT_API_URL }
+  } catch (error) {
+    return { kind: 'error', message: error instanceof Error ? error.message : '云端服务暂时不可用', expired: false }
+  }
+}
+
 export async function downloadCloudStateResult(session: CloudSession): Promise<CloudDownloadResult> {
+  if (isDirectApiUrl(session.apiUrl)) return directDownload(session)
   try {
     const { data, apiUrl } = await request<{ state: State | null }>('/api/state', {
       headers: { Authorization: `Bearer ${session.token}` },
@@ -390,6 +477,11 @@ export async function downloadCloudStateResult(session: CloudSession): Promise<C
     return { kind: 'state', state: removeAiApiKeyFromCloudState(data.state)!, apiUrl }
   } catch (error) {
     const cloudError = error instanceof CloudRequestError ? error : null
+    // 会话令牌两条通道共用同一张 app_sessions 表，因此主通道被封时可以直接改走直连。
+    if (cloudError && cloudError.status !== 401 && isUnavailable(cloudError) && cloudDirectConfigured) {
+      const viaDirect = await directDownload(session)
+      if (viaDirect.kind !== 'error') return viaDirect
+    }
     return { kind: 'error', message: cloudError?.message ?? '云端服务暂时不可用', expired: cloudError?.status === 401 }
   }
 }
@@ -402,9 +494,21 @@ export async function downloadCloudState(session: CloudSession): Promise<State |
 
 export async function uploadCloudState(session: CloudSession, state: State): Promise<boolean> {
   setCloudSyncState('syncing')
+  // AI 密钥属于设备私密配置。学习数据可以云同步，但密钥绝不离开当前设备。
+  const cloudState = removeAiApiKeyFromCloudState(state)!
+
+  if (isDirectApiUrl(session.apiUrl)) {
+    try {
+      await directPutState(session.token, cloudState)
+      setCloudSyncState('synced')
+      return true
+    } catch (error) {
+      setCloudSyncState('pending', error instanceof Error ? error.message : '云端同步失败')
+      return false
+    }
+  }
+
   try {
-    // AI 密钥属于设备私密配置。学习数据可以云同步，但密钥绝不离开当前设备。
-    const cloudState = removeAiApiKeyFromCloudState(state)!
     await request('/api/state', {
       method: 'PUT',
       headers: { Authorization: `Bearer ${session.token}` },
@@ -413,6 +517,19 @@ export async function uploadCloudState(session: CloudSession, state: State): Pro
     setCloudSyncState('synced')
     return true
   } catch (error) {
+    // 主通道被封锁时同一个会话令牌可以直接走 supabase.co(会话表是同一张)。
+    const cloudError = error instanceof CloudRequestError ? error : null
+    if (cloudDirectConfigured && cloudError && isUnavailable(cloudError)) {
+      try {
+        await directPutState(session.token, cloudState)
+        session.apiUrl = DIRECT_API_URL
+        setCloudNetworkState('online', DIRECT_API_URL)
+        setCloudSyncState('synced')
+        return true
+      } catch {
+        // 直连也失败则按原来的待同步处理
+      }
+    }
     setCloudSyncState('pending', error instanceof Error ? error.message : '云端同步失败')
     return false
   }
