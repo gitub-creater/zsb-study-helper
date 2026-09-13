@@ -127,10 +127,12 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       const u = await createUser(account, regPw, id)
       refresh()
       if (cloud.kind === 'ok') {
-        toast(`账号「${u.name}」创建成功，已开启云端同步`, { kind: 'success' })
+        toast(`账号「${u.name}」创建成功，已开启云端同步`, { kind: 'success', duration: 8000 })
         enter(u, cloud.session)
       } else {
-        toast(`账号「${u.name}」创建成功，暂时保存在本机`, { kind: 'success' })
+        // 云端注册失败(网络/服务不可用):账号仅在本设备。登录页已有“重新登录自动迁移上云”逻辑,
+        // 这里必须讲清楚,否则用户会以为好友能直接搜到自己。
+        toast(`账号「${u.name}」已创建,但当前无法连接云端,暂时只保存在这台设备上。恢复网络后,请退出并用同一账号密码重新登录一次,即可自动同步到云端(好友才能搜到你)`, { kind: 'info', duration: 12000 })
         enter(u)
       }
     } catch (e) {

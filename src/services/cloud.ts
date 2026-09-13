@@ -13,15 +13,11 @@ export interface CloudUser {
 export async function findCloudUsers(session: CloudSession, query: string): Promise<CloudUser[]> {
   const value = query.trim()
   if (!value) return []
-  try {
-    const encoded = encodeURIComponent(value)
-    const { data } = await request<{ users: CloudUser[] }>(`/api/auth/users?q=${encoded}`, {
-      headers: { Authorization: `Bearer ${session.token}` },
-    }, session.apiUrl)
-    return data.users ?? []
-  } catch {
-    return []
-  }
+  const encoded = encodeURIComponent(value)
+  const { data } = await request<{ users: CloudUser[] }>(`/api/auth/users?q=${encoded}`, {
+    headers: { Authorization: `Bearer ${session.token}` },
+  }, session.apiUrl)
+  return data.users ?? []
 }
 
 export type CloudLoginResult =
@@ -30,6 +26,8 @@ export type CloudLoginResult =
   | { kind: 'bad_password' }
   | { kind: 'unavailable' }
   | { kind: 'error'; message: string }
+
+export { CloudRequestError }
 
 const API_URL_KEY = 'zsb_cloud_api_url_v1'
 const DEFAULT_CLOUD_API_URL = 'https://shandong-zsb-study-helper.vercel.app'

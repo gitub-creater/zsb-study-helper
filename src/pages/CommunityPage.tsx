@@ -7,6 +7,7 @@ import { EmptyState, Field, Modal, Segmented, useConfirm, useToast } from '../co
 import { AVATAR_INFO } from '../lib/theme'
 import { getSession, listUsers } from '../lib/auth'
 import { findCloudUsers } from '../services/cloud'
+import { CloudRequestError } from '../services/cloud'
 import { downloadBlob, uid } from '../lib/misc'
 import { processSkinImage } from '../lib/colorExtract'
 import { listMeetings } from '../services/rtc'
@@ -1178,12 +1179,22 @@ function FriendsModal({ me, data, onClose }: { me: CommunityUser; data: Communit
       return
     }
     setLookupBusy(true)
-    const matches = await findCloudUsers({ token: session.cloudToken, apiUrl: session.cloudApiUrl }, value)
+    let matches: { id: string; name: string }[]
+    try {
+      matches = await findCloudUsers({ token: session.cloudToken, apiUrl: session.cloudApiUrl }, value)
+    } catch (error) {
+      setLookupBusy(false)
+      const status = error instanceof CloudRequestError ? error.status : 0
+      if (status === 401) setAccountError('你的云端登录已过期，请退出后重新登录再查找')
+      else if (status === 0) setAccountError('网络异常，暂时无法查找，请稍后重试')
+      else setAccountError(error instanceof Error ? error.message : '查找失败，请稍后重试')
+      return
+    }
     setLookupBusy(false)
     setCloudMatches(matches.map((u) => ({ ...u, avatar: 'sprout' as const })))
     const account = matches[0]
     if (!account) {
-      setAccountError('未找到该账号，请确认对方已注册且账号拼写正确')
+      setAccountError('云端没有这个账号。若对方刚注册，请对方退出后用同一账号密码重新登录一次完成云端同步')
       return
     }
     const other: CommunityUser = { id: account.id, name: account.name, avatar: 'sprout' }
