@@ -49,6 +49,8 @@ export function setCors(req: ApiRequest, res: ApiResponse): void {
     .filter(Boolean)
   const allowOrigin = origin && (allowed.length === 0 || allowed.includes(origin)) ? origin : '*'
   res.setHeader('Access-Control-Allow-Origin', allowOrigin)
+  // 账号、会话和学习快照均为私有数据，禁止浏览器、Service Worker 和代理缓存。
+  res.setHeader('Cache-Control', 'no-store')
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS')
   res.setHeader('Vary', 'Origin')

@@ -7,7 +7,8 @@
 ```bash
 npm install
 npm run dev        # 开发: http://localhost:5173(手机同网段可访问)
-npm run build      # 类型检查 + 构建
+npm run typecheck  # 前端与 API 类型检查
+npm run build      # 构建前端产物
 npm run test       # 单元测试(学习算法、云同步、语音、提醒、Office 材料等)
 npm run preview    # 预览构建产物
 ```

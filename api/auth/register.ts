@@ -1,5 +1,5 @@
 import {
-  createSession, db, getBody, handleOptions, hashPassword, normalizedName, publicUser, sendError, setCors,
+  createSession, db, getBody, handleOptions, hashPassword, normalizedName, passwordMatches, publicUser, sendError, setCors,
   validName, validPassword,
 } from '../../server/cloud-api.js'
 
@@ -17,11 +17,18 @@ export default async function handler(req: import('../../server/cloud-api.js').A
     const normalized = normalizedName(name)
     const { data: existing, error: lookupError } = await db()
       .from('app_users')
-      .select('id')
+      .select('id, name, name_normalized, password_salt, password_hash')
       .eq('name_normalized', normalized)
       .maybeSingle()
     if (lookupError) throw lookupError
-    if (existing) return sendError(res, 409, 'name_taken', '该账号已存在')
+    // 网络在响应返回前中断时，客户端会用相同 ID 重试。只有同一账号、同一密码才可恢复会话。
+    if (existing) {
+      if (existing.id !== id || !passwordMatches(password, existing.password_salt, existing.password_hash)) {
+        return sendError(res, 409, 'name_taken', '该账号已存在')
+      }
+      const token = await createSession(existing.id)
+      return res.status(200).json({ user: publicUser(existing), token })
+    }
 
     const { salt, hash } = hashPassword(password)
     const { data: user, error } = await db()

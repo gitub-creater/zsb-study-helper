@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest'
-import { hashHex, makeSalt, dataKey } from '../src/lib/auth'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createUser, findUserByName, hashHex, listUsers, makeSalt, dataKey, setCloudRegistrationPending } from '../src/lib/auth'
+
+function installStorage(): void {
+  const values = new Map<string, string>()
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  })
+}
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('本地账号安全', () => {
   it('同一输入哈希一致(可验证密码)', async () => {
@@ -29,5 +40,17 @@ describe('本地账号安全', () => {
   it('数据键按用户隔离', () => {
     expect(dataKey('u_1')).toBe('zsb_helper_v1__u_1')
     expect(dataKey('u_2')).not.toBe(dataKey('u_1'))
+  })
+
+  it('账号查找忽略大小写和首尾空格，待同步标记不保存明文密码', async () => {
+    installStorage()
+    const user = await createUser(' G1379278332 ', 'secret')
+    expect(findUserByName('g1379278332')?.id).toBe(user.id)
+    setCloudRegistrationPending(user.id, true)
+    const stored = listUsers()[0]
+    expect(stored.cloudRegistrationPending).toBe(true)
+    expect(stored).not.toHaveProperty('password')
+    setCloudRegistrationPending(user.id, false)
+    expect(listUsers()[0].cloudRegistrationPending).toBeUndefined()
   })
 })

@@ -14,7 +14,7 @@ import { entryOnCorrectReview, entryOnEarlyCorrect, entryOnWrong } from '../lib/
 import { generateTasks } from '../lib/plan'
 import { MAX_FIRED_KEYS, MAX_HISTORY, nextOccurrence, normalizeScheduleTask, parseStamp, skipStaleScheduleOccurrence, withNextRun } from '../lib/schedule'
 import { getSession } from '../lib/auth'
-import { downloadCloudState, retainLocalAiApiKey, uploadCloudState } from '../services/cloud'
+import { downloadCloudStateResult, retainLocalAiApiKey, setCloudSyncState, uploadCloudState } from '../services/cloud'
 
 const STORAGE_KEY = 'zsb_helper_v1'
 
@@ -995,38 +995,60 @@ export function StoreProvider({
   const cloudSession = getSession()
   const [state, dispatch] = useReducer(reducer, storageKey, load)
   const [cloudReady, setCloudReady] = React.useState(!cloudSession?.cloudToken || !cloudSession.cloudApiUrl)
+  const [syncRetry, setSyncRetry] = React.useState(0)
+  const [uploadTick, setUploadTick] = React.useState(0)
   const stateRef = useRef(state)
   stateRef.current = state
   const undoStack = useRef<{ state: State }[]>([])
   const keyRef = useRef(storageKey)
+  const uploadedStateRef = useRef<State | null>(null)
+  const uploadInFlightRef = useRef(false)
+  const retryTimerRef = useRef<number | null>(null)
+  const initialSyncRef = useRef<'pending' | 'ready' | 'failed'>('pending')
+  const skipNextUploadRef = useRef(false)
   keyRef.current = storageKey
 
-  // Remote state wins on a newly logged-in device. If it does not exist yet, upload this device's local history.
+  // 新设备登录时优先下载远端；只有明确返回 state=null 才允许首次上传本机记录。
   useEffect(() => {
     const token = cloudSession?.cloudToken
     const apiUrl = cloudSession?.cloudApiUrl
+    if (syncRetry > 0 && initialSyncRef.current !== 'failed') return
     if (!token || !apiUrl) {
+      initialSyncRef.current = 'ready'
       setCloudReady(true)
+      setCloudSyncState('idle')
       return
     }
 
     let cancelled = false
+    initialSyncRef.current = 'pending'
     setCloudReady(false)
-    downloadCloudState({ token, apiUrl }).then(async (remoteState) => {
+    setCloudSyncState('syncing')
+    void downloadCloudStateResult({ token, apiUrl }).then(async (result) => {
       if (cancelled) return
-      if (remoteState) {
-        // downloadCloudState 已无条件清理旧云端快照中的 API Key；本机已有密钥始终优先。
-        const stateWithLocalSecret = retainLocalAiApiKey(remoteState, stateRef.current)
+      if (result.kind === 'state') {
+        initialSyncRef.current = 'ready'
+        uploadedStateRef.current = result.state
+        // downloadCloudStateResult 已清理旧云端快照中的 API Key；本机已有密钥始终优先。
+        const stateWithLocalSecret = retainLocalAiApiKey(result.state, stateRef.current)
+        skipNextUploadRef.current = true
         dispatch({ type: 'HYDRATE', state: stateWithLocalSecret })
+        setCloudSyncState('synced')
+      } else if (result.kind === 'empty') {
+        initialSyncRef.current = 'ready'
+        const current = stateRef.current
+        const ok = await uploadCloudState({ token, apiUrl }, current)
+        if (ok) uploadedStateRef.current = current
+      } else {
+        initialSyncRef.current = 'failed'
+        // 下载失败时绝不上传，避免国内网络抖动覆盖远端快照；等待在线恢复或用户操作后重试。
+        setCloudSyncState('pending', result.message)
       }
-      else await uploadCloudState({ token, apiUrl }, stateRef.current)
-      if (!cancelled) setCloudReady(true)
-    }).catch(() => {
       if (!cancelled) setCloudReady(true)
     })
 
     return () => { cancelled = true }
-  }, [cloudSession?.cloudToken, cloudSession?.cloudApiUrl])
+  }, [cloudSession?.cloudToken, cloudSession?.cloudApiUrl, syncRetry])
 
   const dispatchWrapped = useCallback((action: Action) => {
     if (UNDO_LABELS[action.type]) {
@@ -1053,16 +1075,59 @@ export function StoreProvider({
     return () => window.clearTimeout(t)
   }, [state])
 
-  // Keep cloud and local snapshots aligned. A failed request leaves local learning fully usable and retries on the next change.
+  // 云端快照串行上传:只发送最新状态，失败后在网络恢复、重新获得焦点或退避定时器中重试。
   useEffect(() => {
     const token = cloudSession?.cloudToken
     const apiUrl = cloudSession?.cloudApiUrl
-    if (!cloudReady || !token || !apiUrl) return
+    if (!cloudReady || !token || !apiUrl || initialSyncRef.current !== 'ready') return
+    if (uploadedStateRef.current === state) return
+    if (skipNextUploadRef.current) {
+      skipNextUploadRef.current = false
+      return
+    }
     const timer = window.setTimeout(() => {
+      if (uploadInFlightRef.current) return
+      uploadInFlightRef.current = true
       void uploadCloudState({ token, apiUrl }, state)
+        .then((ok) => {
+          if (ok) {
+            uploadedStateRef.current = state
+            if (retryTimerRef.current != null) {
+              window.clearTimeout(retryTimerRef.current)
+              retryTimerRef.current = null
+            }
+          } else if (retryTimerRef.current == null) {
+            retryTimerRef.current = window.setTimeout(() => {
+              retryTimerRef.current = null
+              setUploadTick((value) => value + 1)
+            }, 5000)
+          }
+        })
+        .finally(() => {
+          uploadInFlightRef.current = false
+          // 请求期间若本地又产生了新状态，立即安排下一次上传，避免旧快照覆盖最新学习记录。
+          if (stateRef.current !== state) setUploadTick((value) => value + 1)
+        })
     }, 1000)
     return () => window.clearTimeout(timer)
-  }, [state, cloudReady, cloudSession?.cloudToken, cloudSession?.cloudApiUrl])
+  }, [state, cloudReady, cloudSession?.cloudToken, cloudSession?.cloudApiUrl, uploadTick])
+
+  // 国内网络恢复后无需用户再改动学习数据即可继续上传。
+  useEffect(() => {
+    const retry = () => {
+      if (cloudSession?.cloudToken && cloudSession.cloudApiUrl) {
+        setSyncRetry((value) => value + 1)
+        setUploadTick((value) => value + 1)
+      }
+    }
+    window.addEventListener('online', retry)
+    window.addEventListener('focus', retry)
+    return () => {
+      window.removeEventListener('online', retry)
+      window.removeEventListener('focus', retry)
+      if (retryTimerRef.current != null) window.clearTimeout(retryTimerRef.current)
+    }
+  }, [cloudSession?.cloudToken, cloudSession?.cloudApiUrl])
 
   // 关键时刻立即落盘
   useEffect(() => {

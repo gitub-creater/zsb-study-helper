@@ -14,7 +14,7 @@ import { masteredKpCount } from '../lib/selectors'
 import {
   clearSession, getSession, getSessionUser, issueCode, checkCode, LEGACY_USER_ID, migrateUserId, setPhone, setPassword, setSession, uid, verifyPassword,
 } from '../lib/auth'
-import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl, updateCloudPassword } from '../services/cloud'
+import { getCloudApiUrl, getCloudStatus, loginCloud, registerCloud, saveCloudApiUrl, subscribeCloudStatus, updateCloudPassword } from '../services/cloud'
 
 function ringForLevel(level: number): string | undefined {
   if (level >= 5) return '#FFD34D'
@@ -47,6 +47,9 @@ export function ProfilePage() {
   const [cloudUrl, setCloudUrl] = useState(() => getCloudApiUrl() ?? '')
   const [cloudPassword, setCloudPassword] = useState('')
   const [cloudBusy, setCloudBusy] = useState(false)
+  const [cloudStatus, setCloudStatus] = useState(getCloudStatus)
+
+  useEffect(() => subscribeCloudStatus(() => setCloudStatus(getCloudStatus())), [])
 
   // 验证码倒计时:统一在 effect 里递减,组件卸载自动清理,避免 interval 泄漏
   useEffect(() => {
@@ -94,11 +97,22 @@ export function ProfilePage() {
   const todayCount = state.attempts.filter((a) => a.date === todayStr()).length
   const activeSession = getSession()
   const cloudConnected = !!activeSession?.cloudToken && !!activeSession.cloudApiUrl
+  const cloudStatusText = !cloudConnected
+    ? '未连接'
+    : cloudStatus.network === 'expired'
+      ? '登录已过期'
+      : cloudStatus.sync === 'pending' || cloudStatus.network === 'offline'
+        ? '等待同步'
+        : cloudStatus.sync === 'syncing'
+          ? '同步中'
+          : cloudStatus.sync === 'synced'
+            ? '已同步'
+            : '已连接'
 
   const connectCloud = async () => {
     if (!sessUser) return
     if (!cloudUrl.trim()) {
-      toast('请输入 Vercel 网页地址', { kind: 'error' })
+      toast('请输入云端 API 地址', { kind: 'error' })
       return
     }
     if (!sessUser.hash) {
@@ -137,6 +151,8 @@ export function ProfilePage() {
       setSession({ userId: syncedUser.id, name: syncedUser.name, cloudToken: result.session.token, cloudApiUrl: result.session.apiUrl })
       toast('已连接云端，正在同步学习数据', { kind: 'success' })
       window.setTimeout(() => window.location.reload(), 500)
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '连接云端失败，请稍后重试', { kind: 'error' })
     } finally {
       setCloudBusy(false)
     }
@@ -317,7 +333,7 @@ export function ProfilePage() {
             </div>
             <div className="stat-line">
               <span>云端同步</span>
-              <b>{cloudConnected ? '已连接' : '未连接'}</b>
+              <b title={cloudStatus.message ?? cloudStatus.apiUrl}>{cloudStatusText}</b>
             </div>
             <div className="row mt8" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button className="btn btn-sm" onClick={() => setPwOpen((v) => !v)}>
@@ -449,7 +465,7 @@ export function ProfilePage() {
             {cloudOpen && (
               <div className="col mt8" style={{ border: '1px solid var(--primary-soft)', borderRadius: 8, padding: 10, background: 'var(--primary-weak)' }}>
                 <p className="fs12 muted">首次同步会把本机学习记录上传；之后手机、网页和电脑端登录同一账号即可使用同一份记录。</p>
-                <Field label="Vercel 网页地址">
+                <Field label="云端 API 地址">
                   <input className="input" value={cloudUrl} onChange={(e) => setCloudUrl(e.target.value)} placeholder="https://your-project.vercel.app" />
                 </Field>
                 <Field label="当前账号密码">

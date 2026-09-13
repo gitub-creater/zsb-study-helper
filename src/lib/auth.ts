@@ -12,6 +12,9 @@ export interface AuthUser {
   vip?: boolean
   /** 绑定手机号(用于找回密码,仅存本机) */
   phone?: string
+  /** 云端暂不可达时保留注册意图；不保存明文密码，需用户下次输入密码后完成同步。 */
+  cloudRegistrationPending?: boolean
+  cloudRegistrationFailedAt?: string
   createdAt: string
 }
 
@@ -101,7 +104,7 @@ export async function createUser(name: string, password?: string, id = uid()): P
   const users = listUsers()
   const trimmed = name.trim()
   if (!trimmed) throw new Error('请填写账号')
-  if (users.some((u) => u.name === trimmed)) throw new Error('该账号已存在')
+  if (users.some((u) => u.name.trim().toLocaleLowerCase('zh-CN') === trimmed.toLocaleLowerCase('zh-CN'))) throw new Error('该账号已存在')
   if (users.some((u) => u.id === id)) throw new Error('账号已存在')
   const user: AuthUser = { id, name: trimmed, guest: !password, createdAt: new Date().toISOString() }
   if (password) {
@@ -112,6 +115,33 @@ export async function createUser(name: string, password?: string, id = uid()): P
   users.push(user)
   saveUsers(users)
   return user
+}
+
+/** 按云端规则查找本机账号，避免大小写或首尾空格造成迁移分叉。 */
+export function findUserByName(name: string): AuthUser | null {
+  const normalized = name.trim().toLocaleLowerCase('zh-CN')
+  return listUsers().find((user) => user.name.trim().toLocaleLowerCase('zh-CN') === normalized) ?? null
+}
+
+/** 删除刚创建但无法绑定云端的本机账号，不触碰其他账号的数据。 */
+export function removeUser(id: string): void {
+  const users = listUsers()
+  if (!users.some((user) => user.id === id)) return
+  localStorage.removeItem(dataKey(id))
+  saveUsers(users.filter((user) => user.id !== id))
+}
+
+/** 网络恢复后，用户再次输入密码即可安全补齐云端注册。 */
+export function setCloudRegistrationPending(id: string, pending: boolean): void {
+  const users = listUsers()
+  const index = users.findIndex((user) => user.id === id)
+  if (index < 0) return
+  users[index] = {
+    ...users[index],
+    cloudRegistrationPending: pending || undefined,
+    cloudRegistrationFailedAt: pending ? new Date().toISOString() : undefined,
+  }
+  saveUsers(users)
 }
 
 /** 为早期“本机数据”账号生成可用于云端的 ID，并保留全部本地学习记录。 */

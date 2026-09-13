@@ -4,8 +4,8 @@ import { Mascot } from '../components/Mascot'
 import { Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import {
-  checkCode, createUser, ensureLegacyMigrated, findByPhone, issueCode, listUsers,
-  migrateUserId, setSession, setPassword, uid, verifyPassword,
+  checkCode, createUser, ensureLegacyMigrated, findByPhone, findUserByName, issueCode, listUsers,
+  migrateUserId, removeUser, setCloudRegistrationPending, setSession, setPassword, uid, verifyPassword,
 } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
 import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl } from '../services/cloud'
@@ -49,14 +49,13 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
       const cloud = await loginCloud(normalized, pw)
       if (cloud.kind === 'ok') {
-        let local = users.find((u) => u.id === cloud.user.id)
-        const sameName = users.find((u) => u.name === cloud.user.name)
-        if (!local && sameName) {
-          if (!(await verifyPassword(sameName.id, pw))) {
+        let local = users.find((u) => u.id === cloud.user.id) ?? findUserByName(cloud.user.name)
+        if (local && local.id !== cloud.user.id) {
+          if (!(await verifyPassword(local.id, pw))) {
             toast('本机已有同名账号，但密码不一致。请确认使用的是同一账号密码', { kind: 'error' })
             return
           }
-          local = migrateUserId(sameName.id, cloud.user.id)
+          local = migrateUserId(local.id, cloud.user.id)
           refresh()
           toast('已关联本机账号和云端账号，学习记录正在同步', { kind: 'success' })
         }
@@ -64,6 +63,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
           local = await createUser(cloud.user.name, pw, cloud.user.id)
           refresh()
         }
+        setCloudRegistrationPending(local.id, false)
         enter(local, cloud.session)
         return
       }
@@ -76,31 +76,39 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
         return
       }
 
-      const local = users.find((u) => u.name === normalized)
-      if (!local) {
-        toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端服务暂时不可用；首次登录请稍后重试，已有本机账号可离线登录', { kind: 'error' })
+      let loginLocal = findUserByName(normalized)
+      if (!loginLocal) {
+        toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端服务暂时不可用；请稍后重试，已有本机账号可离线登录', { kind: 'error' })
         return
       }
-      if (!(await verifyPassword(local.id, pw))) {
+      if (!(await verifyPassword(loginLocal.id, pw))) {
         toast('密码不正确', { kind: 'error' })
         return
       }
 
-      // The account was created before cloud sync. Its verified local password authorizes a one-time migration.
-      if (cloud.kind === 'not_found') {
-        const migrated = await registerCloud(local.id, local.name, pw)
+      // 已验证本机密码后，允许把旧账号或待同步账号补注册到云端；不在本机保存明文密码。
+      if (cloud.kind === 'not_found' || loginLocal.cloudRegistrationPending) {
+        // 旧的 local 账号没有合法云端 ID，先迁移并持久化新 ID，保证响应丢失后的重试仍是同一注册请求。
+        loginLocal = loginLocal.id === 'local' ? migrateUserId(loginLocal.id, uid()) : loginLocal
+        const migrated = await registerCloud(loginLocal.id, loginLocal.name, pw)
         if (migrated.kind === 'ok') {
+          setCloudRegistrationPending(loginLocal.id, false)
+          refresh()
           toast('本机账号已同步到云端', { kind: 'success' })
-          enter(local, migrated.session)
+          enter(loginLocal, migrated.session)
           return
         }
         if (migrated.kind === 'error') {
           toast(migrated.message, { kind: 'error' })
           return
         }
+        setCloudRegistrationPending(loginLocal.id, true)
+        refresh()
       }
-      enter(local)
-      if (cloud.kind === 'unavailable') toast('当前使用本机登录，云端服务恢复后会自动继续同步学习数据', { kind: 'info' })
+      enter(loginLocal)
+      if (cloud.kind === 'unavailable') toast('当前使用本机登录，云端注册待网络恢复后重试；好友暂时搜不到此账号', { kind: 'info', duration: 10000 })
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '登录失败，请稍后重试', { kind: 'error' })
     } finally {
       setBusy(false)
     }
@@ -118,21 +126,30 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     setBusy(true)
     try {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
+      if (findUserByName(account)) {
+        toast('这台设备已存在同名账号，请直接登录', { kind: 'error' })
+        return
+      }
       const id = uid()
-      const cloud = await registerCloud(id, account, regPw)
+      // 先建立本机账号，网络中断时保留同一个稳定 ID 供后续安全补注册。
+      const u = await createUser(account, regPw, id)
+      const cloud = await registerCloud(id, u.name, regPw)
       if (cloud.kind === 'error') {
+        // 账号已占用等确定性错误不是网络待办；移除本次本机占位，避免列表留下错误账号。
+        removeUser(u.id)
+        refresh()
         toast(cloud.message, { kind: 'error' })
         return
       }
-      const u = await createUser(account, regPw, id)
       refresh()
       if (cloud.kind === 'ok') {
-        toast(`账号「${u.name}」创建成功，已开启云端同步`, { kind: 'success', duration: 8000 })
+        setCloudRegistrationPending(u.id, false)
+        toast(`账号「${u.name}」已完成云端注册`, { kind: 'success', duration: 8000 })
         enter(u, cloud.session)
       } else {
-        // 云端注册失败(网络/服务不可用):账号仅在本设备。登录页已有“重新登录自动迁移上云”逻辑,
-        // 这里必须讲清楚,否则用户会以为好友能直接搜到自己。
-        toast(`账号「${u.name}」已创建,但当前无法连接云端,暂时只保存在这台设备上。恢复网络后,请退出并用同一账号密码重新登录一次,即可自动同步到云端(好友才能搜到你)`, { kind: 'info', duration: 12000 })
+        setCloudRegistrationPending(u.id, true)
+        refresh()
+        toast(`账号「${u.name}」已保存在本机，但云端注册尚未完成，好友暂时搜不到。网络恢复后，请在登录页输入同一账号和密码重试。`, { kind: 'info', duration: 12000 })
         enter(u)
       }
     } catch (e) {
@@ -260,6 +277,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
                 <Icon name="user" size={16} />
                 <b className="fs13 grow">{u.name}</b>
                 {u.guest && <span className="chip">无密码</span>}
+                {u.cloudRegistrationPending && <span className="chip chip-yellow">待同步</span>}
                 {u.guest ? (
                   <button className="btn btn-sm" onClick={() => enter(u)}>进入</button>
                 ) : (

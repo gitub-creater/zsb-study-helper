@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   downloadCloudState,
+  downloadCloudStateResult,
+  getCloudApiUrls,
   removeAiApiKeyFromCloudState,
   retainLocalAiApiKey,
   uploadCloudState,
@@ -22,6 +24,37 @@ function stateWithApiKey(apiKey: string): State {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('云端网络适配', () => {
+  it('国内网络下会保留首选地址并提供第二生产入口', () => {
+    const urls = getCloudApiUrls('https://primary.example.test')
+    expect(urls[0]).toBe('https://primary.example.test')
+    expect(urls).toContain('https://shandong-zsb-study-helper.vercel.app')
+    expect(urls).toContain('https://zsb-study-helper.vercel.app')
+  })
+
+  it('下载失败与云端明确为空必须区分', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('dns')))
+    await expect(downloadCloudStateResult({ token: 'token', apiUrl: 'https://sync.example.test' })).resolves.toMatchObject({ kind: 'error' })
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ state: null }) }))
+    await expect(downloadCloudStateResult({ token: 'token', apiUrl: 'https://sync.example.test' })).resolves.toMatchObject({ kind: 'empty' })
+  })
+
+  it('第一个入口异常时会切换到第二个入口，并记住成功地址', async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('dns'))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ state: null }) })
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(downloadCloudStateResult({ token: 'token', apiUrl: 'https://primary.example.test' })).resolves.toMatchObject({ kind: 'empty' })
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('https://primary.example.test/api/state')
+  })
+
+  it('HTML 或缺字段响应不会被当成成功', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
+    await expect(downloadCloudStateResult({ token: 'token', apiUrl: 'https://sync.example.test' })).resolves.toMatchObject({ kind: 'error' })
+  })
 })
 
 describe('云同步 AI 密钥隔离', () => {
