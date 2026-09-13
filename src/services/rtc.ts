@@ -837,10 +837,134 @@ export class SupabaseRealtimeDriver implements RtcDriver {
   }
 }
 
-/** 驱动工厂:配置了 Supabase 用云端驱动(跨设备),否则回退本机 BroadcastChannel;globalThis 可覆盖 */
+// ---------- 自建 WebSocket 信令驱动(钉钉级实时通道) ----------
+//
+// 服务端:rtc-server/index.mjs(纯转发,房间内存表)。连接 URL 由 VITE_RTC_WS_URL 配置。
+// 消息格式与 SupabaseRealtimeDriver 的 RtcWireMessage 完全一致(服务端只包一层 relay 信封),
+// 因此 host 权威、增量擦除、聊天等上层逻辑零改动。
+// 可靠性:首次连接失败自动降级到 fallback(Supabase/BroadcastChannel);
+//         连上后断线则指数退避自动重连(1s 起,封顶 15s),重连后主机快照自动收敛。
+
+export class WebSocketRealtimeDriver implements RtcDriver {
+  private handlers: RtcHandlers | null = null
+  private ws: WebSocket | null = null
+  private meetingId = ''
+  private closed = false
+  private everOpened = false
+  private retry = 0
+  private reconnectTimer: number | undefined
+  readonly clientId = uid('cli')
+
+  constructor(
+    private url: string,
+    private fallback: RtcDriver | null = null,
+  ) {}
+
+  connect(meetingId: string, handlers: RtcHandlers): void {
+    this.handlers = handlers
+    this.meetingId = meetingId
+    this.open()
+  }
+
+  private open(): void {
+    if (this.closed) return
+    try {
+      const url = `${this.url}?room=${encodeURIComponent(this.meetingId)}`
+      const ws = new WebSocket(url)
+      this.ws = ws
+      ws.onopen = () => {
+        this.everOpened = true
+        this.retry = 0
+        ws.send(JSON.stringify({ t: 'hello', room: this.meetingId, clientId: this.clientId }))
+      }
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(String(ev.data)) as { t?: string; payload?: RtcWireMessage }
+          if (msg.t === 'relay' && msg.payload) this.dispatch(msg.payload)
+        } catch {
+          /* 非 JSON 消息忽略 */
+        }
+      }
+      ws.onclose = () => {
+        this.ws = null
+        if (this.closed) return
+        // 从未成功连上:切换到降级驱动,保证会议可用
+        if (!this.everOpened && this.fallback) {
+          this.fallback.connect(this.meetingId, this.handlers!)
+          return
+        }
+        // 连上后断线:指数退避重连,主机快照会自动收敛断线期间的状态
+        const delay = Math.min(15000, 1000 * 2 ** this.retry++)
+        this.reconnectTimer = window.setTimeout(() => this.open(), delay)
+      }
+      ws.onerror = () => {
+        try {
+          ws.close()
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch {
+      if (this.fallback && this.handlers) this.fallback.connect(this.meetingId, this.handlers)
+    }
+  }
+
+  /** 单条线上消息 → 本地回调(独立出来便于单测) */
+  dispatch(wire: RtcWireMessage): void {
+    const h = this.handlers
+    if (!h) return
+    if (wire.t === 'room' && wire.state) h.onRoomState(wire.state)
+    else if (wire.t === 'chat' && wire.msg) h.onChat(wire.msg)
+    else if (wire.t === 'board' && wire.pageId) h.onBoardDelta(wire.pageId, wire.items ?? [], !!wire.replace, wire.eraseUpdates)
+    else if (wire.t === 'intent' && wire.action) forwardIntent(wire.action, h)
+  }
+
+  send(action: RtcAction): void {
+    const ws = this.ws
+    if (!ws || ws.readyState !== 1) return // 重连中断发出的消息由主机快照收敛,不排队
+    if (action.kind === '__room') {
+      ws.send(JSON.stringify({ t: 'relay', payload: { t: 'room', client_id: this.clientId, state: action.state as MeetingRoomState } }))
+    } else if (action.kind === 'chat') {
+      ws.send(JSON.stringify({ t: 'relay', payload: { t: 'chat', client_id: this.clientId, msg: action.msg as MeetingChatMsg } }))
+    } else if (action.kind === 'board') {
+      const a = action as unknown as { pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
+      ws.send(JSON.stringify({ t: 'relay', payload: { t: 'board', client_id: this.clientId, pageId: a.pageId, items: a.items, replace: a.replace, eraseUpdates: a.eraseUpdates } }))
+    } else {
+      ws.send(JSON.stringify({ t: 'relay', payload: { t: 'intent', client_id: this.clientId, action } }))
+    }
+  }
+
+  disconnect(): void {
+    this.closed = true
+    if (this.reconnectTimer !== undefined) {
+      window.clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = undefined
+    }
+    try {
+      this.ws?.close()
+    } catch {
+      /* ignore */
+    }
+    this.ws = null
+    this.fallback?.disconnect()
+    this.handlers = null
+  }
+
+  /** 连接状态(open 为正常;F12/测试验证用) */
+  get channelState(): string {
+    return this.ws?.readyState === 1 ? 'open' : 'closed'
+  }
+}
+
+/** 驱动工厂:配置了自建信令(WebSocket)优先 → Supabase 云端 → 本机 BroadcastChannel;globalThis 可覆盖 */
 export function createDefaultDriver(): RtcDriver {
   const injected = (globalThis as Record<string, unknown>).rtcDriver as RtcDriver | (() => RtcDriver) | undefined
   if (injected) return typeof injected === 'function' ? (injected as () => RtcDriver)() : injected
+  const wsUrl = (import.meta.env.VITE_RTC_WS_URL as string | undefined)?.replace(/\/$/, '')
+  if (wsUrl) {
+    const fallback = getSupabase() ? new SupabaseRealtimeDriver() : new BroadcastChannelDriver()
+    return new WebSocketRealtimeDriver(wsUrl, fallback)
+  }
   if (getSupabase()) return new SupabaseRealtimeDriver()
   return new BroadcastChannelDriver()
 }

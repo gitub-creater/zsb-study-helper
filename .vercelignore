@@ -6,6 +6,7 @@ desktop-build
 release-codex
 release-codex-verify
 android
+rtc-server
 *.jks
 .git
 .cache

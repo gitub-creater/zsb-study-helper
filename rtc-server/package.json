@@ -1,0 +1,17 @@
+{
+  "name": "zsb-rtc-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "专升本学习助手会议 WebSocket 信令服务器(纯转发,房间内存表)",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
