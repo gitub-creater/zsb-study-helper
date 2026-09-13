@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3E9BFF" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="专升本助手" />
+    <meta name="description" content="山东专升本学习助手 - 知识校园备考冒险" />
+    <title>专升本学习助手 · 知识校园</title>
+    <script type="module" crossorigin src="./assets/index-CbdmGPw4.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CrONZMGw.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // localhost 下的开发模式不注册 SW(无哈希文件名会被 cache-first 永久扣住旧代码)
+      if ('serviceWorker' in navigator && !/(localhost|127\.0\.0\.1)(:|$)/.test(location.hostname)) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('./sw.js').catch(function () {});
+        });
+      }
+    </script>
+  </body>
+</html>
