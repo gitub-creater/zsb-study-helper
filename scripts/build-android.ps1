@@ -8,7 +8,8 @@ $androidRoot = Join-Path $projectRoot 'android'
 $studioJbr = 'C:\Program Files\Android\Android Studio\jbr'
 $defaultSdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
 
-if (-not $env:JAVA_HOME -and (Test-Path (Join-Path $studioJbr 'bin\java.exe'))) {
+# Capacitor 8 / Android Gradle Plugin 8.13 require Java 21; prefer Android Studio's bundled JBR.
+if (Test-Path (Join-Path $studioJbr 'bin\java.exe')) {
   $env:JAVA_HOME = $studioJbr
 }
 

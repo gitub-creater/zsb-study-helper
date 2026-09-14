@@ -79,6 +79,60 @@ describe('国内直连通道', () => {
     expect(calls.some((url) => url.endsWith('/api/auth/register'))).toBe(true)
   })
 
+  it('登录直连优先成功时不请求 Vercel', async () => {
+    const { calls } = stubFetch({ zsb_login: { user: { id: 'u_login1', name: '快速登录' }, token: 'tok_login1' } })
+    const { loginCloud } = await import('../src/services/cloud')
+    const { DIRECT_API_URL } = await import('../src/services/cloudDirect')
+
+    const result = await loginCloud('快速登录', 'pw1234')
+    expect(result.kind).toBe('ok')
+    expect(result.kind === 'ok' && result.session.apiUrl).toBe(DIRECT_API_URL)
+    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_login`])
+  })
+
+  it('旧 scrypt 账号直连返回 legacy_account 后回退 Vercel', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {
+      const href = typeof url === 'string' ? url : url.toString()
+      calls.push(href)
+      if (href === `${SUPABASE_URL}/rest/v1/rpc/zsb_login`) {
+        return new Response(JSON.stringify({ code: 'legacy_account', error: '旧账号' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ user: { id: 'u_legacy1', name: '旧账号' }, token: 'tok_legacy1' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    const { loginCloud } = await import('../src/services/cloud')
+
+    const result = await loginCloud('旧账号', 'pw1234')
+    expect(result.kind).toBe('ok')
+    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_login`)
+    expect(calls.some((url) => url.endsWith('/api/auth/login'))).toBe(true)
+  })
+
+  it('登录直连失败后回退 Vercel', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {
+      const href = typeof url === 'string' ? url : url.toString()
+      calls.push(href)
+      if (href.startsWith(`${SUPABASE_URL}/rest/v1/rpc/`)) throw new TypeError('直连失败')
+      return new Response(JSON.stringify({ user: { id: 'u_login2', name: '回退登录' }, token: 'tok_login2' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    const { loginCloud } = await import('../src/services/cloud')
+
+    const result = await loginCloud('回退登录', 'pw1234')
+    expect(result.kind).toBe('ok')
+    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_login`)
+    expect(calls.some((url) => url.endsWith('/api/auth/login'))).toBe(true)
+  })
+
   it('主通道被封时注册自动改走直连,并记住直连入口', async () => {
     stubFetch({ zsb_register: { user: { id: 'u_a1', name: '小明' }, token: 'tok_a1' }, zsb_adopt_password: { ok: true } })
     const { registerCloud } = await import('../src/services/cloud')

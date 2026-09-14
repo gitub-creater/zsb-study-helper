@@ -359,6 +359,20 @@ function directResultToLogin(result: Awaited<ReturnType<typeof directLogin>>): C
 }
 
 export async function loginCloud(name: string, password: string): Promise<CloudLoginResult> {
+  // Supabase 直连优先:国内网络不再先等待被拦截的 Vercel 域名。
+  // 旧版 scrypt 账号会返回 legacy_account,再交给 Vercel 校验并异步升级。
+  if (cloudDirectConfigured) {
+    try {
+      const mapped = directResultToLogin(await directLogin(name, password))
+      if (mapped) {
+        setCloudNetworkState('online', DIRECT_API_URL)
+        return mapped
+      }
+    } catch {
+      // 直连 RPC 不可用时再走主通道,兼容未执行 SQL 或旧环境。
+    }
+  }
+
   try {
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/login', {
       method: 'POST',
@@ -373,18 +387,7 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
     if (error.code === 'not_found') return { kind: 'not_found' }
     if (error.code === 'bad_password') return { kind: 'bad_password' }
-    if (isUnavailable(error) && cloudDirectConfigured) {
-      // 主通道在国内被封锁时改走 supabase.co 直连,账号数据仍是同一张表。
-      try {
-        const mapped = directResultToLogin(await directLogin(name, password))
-        if (mapped) {
-          setCloudNetworkState('online', DIRECT_API_URL)
-          return mapped
-        }
-      } catch {
-        // 直连也失败则按原来的不可达处理
-      }
-    }
+    // 直连已经在前面尝试过,这里不再重复等待同一个 Supabase RPC。
     if (isUnavailable(error)) return { kind: 'unavailable' }
     return { kind: 'error', message: error.message }
   }
