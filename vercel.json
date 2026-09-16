@@ -1,5 +1,6 @@
 {
   "framework": "vite",
+  "regions": ["hkg1"],
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "installCommand": "npm install --include=dev --no-audit --no-fund",

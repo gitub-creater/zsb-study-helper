@@ -79,6 +79,15 @@ describe('国内直连通道', () => {
     expect(calls.some((url) => url.endsWith('/api/auth/register'))).toBe(true)
   })
 
+  it('后台补注册也默认直连优先，避免在大陆网络先等待 Vercel', async () => {
+    const { calls } = stubFetch({ zsb_register: { user: { id: 'u_queue1', name: '后台用户' }, token: 'tok_queue1' } })
+    const { registerCloud } = await import('../src/services/cloud')
+
+    const result = await registerCloud('u_queue1', '后台用户', 'pw1234')
+    expect(result.kind).toBe('ok')
+    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_register`])
+  })
+
   it('登录直连优先成功时不请求 Vercel', async () => {
     const { calls } = stubFetch({ zsb_login: { user: { id: 'u_login1', name: '快速登录' }, token: 'tok_login1' } })
     const { loginCloud } = await import('../src/services/cloud')

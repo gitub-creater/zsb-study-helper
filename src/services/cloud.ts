@@ -97,6 +97,17 @@ const CLOUD_TOTAL_TIMEOUT_MS = 45000
 const CLOUD_AUTH_TOTAL_TIMEOUT_MS = 75000
 const RETRY_DELAYS_MS = [400, 1200]
 
+/**
+ * Supabase RPC 已经尝试过时，再把 Vercel 作为兼容旧账号的短回退。
+ * vercel.app 在部分大陆网络会被直接拦截；沿用完整的 75 秒认证预算会让
+ * 登录页面看起来永久卡住。实际可用的 Vercel 冷启动通常会在这个预算内返回。
+ */
+const DIRECT_FALLBACK_AUTH_BUDGET: RequestBudget = {
+  requestTimeoutMs: 8000,
+  totalTimeoutMs: 15000,
+  retryDelaysMs: [400],
+}
+
 function isGithubPagesHost(): boolean {
   return typeof window !== 'undefined'
     && (window.location.hostname === GITHUB_PAGES_HOST || window.location.hostname.endsWith(`.${GITHUB_PAGES_HOST}`))
@@ -225,6 +236,12 @@ class CloudRequestError extends Error {
   }
 }
 
+interface RequestBudget {
+  requestTimeoutMs: number
+  totalTimeoutMs: number
+  retryDelaysMs: readonly number[]
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -232,15 +249,17 @@ async function request<T>(
   validate?: (body: T) => boolean,
   /** 注册/登录用更宽的预算:超时会让云端写成功而本机认为失败。 */
   slow = false,
+  budget?: RequestBudget,
 ): Promise<{ data: T; apiUrl: string }> {
   const urls = getCloudApiUrls(preferredApiUrl)
   if (urls.length === 0) throw new CloudRequestError(0, 'not_configured', '未配置云端地址')
 
   let lastError: CloudRequestError | null = null
-  const perRequestTimeout = slow ? CLOUD_AUTH_REQUEST_TIMEOUT_MS : CLOUD_REQUEST_TIMEOUT_MS
-  const deadline = Date.now() + (slow ? CLOUD_AUTH_TOTAL_TIMEOUT_MS : CLOUD_TOTAL_TIMEOUT_MS)
+  const perRequestTimeout = budget?.requestTimeoutMs ?? (slow ? CLOUD_AUTH_REQUEST_TIMEOUT_MS : CLOUD_REQUEST_TIMEOUT_MS)
+  const deadline = Date.now() + (budget?.totalTimeoutMs ?? (slow ? CLOUD_AUTH_TOTAL_TIMEOUT_MS : CLOUD_TOTAL_TIMEOUT_MS))
+  const retryDelays = budget?.retryDelaysMs ?? RETRY_DELAYS_MS
   for (const apiUrl of urls) {
-    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
       if (Date.now() >= deadline) break
 
       try {
@@ -275,8 +294,8 @@ async function request<T>(
           setCloudNetworkState(cloudError.status === 401 ? 'expired' : 'online', cloudError.apiUrl, cloudError.message)
           throw cloudError
         }
-        if (attempt >= RETRY_DELAYS_MS.length) break
-        await wait(RETRY_DELAYS_MS[attempt])
+        if (attempt >= retryDelays.length) break
+        await wait(retryDelays[attempt])
       }
     }
   }
@@ -361,7 +380,9 @@ function directResultToLogin(result: Awaited<ReturnType<typeof directLogin>>): C
 export async function loginCloud(name: string, password: string): Promise<CloudLoginResult> {
   // Supabase 直连优先:国内网络不再先等待被拦截的 Vercel 域名。
   // 旧版 scrypt 账号会返回 legacy_account,再交给 Vercel 校验并异步升级。
+  let directAttempted = false
   if (cloudDirectConfigured) {
+    directAttempted = true
     try {
       const mapped = directResultToLogin(await directLogin(name, password))
       if (mapped) {
@@ -377,7 +398,7 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
-    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true)
+    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true, directAttempted ? DIRECT_FALLBACK_AUTH_BUDGET : undefined)
     const ok = toLoginResult(data, apiUrl)
     // 主通道可达时顺手把旧账号的密码摘要补写成数据库可校验的格式,
     // 之后在没有代理的国内网络也能直接登录。失败不影响本次登录。
@@ -393,8 +414,10 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
   }
 }
 
-export async function registerCloud(id: string, name: string, password: string, preferDirect = false): Promise<CloudLoginResult> {
+export async function registerCloud(id: string, name: string, password: string, preferDirect = true): Promise<CloudLoginResult> {
+  let directAttempted = false
   if (preferDirect && cloudDirectConfigured) {
+    directAttempted = true
     try {
       const mapped = directResultToLogin(await directRegister(id, name, password))
       if (mapped) {
@@ -410,7 +433,7 @@ export async function registerCloud(id: string, name: string, password: string, 
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ id, name, password }),
-    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true)
+    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true, directAttempted ? DIRECT_FALLBACK_AUTH_BUDGET : undefined)
     const ok = toLoginResult(data, apiUrl)
     if (ok.kind === 'ok' && cloudDirectConfigured) void directAdoptPassword(ok.session.token, password)
     return ok
