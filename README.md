@@ -15,14 +15,14 @@ npm run preview    # 预览构建产物
 
 同一套响应式代码覆盖电脑端(左侧导航)、手机端(底部导航 + 更多菜单)与平板。默认可离线使用本机存储；配置 Supabase + Vercel 后，账号和学习记录会在网页、手机、电脑端同步，断网时仍可继续学习。部署步骤见 [docs/CLOUD_SYNC.md](docs/CLOUD_SYNC.md)。
 
-  ## 访问入口
+## 访问入口
 
-  - **国内首选（GitHub Pages）**：<https://gitub-creater.github.io/zsb-study-helper/>
-  - **Vercel 备用**：<https://shandong-zsb-study-helper.vercel.app/>（部分中国大陆网络可能拦截 `vercel.app`）
+- **国内首选（GitHub Pages）**：<https://gitub-creater.github.io/zsb-study-helper/>
+- **Vercel 备用**：<https://shandong-zsb-study-helper.vercel.app/>（部分中国大陆网络可能拦截 `vercel.app`）
 
-  `vercel.app` 的 DNS 和跨境链路不受应用代码控制；如需让自有域名在大陆稳定访问，请绑定已备案域名并配置国内 CDN/云服务。GitHub Pages 页面已启用 Supabase 直连登录，注册、登录和学习数据同步不依赖 Vercel 页面入口。
+`vercel.app` 的 DNS 和跨境链路不受应用代码控制；如需让自有域名在大陆稳定访问，请绑定已备案域名并配置国内 CDN/云服务。GitHub Pages 页面已启用 Supabase 直连登录，注册、登录和学习数据同步不依赖 Vercel 页面入口。
 
-  ## 安装包发布
+## 安装包发布
 
 - Android 和 Windows 安装入口会自动指向 GitHub Releases 最新版本；安装详情和首次签名配置见 [docs/INSTALLERS.md](docs/INSTALLERS.md)。
 - Android 新版本使用同一签名密钥和更高版本号安装时，会覆盖旧版本；Windows 新安装包会自动替换旧版，并在启动时检查更新。
