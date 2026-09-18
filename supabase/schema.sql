@@ -4,11 +4,15 @@ create table if not exists public.app_users (
   id text primary key check (id ~ '^u_[A-Za-z0-9]+$'),
   name text not null check (char_length(name) between 2 and 12),
   name_normalized text not null unique,
+  email text,
   password_salt text not null,
   password_hash text not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.app_users add column if not exists email text;
+create unique index if not exists app_users_email_idx on public.app_users(lower(email)) where email is not null;
 
 create table if not exists public.app_sessions (
   token_hash text primary key,

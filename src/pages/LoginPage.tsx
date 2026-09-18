@@ -5,7 +5,7 @@ import { Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import {
   checkCode, createUser, ensureLegacyMigrated, findByPhone, findUserByName, issueCode, listUsers,
-  migrateUserId, removeUser, setCloudRegistrationPending, setSession, setPassword, uid, verifyPassword,
+  findUserByEmail, migrateUserId, removeUser, setCloudRegistrationPending, setSession, setPassword, uid, verifyPassword,
 } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
 import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl } from '../services/cloud'
@@ -19,6 +19,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
   const [pw, setPw] = useState('')
   const [cloudApiUrl, setCloudApiUrl] = useState(() => getCloudApiUrl() ?? '')
   const [account, setAccount] = useState('')
+  const [email, setEmail] = useState('')
   const [regPw, setRegPw] = useState('')
   const [busy, setBusy] = useState(false)
   // 忘记密码
@@ -50,7 +51,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
       const cloud = await loginCloud(normalized, pw)
       if (cloud.kind === 'ok') {
-        let local = users.find((u) => u.id === cloud.user.id) ?? findUserByName(cloud.user.name)
+        let local = users.find((u) => u.id === cloud.user.id) ?? findUserByName(cloud.user.name) ?? (cloud.user.email ? findUserByEmail(cloud.user.email) : null)
         if (local && local.id !== cloud.user.id) {
           if (!(await verifyPassword(local.id, pw))) {
             toast('本机已有同名账号，但密码不一致。请确认使用的是同一账号密码', { kind: 'error' })
@@ -61,7 +62,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
           toast('已关联本机账号和云端账号，学习记录正在同步', { kind: 'success' })
         }
         if (!local) {
-          local = await createUser(cloud.user.name, pw, cloud.user.id)
+          local = await createUser(cloud.user.name, pw, cloud.user.id, cloud.user.email)
           refresh()
         }
         setCloudRegistrationPending(local.id, false)
@@ -77,7 +78,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
         return
       }
 
-      let loginLocal = findUserByName(normalized)
+      let loginLocal = findUserByName(normalized) ?? findUserByEmail(normalized)
       if (!loginLocal) {
         toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端服务暂时不可用；请稍后重试，已有本机账号可离线登录', { kind: 'error' })
         return
@@ -135,8 +136,8 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       }
       const id = uid()
       // 先建立本机账号，网络中断时保留同一个稳定 ID 供后续安全补注册。
-      const u = await createUser(account, regPw, id)
-      const cloud = await registerCloud(id, u.name, regPw, true)
+      const u = await createUser(account, regPw, id, email)
+      const cloud = await registerCloud(id, u.name, regPw, true, email)
       if (cloud.kind === 'error') {
         // 账号已占用等确定性错误不是网络待办；移除本次本机占位，避免列表留下错误账号。
         removeUser(u.id)
@@ -261,8 +262,8 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
                 <input className="input" value={cloudApiUrl} onChange={(e) => setCloudApiUrl(e.target.value)} placeholder="https://your-project.vercel.app" />
               </Field>
             ) : null}
-            <Field label="账号">
-              <input className="input" value={loginName} maxLength={12} onChange={(e) => setLoginName(e.target.value)} placeholder="输入已注册的账号" />
+            <Field label="账号 / 邮箱">
+              <input className="input" value={loginName} maxLength={128} onChange={(e) => setLoginName(e.target.value)} placeholder="输入账号或邮箱" />
             </Field>
             <Field label="密码">
               <input
@@ -319,6 +320,9 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
           <div className="col">
             <Field label="账号" hint="用于登录；注册后可在首次引导设置学习昵称">
               <input className="input" value={account} maxLength={12} onChange={(e) => setAccount(e.target.value)} placeholder="设置登录账号(2-12 个字符)" />
+            </Field>
+            <Field label="邮箱（可选）" hint="绑定后可直接用邮箱登录">
+              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
             </Field>
             <Field label="密码" hint="至少 4 位；本机和云端都只保存加盐哈希，不保存明文">
               <input className="input" type="password" value={regPw} onChange={(e) => setRegPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && register()} placeholder="至少 4 位" />

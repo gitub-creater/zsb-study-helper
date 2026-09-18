@@ -36,7 +36,7 @@ end $$;
 -- 大陆通道自己的密码方案:pgcrypto crypt/bf。与 Vercel 的 scrypt 不同,
 -- 因此 password_salt 用 'bf' 标记该行由哪条通道写入,校验时按标记分派。
 create or replace function public.zsb_register(
-  p_id text, p_name text, p_password text
+  p_id text, p_name text, p_password text, p_email text default null
 ) returns json
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 declare
@@ -53,8 +53,11 @@ begin
   if p_password is null or char_length(p_password) < 4 or char_length(p_password) > 128 then
     return json_build_object('code','invalid_input','error','账号或密码格式不正确');
   end if;
+  if p_email is not null and p_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$' then
+    return json_build_object('code','invalid_input','error','邮箱格式不正确');
+  end if;
 
-  select * into v_row from public.app_users where name_normalized = v_norm;
+  select * into v_row from public.app_users where name_normalized = v_norm or lower(email) = lower(nullif(btrim(p_email),''));
   if found then
     -- 网络在响应返回前中断时客户端会重试:同 ID 同密码才允许复用,否则视为占用。
     if v_row.id <> p_id then
@@ -67,8 +70,8 @@ begin
       return json_build_object('code','name_taken','error','该账号已存在');
     end if;
   else
-    insert into public.app_users(id, name, name_normalized, password_salt, password_hash)
-    values (p_id, btrim(p_name), v_norm, 'bf', crypt(p_password, gen_salt('bf', 8)))
+    insert into public.app_users(id, name, name_normalized, email, password_salt, password_hash)
+    values (p_id, btrim(p_name), v_norm, nullif(btrim(p_email),''), 'bf', crypt(p_password, gen_salt('bf', 8)))
     returning * into v_row;
   end if;
 
@@ -77,7 +80,7 @@ begin
   insert into public.app_sessions(token_hash, user_id, expires_at)
   values (public.zsb_token_hash(v_token), v_row.id, now() + interval '30 days');
 
-  return json_build_object('user', json_build_object('id', v_row.id, 'name', v_row.name), 'token', v_token);
+  return json_build_object('user', json_build_object('id', v_row.id, 'name', v_row.name, 'email', v_row.email), 'token', v_token);
 end $$;
 
 create or replace function public.zsb_login(p_name text, p_password text)
@@ -88,7 +91,7 @@ declare
   v_token text;
 begin
   select * into v_row from public.app_users
-   where name_normalized = public.zsb_normalize_name(p_name);
+   where name_normalized = public.zsb_normalize_name(p_name) or lower(email) = lower(btrim(p_name));
   if not found then
     return json_build_object('code','not_found','error','账号不存在');
   end if;
@@ -104,7 +107,7 @@ begin
   v_token := replace(replace(replace(v_token,'+','-'),'/','_'),'=','');
   insert into public.app_sessions(token_hash, user_id, expires_at)
   values (public.zsb_token_hash(v_token), v_row.id, now() + interval '30 days');
-  return json_build_object('user', json_build_object('id', v_row.id, 'name', v_row.name), 'token', v_token);
+  return json_build_object('user', json_build_object('id', v_row.id, 'name', v_row.name, 'email', v_row.email), 'token', v_token);
 end $$;
 
 -- 会话校验:过期即视为无效,顺带清理过期行。
@@ -205,6 +208,7 @@ end $$;
 
 -- 只暴露这几个函数;app_users/app_sessions/user_states 的 RLS 仍然拦住 anon 直接读写。
 revoke all on function public.zsb_register(text,text,text) from public, anon, authenticated;
+revoke all on function public.zsb_register(text,text,text,text) from public, anon, authenticated;
 revoke all on function public.zsb_login(text,text) from public, anon, authenticated;
 revoke all on function public.zsb_find_users(text,text) from public, anon, authenticated;
 revoke all on function public.zsb_get_state(text) from public, anon, authenticated;
@@ -213,6 +217,7 @@ revoke all on function public.zsb_set_bf_password(text,text) from public, anon, 
 revoke all on function public.zsb_session_user(text) from public, anon, authenticated;
 
 grant execute on function public.zsb_register(text,text,text) to anon, authenticated;
+grant execute on function public.zsb_register(text,text,text,text) to anon, authenticated;
 grant execute on function public.zsb_login(text,text) to anon, authenticated;
 grant execute on function public.zsb_find_users(text,text) to anon, authenticated;
 grant execute on function public.zsb_get_state(text) to anon, authenticated;

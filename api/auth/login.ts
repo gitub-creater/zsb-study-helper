@@ -13,8 +13,8 @@ export default async function handler(req: import('../../server/cloud-api.js').A
 
     const { data: user, error } = await db()
       .from('app_users')
-      .select('id, name, name_normalized, password_salt, password_hash')
-      .eq('name_normalized', normalizedName(name))
+      .select('id, name, email, name_normalized, password_salt, password_hash')
+      .or(`name_normalized.eq.${normalizedName(name)},email.eq.${name.trim().toLowerCase()}`)
       .maybeSingle()
     if (error) throw error
     if (!user) return sendError(res, 404, 'not_found', '账号不存在')

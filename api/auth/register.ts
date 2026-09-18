@@ -9,15 +9,17 @@ export default async function handler(req: import('../../server/cloud-api.js').A
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
 
   try {
-    const { id, name, password } = getBody<{ id?: string; name?: string; password?: string }>(req)
+    const { id, name, password, email } = getBody<{ id?: string; name?: string; password?: string; email?: string }>(req)
     if (!id || !/^u_[a-z0-9]+$/i.test(id) || !name || !validName(name) || !password || !validPassword(password)) {
       return sendError(res, 400, 'invalid_input', '账号或密码格式不正确')
     }
 
     const normalized = normalizedName(name)
+    const normalizedEmail = email?.trim().toLowerCase() || null
+    if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return sendError(res, 400, 'invalid_input', '邮箱格式不正确')
     const { data: existing, error: lookupError } = await db()
       .from('app_users')
-      .select('id, name, name_normalized, password_salt, password_hash')
+      .select('id, name, email, name_normalized, password_salt, password_hash')
       .eq('name_normalized', normalized)
       .maybeSingle()
     if (lookupError) throw lookupError
@@ -33,8 +35,8 @@ export default async function handler(req: import('../../server/cloud-api.js').A
     const { salt, hash } = hashPassword(password)
     const { data: user, error } = await db()
       .from('app_users')
-      .insert({ id, name: name.trim(), name_normalized: normalized, password_salt: salt, password_hash: hash })
-      .select('id, name, name_normalized, password_salt, password_hash')
+      .insert({ id, name: name.trim(), email: normalizedEmail, name_normalized: normalized, password_salt: salt, password_hash: hash })
+      .select('id, name, email, name_normalized, password_salt, password_hash')
       .single()
     if (error) throw error
 

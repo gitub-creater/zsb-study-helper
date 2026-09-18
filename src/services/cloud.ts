@@ -13,6 +13,7 @@ export interface CloudSession {
 export interface CloudUser {
   id: string
   name: string
+  email?: string
 }
 
 export type CloudNetworkState = 'unknown' | 'online' | 'offline' | 'expired'
@@ -414,12 +415,12 @@ export async function loginCloud(name: string, password: string): Promise<CloudL
   }
 }
 
-export async function registerCloud(id: string, name: string, password: string, preferDirect = true): Promise<CloudLoginResult> {
+export async function registerCloud(id: string, name: string, password: string, preferDirect = true, email?: string): Promise<CloudLoginResult> {
   let directAttempted = false
   if (preferDirect && cloudDirectConfigured) {
     directAttempted = true
     try {
-      const mapped = directResultToLogin(await directRegister(id, name, password))
+      const mapped = directResultToLogin(await directRegister(id, name, password, email))
       if (mapped) {
         setCloudNetworkState('online', DIRECT_API_URL)
         return mapped
@@ -432,7 +433,7 @@ export async function registerCloud(id: string, name: string, password: string, 
   try {
     const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ id, name, password }),
+      body: JSON.stringify({ id, name, password, email }),
     }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true, directAttempted ? DIRECT_FALLBACK_AUTH_BUDGET : undefined)
     const ok = toLoginResult(data, apiUrl)
     if (ok.kind === 'ok' && cloudDirectConfigured) void directAdoptPassword(ok.session.token, password)
@@ -444,7 +445,7 @@ export async function registerCloud(id: string, name: string, password: string, 
       // 国内网络连不上主通道时直接写库,注册因此不再依赖 vercel.app 是否可达。
       // RPC 与主通道同样是"同 ID 同密码可安全复用",重试不会建出重复账号。
       try {
-        const mapped = directResultToLogin(await directRegister(id, name, password))
+        const mapped = directResultToLogin(await directRegister(id, name, password, email))
         if (mapped) {
           setCloudNetworkState('online', DIRECT_API_URL)
           return mapped

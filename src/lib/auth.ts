@@ -12,6 +12,7 @@ export interface AuthUser {
   vip?: boolean
   /** 绑定手机号(用于找回密码,仅存本机) */
   phone?: string
+  email?: string
   /** 云端暂不可达时保留注册意图；不保存明文密码，需用户下次输入密码后完成同步。 */
   cloudRegistrationPending?: boolean
   cloudRegistrationFailedAt?: string
@@ -100,13 +101,15 @@ export function ensureLegacyMigrated(): AuthUser[] {
   return users
 }
 
-export async function createUser(name: string, password?: string, id = uid()): Promise<AuthUser> {
+export async function createUser(name: string, password?: string, id = uid(), email?: string): Promise<AuthUser> {
   const users = listUsers()
   const trimmed = name.trim()
   if (!trimmed) throw new Error('请填写账号')
   if (users.some((u) => u.name.trim().toLocaleLowerCase('zh-CN') === trimmed.toLocaleLowerCase('zh-CN'))) throw new Error('该账号已存在')
   if (users.some((u) => u.id === id)) throw new Error('账号已存在')
-  const user: AuthUser = { id, name: trimmed, guest: !password, createdAt: new Date().toISOString() }
+  const normalizedEmail = email?.trim().toLowerCase()
+  if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) throw new Error('邮箱格式不正确')
+  const user: AuthUser = { id, name: trimmed, email: normalizedEmail || undefined, guest: !password, createdAt: new Date().toISOString() }
   if (password) {
     user.salt = makeSalt()
     user.hash = await hashHex(user.salt + password)
@@ -121,6 +124,11 @@ export async function createUser(name: string, password?: string, id = uid()): P
 export function findUserByName(name: string): AuthUser | null {
   const normalized = name.trim().toLocaleLowerCase('zh-CN')
   return listUsers().find((user) => user.name.trim().toLocaleLowerCase('zh-CN') === normalized) ?? null
+}
+
+export function findUserByEmail(email: string): AuthUser | null {
+  const normalized = email.trim().toLowerCase()
+  return listUsers().find((user) => user.email?.toLowerCase() === normalized) ?? null
 }
 
 /** 删除刚创建但无法绑定云端的本机账号，不触碰其他账号的数据。 */

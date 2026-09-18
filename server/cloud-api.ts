@@ -22,6 +22,7 @@ export type ApiResponse = ResponseLike
 export interface CloudUserRow {
   id: string
   name: string
+  email?: string | null
   name_normalized: string
   password_salt: string
   password_hash: string
@@ -142,13 +143,13 @@ export async function sessionUser(req: ApiRequest): Promise<CloudUserRow | null>
 
   const { data: user, error: userError } = await db()
     .from('app_users')
-    .select('id, name, name_normalized, password_salt, password_hash')
+    .select('id, name, email, name_normalized, password_salt, password_hash')
     .eq('id', session.user_id)
     .maybeSingle()
   if (userError || !user) return null
   return user as CloudUserRow
 }
 
-export function publicUser(user: Pick<CloudUserRow, 'id' | 'name'>): { id: string; name: string } {
-  return { id: user.id, name: user.name }
+export function publicUser(user: Pick<CloudUserRow, 'id' | 'name' | 'email'>): { id: string; name: string; email?: string } {
+  return { id: user.id, name: user.name, ...(user.email ? { email: user.email } : {}) }
 }
