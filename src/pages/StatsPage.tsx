@@ -1,7 +1,7 @@
 // 数据分析(第一阶段基础版):总览 / 科目章节掌握度 / 薄弱排行 / 近7天趋势
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { Bar, Chip, EmptyState, useToast } from '../components/ui'
+import { Bar, Chip, EmptyState, Field, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { chapterKps, chapterMastery, getMastery, subjectMastery, subjectAccuracy, totalAccuracy, weakKps } from '../lib/selectors'
 import { totalReviewCount } from '../lib/spaced'
@@ -10,12 +10,17 @@ import { startKpPractice } from '../lib/practice'
 import { addDays, fmtDuration, fmtDate, todayStr } from '../lib/date'
 import { nav } from '../lib/misc'
 import { levelInfo } from '../lib/xp'
+import { aiChatStream, type AiConfig } from '../services/ai'
+import { buildWeaknessMessages, buildWeaknessPrompt } from '../lib/aiWeakness'
 
 export function StatsPage() {
   const { state, dispatch } = useStore()
   const toast = useToast()
+  const [aiMaterial, setAiMaterial] = useState('')
+  const [aiResult, setAiResult] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
   const today = todayStr()
-
   const totalAcc = totalAccuracy(state)
   const weak = useMemo(() => weakKps(state, 10), [state.kps, state.attempts, state.profile]) // eslint-disable-line react-hooks/exhaustive-deps
   const dueCount = Object.values(state.wrong).filter((e) => !e.archived && e.nextReviewAt != null && e.nextReviewAt <= today).length
@@ -35,12 +40,112 @@ export function StatsPage() {
   const totalMin = Object.values(state.studyTime).reduce((s, v) => s + v, 0)
   const latestExam = (state.examHistory ?? [])[0]
   const level = levelInfo(state.xp)
+  const aiSettings = state.settings.ai
+  const aiConfigured = Boolean(aiSettings?.baseURL && aiSettings.apiKey && aiSettings.model)
+
+  const runAiAnalysis = async (mode: 'pasted' | 'wrong' | 'exam') => {
+    if (!aiConfigured || !aiSettings) {
+      toast('请先在「设置 → AI 服务」配置接口地址、API Key 和模型名', { kind: 'error' })
+      nav('settings')
+      return
+    }
+    if (mode === 'pasted' && !aiMaterial.trim()) {
+      toast('请先粘贴试卷、错题或作答材料', { kind: 'error' })
+      return
+    }
+    if (mode === 'exam' && !latestExam) {
+      toast('还没有模拟考试记录', { kind: 'error' })
+      return
+    }
+    const controller = new AbortController()
+    abortRef.current = controller
+    setAiBusy(true)
+    setAiResult('')
+    try {
+      const material = buildWeaknessPrompt({
+        state,
+        pastedText: aiMaterial,
+        wrongOnly: mode === 'wrong',
+        exam: mode === 'exam' ? latestExam : null,
+      })
+      const messages = buildWeaknessMessages(material, state)
+      const cfg: AiConfig = {
+        provider: (aiSettings.provider || 'custom') as AiConfig['provider'],
+        baseURL: aiSettings.baseURL,
+        apiKey: aiSettings.apiKey,
+        model: aiSettings.model,
+        transport: aiSettings.transport,
+        proxyURL: aiSettings.proxyURL,
+        reasoningEffort: aiSettings.reasoningEffort,
+        apiMode: aiSettings.apiMode,
+        timeoutMs: aiSettings.timeoutMs,
+        stream: false,
+        customHeaders: aiSettings.customHeaders,
+        temperature: aiSettings.temperature,
+        maxTokens: aiSettings.maxTokens,
+      }
+      const result = await aiChatStream(cfg, messages, {
+        signal: controller.signal,
+        onDelta: (delta) => setAiResult((previous) => previous + delta),
+        timeoutMs: 90000,
+      })
+      setAiResult(result)
+    } catch (error) {
+      if (!controller.signal.aborted) toast(error instanceof Error ? error.message : 'AI 分析失败，请稍后重试', { kind: 'error' })
+    } finally {
+      abortRef.current = null
+      setAiBusy(false)
+    }
+  }
+
+  const stopAiAnalysis = () => abortRef.current?.abort()
 
   return (
     <div>
       <div className="page-h">
         <h2>数据分析</h2>
         <span className="fs12 muted">学习数据与游戏化数据分开统计,等级不代替真实水平</span>
+      </div>
+
+      <div className="card mb12">
+        <div className="card-h">
+          <span className="icon-chip" style={{ background: 'var(--primary-weak)', color: 'var(--primary-deep)' }}>
+            <Icon name="sparkle" size={15} />
+          </span>
+          <b>AI 薄弱点分析</b>
+          <Chip tone={aiConfigured ? 'green' : 'gray'}>{aiConfigured ? `已连接 · ${aiSettings?.model}` : '未配置 AI'}</Chip>
+        </div>
+        <p className="fs12 muted">粘贴考试试卷、错题和作答，AI 会根据材料分析薄弱章节、知识点和复习顺序。结果只保留在当前页面，不会改动你的学习统计。</p>
+        <textarea
+          className="input mt8"
+          rows={6}
+          value={aiMaterial}
+          onChange={(event) => setAiMaterial(event.target.value)}
+          placeholder="例如：高等数学选择题第 1、4、8 题答错；我的答案……标准答案……解析……"
+          disabled={aiBusy}
+        />
+        <div className="row mt8" style={{ flexWrap: 'wrap', gap: 8 }}>
+          <button className="btn btn-primary" disabled={aiBusy} onClick={() => void runAiAnalysis('pasted')}>
+            <Icon name="sparkle" size={14} /> 分析粘贴材料
+          </button>
+          <button className="btn" disabled={aiBusy || Object.keys(state.wrong).length === 0} onClick={() => void runAiAnalysis('wrong')}>
+            分析当前错题
+          </button>
+          <button className="btn" disabled={aiBusy || !latestExam} onClick={() => void runAiAnalysis('exam')}>
+            分析最近模拟考
+          </button>
+          {aiBusy && <button className="btn" onClick={stopAiAnalysis}>停止分析</button>}
+          {!aiConfigured && <button className="link-btn" onClick={() => nav('settings')}>去设置 AI 服务</button>}
+        </div>
+        {aiResult && (
+          <div className="explain-box mt12" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
+            <div className="row mb8" style={{ justifyContent: 'space-between' }}>
+              <b>分析结果</b>
+              <span className="fs12 muted">AI 判断，不等于应用统计结论</span>
+            </div>
+            {aiResult}
+          </div>
+        )}
       </div>
 
       <div className="cards mb12">

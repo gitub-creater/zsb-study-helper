@@ -1,0 +1,155 @@
+// API Route: /api/auth/send-code
+// 发送邮箱验证码
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { supabase } from '../_lib/cloud-api'
+
+interface SendCodeRequest {
+  email: string
+}
+
+interface SendCodeResponse {
+  success: boolean
+  expiresIn?: number
+  error?: string
+  waitSeconds?: number
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS 处理
+  const allowedOrigins = (process.env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean)
+  const origin = req.headers.origin ?? ''
+  if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  res.setHeader('Access-Control-Allow-Origin', origin || '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    const { email } = req.body as SendCodeRequest
+
+    // 验证邮箱格式
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$/
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '邮箱格式不正确' 
+      })
+    }
+
+    // 生成 6 位数字验证码
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+
+    // 获取客户端 IP
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || 
+               req.headers['x-real-ip'] as string || 
+               'unknown'
+
+    // 调用 Supabase RPC 记录验证码
+    const { data, error } = await supabase.rpc('send_verification_code', {
+      p_email: email,
+      p_code: code,
+      p_ip: ip
+    })
+
+    if (error) {
+      console.error('[send-code] Supabase error:', error)
+      return res.status(500).json({ 
+        success: false, 
+        error: '服务暂时不可用，请稍后重试' 
+      })
+    }
+
+    // 检查频率限制
+    if (!data.success) {
+      return res.status(429).json(data as SendCodeResponse)
+    }
+
+    // 实际发送邮件
+    const emailSent = await sendEmail(email, code)
+
+    if (!emailSent) {
+      return res.status(500).json({ 
+        success: false, 
+        error: '邮件发送失败，请稍后重试' 
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      expiresIn: 600
+    } as SendCodeResponse)
+
+  } catch (error) {
+    console.error('[send-code] Unexpected error:', error)
+    return res.status(500).json({ 
+      success: false, 
+      error: '服务器错误' 
+    })
+  }
+}
+
+// 发送邮件函数
+async function sendEmail(email: string, code: string): Promise<boolean> {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY
+  const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@yourdomain.com'
+
+  // 如果没有配置 Resend，降级为控制台输出（开发环境）
+  if (!RESEND_API_KEY) {
+    console.log([send-code] 验证码 (未配置邮件服务): ${email} -> ${code})
+    return true
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': Bearer ${RESEND_API_KEY},
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: email,
+        subject: '【专升本学习助手】您的验证码',
+        html: 
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a; margin-bottom: 24px;">欢迎使用专升本学习助手</h2>
+            <p style="color: #4a4a4a; font-size: 16px; line-height: 1.5;">您的验证码是：</p>
+            <div style="background: #f5f5f5; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: center;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">${code}</span>
+            </div>
+            <p style="color: #6b6b6b; font-size: 14px; margin-top: 20px;">
+              验证码有效期为 <strong>10 分钟</strong>，请尽快使用。<br>
+              如果这不是您的操作，请忽略此邮件。
+            </p>
+            <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0;">
+            <p style="color: #9b9b9b; font-size: 12px; text-align: center;">
+              山东专升本学习助手 - 可爱校园冒险风备考工具
+            </p>
+          </div>
+        
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('[send-code] Resend API error:', errorData)
+      return false
+    }
+
+    console.log([send-code] 验证码已发送: ${email})
+    return true
+
+  } catch (error) {
+    console.error('[send-code] Email sending error:', error)
+    return false
+  }
+}

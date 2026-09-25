@@ -37,53 +37,43 @@ describe('云端注册补偿队列', () => {
     expect(listUsers().find((u) => u.id === 'u_slow01')?.cloudRegistrationPending).toBe(true)
   })
 
-  it('后台重试成功后清除待同步标记并写回云端会话', async () => {
+  it('后台补注册不再绕过邮箱验证码签发云端会话', async () => {
     const { queueCloudRegistration, flush, pendingRegistrationCount } = await loadQueue()
-    const { createUser, listUsers, setSession, getSession } = await import('../src/lib/auth')
+    const { createUser, listUsers, getSession, setSession } = await import('../src/lib/auth')
 
     const user = await createUser('补注册用户', 'pw1234', 'u_retry01')
     setSession({ userId: user.id, name: user.name })
     queueCloudRegistration({ id: user.id, name: user.name, password: 'pw1234' })
-
-    registerCloud.mockResolvedValue({
-      kind: 'ok',
-      user: { id: 'u_retry01', name: '补注册用户' },
-      session: { token: 'tok_ok', apiUrl: 'https://api.example.com' },
-    })
     await flush()
 
     expect(pendingRegistrationCount()).toBe(0)
     expect(listUsers().find((u) => u.id === 'u_retry01')?.cloudRegistrationPending).toBeUndefined()
-    expect(getSession()?.cloudToken).toBe('tok_ok')
-    expect(getSession()?.cloudApiUrl).toBe('https://api.example.com')
+    expect(getSession()?.cloudToken).toBeUndefined()
   })
 
-  it('账号已被占用是确定性错误，不再无限重试', async () => {
+  it('废弃的后台补注册不会调用旧注册接口', async () => {
     const { queueCloudRegistration, flush, pendingRegistrationCount } = await loadQueue()
-    const { createUser } = await import('../src/lib/auth')
+    const { createUser, listUsers } = await import('../src/lib/auth')
 
     const user = await createUser('重名用户', 'pw1234', 'u_taken01')
     queueCloudRegistration({ id: user.id, name: user.name, password: 'pw1234' })
-
-    registerCloud.mockResolvedValue({ kind: 'error', message: '该账号已在云端注册，请直接登录' })
     await flush()
 
     expect(pendingRegistrationCount()).toBe(0)
-    expect(registerCloud).toHaveBeenCalledTimes(1)
+    expect(registerCloud).not.toHaveBeenCalled()
+    expect(listUsers().find((u) => u.id === 'u_taken01')?.cloudRegistrationPending).toBeUndefined()
   })
 
-  it('仍然不可用时保留在队列中继续等待重试', async () => {
+  it('不保留无验证码的后台重试队列', async () => {
     const { queueCloudRegistration, flush, pendingRegistrationCount } = await loadQueue()
     const { createUser, listUsers } = await import('../src/lib/auth')
 
     const user = await createUser('离线用户', 'pw1234', 'u_off01')
     queueCloudRegistration({ id: user.id, name: user.name, password: 'pw1234' })
-
-    registerCloud.mockResolvedValue({ kind: 'unavailable' })
     await flush()
 
-    expect(pendingRegistrationCount()).toBe(1)
-    expect(listUsers().find((u) => u.id === 'u_off01')?.cloudRegistrationPending).toBe(true)
+    expect(pendingRegistrationCount()).toBe(0)
+    expect(listUsers().find((u) => u.id === 'u_off01')?.cloudRegistrationPending).toBeUndefined()
   })
 
   it('退出登录可清除内存中的密码', async () => {

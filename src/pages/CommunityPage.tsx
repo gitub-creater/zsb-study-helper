@@ -224,7 +224,7 @@ function CommunityList({ me }: { me: CommunityUser }) {
                           #{t}
                         </span>
                       ))}
-                      <span className="muted">{fmtAgo(p.createdAt)}</span>
+                      <span className="muted" title={fmtDateTime(p.createdAt)}>{fmtAgo(p.createdAt)} · {fmtDateTime(p.createdAt)}</span>
                     </div>
                   </div>
                   <div className="post-card-stats num">
@@ -1336,3 +1336,4 @@ const COMMUNITY_DETAIL_TOUR: TourStep[] = [
   { sel: '[data-tour="comments"]', title: '回答与讨论', text: '支持楼中楼回复和点赞;提问者可「采纳最佳答案」,悬赏积分自动转给回答者。', prefer: 'bottom' },
   { sel: '[data-tour="timeline"]', title: '进度时间线', text: '提问时间/首次解答/完成时间与解决耗时一目了然。', prefer: 'top' },
 ]
+

@@ -585,10 +585,10 @@ export function queryPosts(data: CommunityData, q: PostQuery): CommunityPost[] {
       list.sort((a, b) => b.bounty - a.bounty || b.createdAt.localeCompare(a.createdAt))
       break
     case 'unresolved':
-      list = list.filter((p) => p.status !== 'solved').sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      list = list.filter((p) => p.status !== 'solved').sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       break
     default:
-      list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      list.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   }
   return list
 }
@@ -799,3 +799,5 @@ function seedCommunity(): CommunityData {
   }
   return data
 }
+
+

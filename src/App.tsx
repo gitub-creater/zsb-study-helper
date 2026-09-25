@@ -352,7 +352,11 @@ function CommunityBridge({ meId }: { meId: string }) {
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false)
-  const [session, setSession] = useState(() => getSession())
+  const [session, setSession] = useState(() => {
+    const current = getSession()
+    // 严格认证上线后，旧版本的本机/游客会话不能继续绕过邮箱验证码进入。
+    return current?.cloudToken && current.cloudApiUrl ? current : null
+  })
 
   if (!splashDone) {
     return <Splash onFinish={() => setSplashDone(true)} />

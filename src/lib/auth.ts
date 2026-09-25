@@ -202,18 +202,28 @@ export function setVip(id: string, vip: boolean): void {
   saveUsers(users)
 }
 
-export function setPhone(id: string, phone: string): void {
-  const users = listUsers()
-  const user = users.find((u) => u.id === id)
-  if (!user) throw new Error('账号不存在')
-  user.phone = phone
-  saveUsers(users)
-}
-
 /** 按手机号找回账号(最多匹配一个) */
 export function findByPhone(phone: string): AuthUser | null {
   const hits = listUsers().filter((u) => u.phone === phone)
   return hits.length === 1 ? hits[0] : null
+}
+
+export function setEmail(id: string, email: string): void {
+  const normalized = email.trim().toLowerCase()
+  const users = listUsers()
+  const user = users.find((item) => item.id === id)
+  if (!user) throw new Error('账号不存在')
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error('邮箱格式不正确')
+  user.email = normalized
+  saveUsers(users)
+}
+
+export function setPhone(id: string, phone: string): void {
+  const users = listUsers()
+  const user = users.find((item) => item.id === id)
+  if (!user) throw new Error('账号不存在')
+  user.phone = phone
+  saveUsers(users)
 }
 
 /** 本地验证码:未接入短信服务商时在界面明示"模拟验证码" */

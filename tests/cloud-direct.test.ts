@@ -50,14 +50,14 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('国内直连通道', () => {
   it('新注册直连优先成功时不请求 Vercel', async () => {
-    const { calls } = stubFetch({ zsb_register: { user: { id: 'u_fast1', name: '快速用户' }, token: 'tok_fast1' } })
+    const { calls } = stubFetch({ zsb_register_verified: { user: { id: 'u_fast1', name: '快速用户' }, token: 'tok_fast1' } })
     const { registerCloud } = await import('../src/services/cloud')
     const { DIRECT_API_URL } = await import('../src/services/cloudDirect')
 
-    const result = await registerCloud('u_fast1', '快速用户', 'pw1234', true)
+    const result = await registerCloud('u_fast1', '快速用户', 'pw1234', 'fast@example.com', '123456', true)
     expect(result.kind).toBe('ok')
     expect(result.kind === 'ok' && result.session.apiUrl).toBe(DIRECT_API_URL)
-    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_register`])
+    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_register_verified`])
   })
 
   it('新注册直连失败时才回退到 Vercel 主通道', async () => {
@@ -73,30 +73,30 @@ describe('国内直连通道', () => {
     })
     const { registerCloud } = await import('../src/services/cloud')
 
-    const result = await registerCloud('u_fast2', '回退用户', 'pw1234', true)
+    const result = await registerCloud('u_fast2', '回退用户', 'pw1234', 'fallback@example.com', '123456', true)
     expect(result.kind).toBe('ok')
-    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_register`)
+    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_register_verified`)
     expect(calls.some((url) => url.endsWith('/api/auth/register'))).toBe(true)
   })
 
   it('后台补注册也默认直连优先，避免在大陆网络先等待 Vercel', async () => {
-    const { calls } = stubFetch({ zsb_register: { user: { id: 'u_queue1', name: '后台用户' }, token: 'tok_queue1' } })
+    const { calls } = stubFetch({ zsb_register_verified: { user: { id: 'u_queue1', name: '后台用户' }, token: 'tok_queue1' } })
     const { registerCloud } = await import('../src/services/cloud')
 
-    const result = await registerCloud('u_queue1', '后台用户', 'pw1234')
+    const result = await registerCloud('u_queue1', '后台用户', 'pw1234', 'queue@example.com', '123456')
     expect(result.kind).toBe('ok')
-    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_register`])
+    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_register_verified`])
   })
 
   it('登录直连优先成功时不请求 Vercel', async () => {
-    const { calls } = stubFetch({ zsb_login: { user: { id: 'u_login1', name: '快速登录' }, token: 'tok_login1' } })
+    const { calls } = stubFetch({ zsb_login_verified: { user: { id: 'u_login1', name: '快速登录' }, token: 'tok_login1' } })
     const { loginCloud } = await import('../src/services/cloud')
     const { DIRECT_API_URL } = await import('../src/services/cloudDirect')
 
-    const result = await loginCloud('快速登录', 'pw1234')
+    const result = await loginCloud('快速登录', 'pw1234', 'fast@example.com', '123456')
     expect(result.kind).toBe('ok')
     expect(result.kind === 'ok' && result.session.apiUrl).toBe(DIRECT_API_URL)
-    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_login`])
+    expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`])
   })
 
   it('旧 scrypt 账号直连返回 legacy_account 后回退 Vercel', async () => {
@@ -104,7 +104,7 @@ describe('国内直连通道', () => {
     vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {
       const href = typeof url === 'string' ? url : url.toString()
       calls.push(href)
-      if (href === `${SUPABASE_URL}/rest/v1/rpc/zsb_login`) {
+      if (href === `${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`) {
         return new Response(JSON.stringify({ code: 'legacy_account', error: '旧账号' }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -117,9 +117,9 @@ describe('国内直连通道', () => {
     })
     const { loginCloud } = await import('../src/services/cloud')
 
-    const result = await loginCloud('旧账号', 'pw1234')
+    const result = await loginCloud('旧账号', 'pw1234', 'legacy@example.com', '123456')
     expect(result.kind).toBe('ok')
-    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_login`)
+    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`)
     expect(calls.some((url) => url.endsWith('/api/auth/login'))).toBe(true)
   })
 
@@ -136,18 +136,18 @@ describe('国内直连通道', () => {
     })
     const { loginCloud } = await import('../src/services/cloud')
 
-    const result = await loginCloud('回退登录', 'pw1234')
+    const result = await loginCloud('回退登录', 'pw1234', 'fallback@example.com', '123456')
     expect(result.kind).toBe('ok')
-    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_login`)
+    expect(calls[0]).toBe(`${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`)
     expect(calls.some((url) => url.endsWith('/api/auth/login'))).toBe(true)
   })
 
   it('主通道被封时注册自动改走直连,并记住直连入口', async () => {
-    stubFetch({ zsb_register: { user: { id: 'u_a1', name: '小明' }, token: 'tok_a1' }, zsb_adopt_password: { ok: true } })
+    stubFetch({ zsb_register_verified: { user: { id: 'u_a1', name: '小明' }, token: 'tok_a1' }, zsb_adopt_password: { ok: true } })
     const { registerCloud } = await import('../src/services/cloud')
     const { DIRECT_API_URL } = await import('../src/services/cloudDirect')
 
-    const result = await registerCloud('u_a1', '小明', 'pw1234')
+    const result = await registerCloud('u_a1', '小明', 'pw1234', 'a1@example.com', '123456')
     expect(result.kind).toBe('ok')
     if (result.kind !== 'ok') return
     expect(result.user).toEqual({ id: 'u_a1', name: '小明' })
@@ -156,30 +156,30 @@ describe('国内直连通道', () => {
   })
 
   it('主通道被封时登录自动改走直连', async () => {
-    stubFetch({ zsb_login: { user: { id: 'u_b2', name: '小红' }, token: 'tok_b2' } })
+    stubFetch({ zsb_login_verified: { user: { id: 'u_b2', name: '小红' }, token: 'tok_b2' } })
     const { loginCloud } = await import('../src/services/cloud')
 
-    const result = await loginCloud('小红', 'pw1234')
+    const result = await loginCloud('小红', 'pw1234', 'red@example.com', '123456')
     expect(result.kind).toBe('ok')
   })
 
   it('直连返回的业务错误按语义映射,不会被当成网络故障', async () => {
-    stubFetch({ zsb_login: { code: 'bad_password', error: '密码不正确' } })
+    stubFetch({ zsb_login_verified: { code: 'bad_password', error: '密码不正确' } })
     const { loginCloud } = await import('../src/services/cloud')
-    expect((await loginCloud('小红', 'wrong')).kind).toBe('bad_password')
+    expect((await loginCloud('小红', 'wrong', 'red@example.com', '123456')).kind).toBe('bad_password')
   })
 
   it('账号不存在时直连也返回 not_found,登录页才能提示先注册', async () => {
-    stubFetch({ zsb_login: { code: 'not_found', error: '账号不存在' } })
+    stubFetch({ zsb_login_verified: { code: 'not_found', error: '账号不存在' } })
     const { loginCloud } = await import('../src/services/cloud')
-    expect((await loginCloud('nobody', 'pw1234')).kind).toBe('not_found')
+    expect((await loginCloud('nobody', 'pw1234', 'none@example.com', '123456')).kind).toBe('not_found')
   })
 
   it('旧账号的 scrypt 密码只有主通道能校验,直连返回 legacy_account 时保持不可达语义', async () => {
-    stubFetch({ zsb_login: { code: 'legacy_account', error: '该账号需要先在主通道登录一次完成升级' } })
+    stubFetch({ zsb_login_verified: { code: 'legacy_account', error: '该账号需要先在主通道登录一次完成升级' } })
     const { loginCloud } = await import('../src/services/cloud')
     // 不能谎报密码错误:此时应让上层按"云端暂时不可用"处理,保留本机离线登录
-    expect((await loginCloud('老账号', 'pw1234')).kind).toBe('unavailable')
+    expect((await loginCloud('老账号', 'pw1234', 'legacy@example.com', '123456')).kind).toBe('unavailable')
   })
 
   it('好友搜索在会话已是直连入口时直接走 RPC', async () => {
@@ -247,7 +247,7 @@ describe('国内直连通道', () => {
     }))
     stubFetch({})
     const { loginCloud } = await import('../src/services/cloud')
-    expect((await loginCloud('小红', 'pw1234')).kind).toBe('unavailable')
+    expect((await loginCloud('小红', 'pw1234', 'red@example.com', '123456')).kind).toBe('unavailable')
     vi.doUnmock('../src/services/supabaseClient')
     vi.resetModules()
   })

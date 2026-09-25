@@ -1,7 +1,25 @@
-import {
-  createSession, db, getBody, handleOptions, hashPassword, normalizedName, passwordMatchesAsync, publicUser, sendError, setCors,
-  validName, validPassword,
-} from '../../server/cloud-api.js'
+import { db, getBody, handleOptions, sendError, setCors, validName, validPassword } from '../../server/cloud-api.js'
+
+interface RegisterRequest {
+  id?: string
+  name?: string
+  password?: string
+  email?: string
+  code?: string
+}
+
+interface StrictRegisterReply {
+  code?: string
+  error?: string
+  user?: { id: string; name: string; email?: string }
+  token?: string
+}
+
+function statusFor(code: string | undefined): number {
+  if (code === 'invalid_code') return 401
+  if (code === 'name_taken' || code === 'email_taken') return 409
+  return 400
+}
 
 export default async function handler(req: import('../../server/cloud-api.js').ApiRequest, res: import('../../server/cloud-api.js').ApiResponse) {
   if (handleOptions(req, res)) return
@@ -9,41 +27,25 @@ export default async function handler(req: import('../../server/cloud-api.js').A
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
 
   try {
-    const { id, name, password, email } = getBody<{ id?: string; name?: string; password?: string; email?: string }>(req)
-    if (!id || !/^u_[a-z0-9]+$/i.test(id) || !name || !validName(name) || !password || !validPassword(password)) {
-      return sendError(res, 400, 'invalid_input', '账号或密码格式不正确')
+    const { id, name, password, email, code } = getBody<RegisterRequest>(req)
+    const normalizedEmail = email?.trim().toLowerCase() ?? ''
+    if (!id || !/^u_[a-z0-9]+$/i.test(id) || !name || !validName(name) || !password || !validPassword(password) || !/^\S+@\S+\.\S+$/.test(normalizedEmail) || !/^\d{6}$/.test(code?.trim() ?? '')) {
+      return sendError(res, 400, 'invalid_input', '账号、密码、邮箱或验证码格式不正确')
     }
 
-    const normalized = normalizedName(name)
-    const normalizedEmail = email?.trim().toLowerCase() || null
-    if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return sendError(res, 400, 'invalid_input', '邮箱格式不正确')
-    const { data: existing, error: lookupError } = await db()
-      .from('app_users')
-      .select('id, name, email, name_normalized, password_salt, password_hash')
-      .eq('name_normalized', normalized)
-      .maybeSingle()
-    if (lookupError) throw lookupError
-    // 网络在响应返回前中断时，客户端会用相同 ID 重试。只有同一账号、同一密码才可恢复会话。
-    if (existing) {
-      if (existing.id !== id || !(await passwordMatchesAsync(password, existing.password_salt, existing.password_hash))) {
-        return sendError(res, 409, 'name_taken', '该账号已存在')
-      }
-      const token = await createSession(existing.id)
-      return res.status(200).json({ user: publicUser(existing), token })
-    }
-
-    const { salt, hash } = hashPassword(password)
-    const { data: user, error } = await db()
-      .from('app_users')
-      .insert({ id, name: name.trim(), email: normalizedEmail, name_normalized: normalized, password_salt: salt, password_hash: hash })
-      .select('id, name, email, name_normalized, password_salt, password_hash')
-      .single()
+    const { data, error } = await db().rpc('zsb_register_verified', {
+      p_id: id,
+      p_name: name.trim(),
+      p_password: password,
+      p_email: normalizedEmail,
+      p_code: code!.trim(),
+    })
     if (error) throw error
-
-    const token = await createSession(user.id)
-    res.status(201).json({ user: publicUser(user), token })
+    const result = (data ?? {}) as StrictRegisterReply
+    if (!result.user || !result.token) return sendError(res, statusFor(result.code), result.code || 'invalid_input', result.error || '注册失败')
+    return res.status(201).json({ user: result.user, token: result.token })
   } catch (error) {
-    console.error('Cloud registration failed', error)
-    sendError(res, 503, 'service_unavailable', '云端服务暂时不可用')
+    console.error('Strict cloud registration failed', error)
+    return sendError(res, 503, 'service_unavailable', '云端服务暂时不可用')
   }
 }

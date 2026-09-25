@@ -13,7 +13,7 @@ import { computeKpMastery, difficultyWeight, nextStatus } from '../lib/mastery'
 import { entryOnCorrectReview, entryOnEarlyCorrect, entryOnWrong } from '../lib/spaced'
 import { generateTasks } from '../lib/plan'
 import { MAX_FIRED_KEYS, MAX_HISTORY, nextOccurrence, normalizeScheduleTask, parseStamp, skipStaleScheduleOccurrence, withNextRun } from '../lib/schedule'
-import { getSession } from '../lib/auth'
+import { clearSession, getSession } from '../lib/auth'
 import { downloadCloudStateResult, retainLocalAiApiKey, setCloudSyncState, uploadCloudState } from '../services/cloud'
 
 const STORAGE_KEY = 'zsb_helper_v1'
@@ -1041,6 +1041,11 @@ export function StoreProvider({
         if (ok) uploadedStateRef.current = current
       } else {
         initialSyncRef.current = 'failed'
+        if (result.expired) {
+          clearSession()
+          window.location.reload()
+          return
+        }
         // 下载失败时绝不上传，避免国内网络抖动覆盖远端快照；等待在线恢复或用户操作后重试。
         setCloudSyncState('pending', result.message)
       }

@@ -1,170 +1,185 @@
-// 登录页:快速进入 / 本地账号注册登录 / 扫码登录(诚实占位:需开放平台资质)/ 忘记密码(手机号+验证码)
 import React, { useEffect, useState } from 'react'
 import { Mascot } from '../components/Mascot'
 import { Field, Segmented, useToast } from '../components/ui'
 import { Icon } from '../components/Icon'
-import {
-  checkCode, createUser, ensureLegacyMigrated, findByPhone, findUserByName, issueCode, listUsers,
-  findUserByEmail, migrateUserId, removeUser, setCloudRegistrationPending, setSession, setPassword, uid, verifyPassword,
-} from '../lib/auth'
+import { createUser, ensureLegacyMigrated, findUserByName, listUsers, migrateUserId, setCloudRegistrationPending, setEmail, setPassword as setStoredPassword, setSession, verifyPassword } from '../lib/auth'
 import type { AuthUser } from '../lib/auth'
-import { getCloudApiUrl, loginCloud, registerCloud, saveCloudApiUrl } from '../services/cloud'
-import { queueCloudRegistration } from '../services/cloudRegistrationQueue'
+import { getCloudApiUrl, loginCloud, registerCloud, resetCloudPassword, saveCloudApiUrl, sendVerificationCode } from '../services/cloud'
+
+type AuthTab = 'login' | 'register' | 'forgot'
+
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$/i
 
 export function LoginGate({ onSession }: { onSession: () => void }) {
   const toast = useToast()
   const [users, setUsers] = useState<AuthUser[]>([])
-  const [tab, setTab] = useState<'quick' | 'register' | 'forgot' | 'scan'>('quick')
-  const [loginName, setLoginName] = useState('')
-  const [pw, setPw] = useState('')
+  const [tab, setTab] = useState<AuthTab>('login')
+  const [busy, setBusy] = useState(false)
   const [cloudApiUrl, setCloudApiUrl] = useState(() => getCloudApiUrl() ?? '')
   const [account, setAccount] = useState('')
-  const [email, setEmail] = useState('')
-  const [regPw, setRegPw] = useState('')
-  const [busy, setBusy] = useState(false)
-  // 忘记密码
-  const [fpPhone, setFpPhone] = useState('')
-  const [fpCode, setFpCode] = useState('')
-  const [fpSent, setFpSent] = useState('')
-  const [fpPw, setFpPw] = useState('')
-  const [fpCountdown, setFpCountdown] = useState(0)
+  const [password, setPassword] = useState('')
+  const [email, setEmailValue] = useState('')
+  const [code, setCode] = useState('')
+  const [countdown, setCountdown] = useState(0)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   const refresh = () => setUsers(listUsers())
+
   useEffect(() => {
     ensureLegacyMigrated()
     refresh()
   }, [])
 
-  const enter = (u: AuthUser, cloud?: { token: string; apiUrl: string }) => {
-    setSession({ userId: u.id, name: u.name, cloudToken: cloud?.token, cloudApiUrl: cloud?.apiUrl })
+  const enter = (user: AuthUser, cloud: { token: string; apiUrl: string }) => {
+    setSession({ userId: user.id, name: user.name, cloudToken: cloud.token, cloudApiUrl: cloud.apiUrl })
     onSession()
   }
 
-  const submitLogin = async () => {
-    const normalized = loginName.trim()
-    if (!normalized || !pw) {
-      toast('请输入账号和密码', { kind: 'error' })
-      return
-    }
-    setBusy(true)
-    try {
-      if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
-      const cloud = await loginCloud(normalized, pw)
-      if (cloud.kind === 'ok') {
-        let local = users.find((u) => u.id === cloud.user.id) ?? findUserByName(cloud.user.name) ?? (cloud.user.email ? findUserByEmail(cloud.user.email) : null)
-        if (local && local.id !== cloud.user.id) {
-          if (!(await verifyPassword(local.id, pw))) {
-            toast('本机已有同名账号，但密码不一致。请确认使用的是同一账号密码', { kind: 'error' })
-            return
-          }
-          local = migrateUserId(local.id, cloud.user.id)
-          refresh()
-          toast('已关联本机账号和云端账号，学习记录正在同步', { kind: 'success' })
-        }
-        if (!local) {
-          local = await createUser(cloud.user.name, pw, cloud.user.id, cloud.user.email)
-          refresh()
-        }
-        setCloudRegistrationPending(local.id, false)
-        enter(local, cloud.session)
-        return
-      }
-      if (cloud.kind === 'bad_password') {
-        toast('密码不正确', { kind: 'error' })
-        return
-      }
-      if (cloud.kind === 'error') {
-        toast(cloud.message, { kind: 'error' })
-        return
-      }
-
-      let loginLocal = findUserByName(normalized) ?? findUserByEmail(normalized)
-      if (!loginLocal) {
-        toast(cloud.kind === 'not_found' ? '账号不存在，请先注册账号' : '云端服务暂时不可用；请稍后重试，已有本机账号可离线登录', { kind: 'error' })
-        return
-      }
-      if (!(await verifyPassword(loginLocal.id, pw))) {
-        toast('密码不正确', { kind: 'error' })
-        return
-      }
-
-      // 已验证本机密码后，允许把旧账号或待同步账号补注册到云端；不在本机保存明文密码。
-      if (cloud.kind === 'not_found' || loginLocal.cloudRegistrationPending) {
-        // 旧的 local 账号没有合法云端 ID，先迁移并持久化新 ID，保证响应丢失后的重试仍是同一注册请求。
-        loginLocal = loginLocal.id === 'local' ? migrateUserId(loginLocal.id, uid()) : loginLocal
-        const migrated = await registerCloud(loginLocal.id, loginLocal.name, pw)
-        if (migrated.kind === 'ok') {
-          setCloudRegistrationPending(loginLocal.id, false)
-          refresh()
-          toast('本机账号已同步到云端', { kind: 'success' })
-          enter(loginLocal, migrated.session)
-          return
-        }
-        if (migrated.kind === 'error') {
-          toast(migrated.message, { kind: 'error' })
-          return
-        }
-        setCloudRegistrationPending(loginLocal.id, true)
-        refresh()
-        // 已核对过本机密码，可安全地在后台继续补注册；密码不落盘。
-        queueCloudRegistration({ id: loginLocal.id, name: loginLocal.name, password: pw })
-      }
-      enter(loginLocal)
-      if (cloud.kind === 'unavailable') toast('已用本机账号登录，正在后台继续同步到云端；同步完成前好友暂时搜不到此账号', { kind: 'info', duration: 10000 })
-    } catch (error) {
-      toast(error instanceof Error ? error.message : '登录失败，请稍后重试', { kind: 'error' })
-    } finally {
-      setBusy(false)
-    }
+  const resetCode = () => {
+    setCode('')
+    setCountdown(0)
   }
 
-  const register = async () => {
-    if (account.trim().length < 2) {
-      toast('账号至少 2 个字符', { kind: 'error' })
+  const switchTab = (next: AuthTab) => {
+    setTab(next)
+    resetCode()
+    setPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+  }
+
+  const sendCode = async () => {
+    const normalized = email.trim().toLowerCase()
+    if (!EMAIL_RE.test(normalized)) {
+      toast('请输入正确的邮箱地址', { kind: 'error' })
       return
     }
-    if (regPw.length < 4) {
-      toast('密码至少 4 位', { kind: 'error' })
-      return
-    }
+    if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
     setBusy(true)
     try {
-      if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
-      if (findUserByName(account)) {
-        toast('这台设备已存在同名账号，请直接登录', { kind: 'error' })
-        return
-      }
-      const id = uid()
-      // 先建立本机账号，网络中断时保留同一个稳定 ID 供后续安全补注册。
-      const u = await createUser(account, regPw, id, email)
-      const cloud = await registerCloud(id, u.name, regPw, true, email)
-      if (cloud.kind === 'error') {
-        // 账号已占用等确定性错误不是网络待办；移除本次本机占位，避免列表留下错误账号。
-        removeUser(u.id)
-        refresh()
-        toast(cloud.message, { kind: 'error' })
-        return
-      }
-      refresh()
-      if (cloud.kind === 'ok') {
-        setCloudRegistrationPending(u.id, false)
-        toast(`账号「${u.name}」已完成云端注册`, { kind: 'success', duration: 8000 })
-        enter(u, cloud.session)
+      const purpose = tab === 'register' ? 'register' : tab === 'forgot' ? 'reset_password' : 'login'
+      const result = await sendVerificationCode(normalized, purpose)
+      if (result.kind === 'ok') {
+        setCountdown(60)
+        const iv = window.setInterval(() => setCountdown((value) => (value <= 1 ? (window.clearInterval(iv), 0) : value - 1)), 1000)
+        toast('验证码已发送，请查收邮箱', { kind: 'success', duration: 5000 })
+      } else if (result.kind === 'rate_limited') {
+        toast(`发送过于频繁，请 ${result.waitSeconds} 秒后再试`, { kind: 'error' })
       } else {
-        setCloudRegistrationPending(u.id, true)
-        refresh()
-        // 网络慢时首个请求可能刚好超时。密码只留在内存里，由后台继续重试补注册，
-        // 用户不必自己回到登录页重来一遍。
-        queueCloudRegistration({ id: u.id, name: u.name, password: regPw })
-        toast(`账号「${u.name}」已保存在本机，正在后台继续同步到云端。同步完成前好友暂时搜不到，请保持应用打开。`, { kind: 'info', duration: 12000 })
-        enter(u)
+        toast(result.message, { kind: 'error' })
       }
-    } catch (e) {
-      toast(e instanceof Error ? e.message : '创建失败', { kind: 'error' })
     } finally {
       setBusy(false)
     }
   }
+
+  const submitLogin = async () => {
+    if (!account.trim() || !password || !EMAIL_RE.test(email.trim()) || !/^\d{6}$/.test(code)) {
+      toast('账号、密码、邮箱和 6 位验证码都不能为空', { kind: 'error' })
+      return
+    }
+    setBusy(true)
+    try {
+      if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
+      const result = await loginCloud(account, password, email, code)
+      if (result.kind !== 'ok') {
+        toast(result.kind === 'bad_password' ? '密码不正确' : result.kind === 'not_found' ? '账号不存在' : result.kind === 'unavailable' ? '云端暂时不可用，请稍后重试' : result.message, { kind: 'error' })
+        return
+      }
+      let local = users.find((user) => user.id === result.user.id) ?? findUserByName(result.user.name)
+      if (local && local.id !== result.user.id) {
+        if (!(await verifyPassword(local.id, password))) {
+          toast('本机同名账号的密码不一致，已拒绝自动合并', { kind: 'error' })
+          return
+        }
+        local = migrateUserId(local.id, result.user.id)
+      }
+      if (!local) local = await createUser(result.user.name, password, result.user.id, email)
+      else {
+        if (!local.email) setEmail(local.id, email)
+        if (!local.hash || !(await verifyPassword(local.id, password))) await setStoredPassword(local.id, password)
+      }
+      setCloudRegistrationPending(local.id, false)
+      refresh()
+      enter(local, result.session)
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '登录失败', { kind: 'error' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submitRegister = async () => {
+    if (account.trim().length < 2 || password.length < 4 || !EMAIL_RE.test(email.trim()) || !/^\d{6}$/.test(code)) {
+      toast('账号、密码、邮箱和 6 位验证码都必须填写正确', { kind: 'error' })
+      return
+    }
+    if (findUserByName(account)) {
+      toast('本机已有同名账号，请直接登录', { kind: 'error' })
+      return
+    }
+    setBusy(true)
+    try {
+      if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
+      const id = `u_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
+      const result = await registerCloud(id, account, password, email, code, true)
+      if (result.kind !== 'ok') {
+        const message = result.kind === 'unavailable'
+          ? '云端暂时不可用，请稍后重试'
+          : result.kind === 'not_found'
+            ? '账号不存在'
+            : result.kind === 'bad_password'
+              ? '密码不正确'
+              : result.message
+        toast(message, { kind: 'error' })
+        return
+      }
+      const local = await createUser(account, password, result.user.id, email)
+      setCloudRegistrationPending(local.id, false)
+      refresh()
+      toast('账号注册成功', { kind: 'success' })
+      enter(local, result.session)
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '注册失败', { kind: 'error' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submitReset = async () => {
+    if (!EMAIL_RE.test(email.trim()) || !/^\d{6}$/.test(code) || newPassword.length < 4 || newPassword !== confirmPassword) {
+      toast('请填写正确的邮箱、验证码和两次一致的新密码', { kind: 'error' })
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await resetCloudPassword(email, code, newPassword, confirmPassword)
+      if (result.kind !== 'ok') {
+        toast(result.message, { kind: 'error' })
+        return
+      }
+      const local = users.find((user) => user.email?.toLowerCase() === email.trim().toLowerCase())
+      if (local) {
+        await setStoredPassword(local.id, newPassword)
+      }
+      toast('密码已重置，请使用新密码登录', { kind: 'success' })
+      switchTab('login')
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '重置密码失败', { kind: 'error' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const codeRow = (
+    <div className="row" style={{ gap: 8 }}>
+      <input className="input grow" value={code} maxLength={6} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} placeholder="粘贴 6 位验证码" />
+      <button className="btn" style={{ minWidth: 120 }} disabled={busy || countdown > 0 || !email.trim()} onClick={sendCode}>
+        {countdown > 0 ? `${countdown}s 后重发` : '获取验证码'}
+      </button>
+    </div>
+  )
 
   return (
     <div className="onboard">
@@ -173,183 +188,65 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
           <Mascot mood="idle" size={58} />
           <div>
             <h2 style={{ fontSize: 18 }}>专升本学习助手</h2>
-            <p className="muted fs13">知识校园 · 本机可离线使用，登录后可同步到云端</p>
+            <p className="muted fs13">账号、密码和邮箱验证码齐全后才能进入</p>
           </div>
         </div>
 
         <div className="mt12 mb12">
-          <Segmented
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: 'quick', label: '进入' },
-              { value: 'register', label: '注册账号' },
-              { value: 'forgot', label: '忘记密码' },
-              { value: 'scan', label: '扫码登录' },
-            ]}
-          />
+          <Segmented value={tab} onChange={switchTab} options={[{ value: 'login', label: '登录' }, { value: 'register', label: '注册账号' }, { value: 'forgot', label: '忘记密码' }]} />
         </div>
 
-        {tab === 'forgot' && (
-          <div className="col">
-            <p className="fs12 muted mb8">通过本机绑定的手机号找回；此功能暂不重置云端密码。</p>
-            <Field label="绑定过的手机号">
-              <input className="input" value={fpPhone} maxLength={11} onChange={(e) => setFpPhone(e.target.value)} placeholder="11 位手机号" />
+        <div className="col" style={{ gap: 8 }}>
+          {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+            <Field label="云端地址">
+              <input className="input" value={cloudApiUrl} onChange={(event) => setCloudApiUrl(event.target.value)} placeholder="https://your-domain.com" />
             </Field>
-            <div className="row">
-              <input className="input grow" value={fpCode} maxLength={6} onChange={(e) => setFpCode(e.target.value)} placeholder="6 位验证码" />
-              <button
-                className="btn btn-sm"
-                disabled={fpCountdown > 0 || !/^1\d{10}$/.test(fpPhone)}
-                onClick={() => {
-                  const code = issueCode(fpPhone)
-                  setFpSent(code)
-                  setFpCountdown(60)
-                  const iv = window.setInterval(() => setFpCountdown((c) => (c <= 1 ? (window.clearInterval(iv), 0) : c - 1)), 1000)
-                  toast(`【本地模拟】短信服务未接入,验证码:${code}`, { duration: 10000 })
-                }}
-              >
-                {fpCountdown > 0 ? `${fpCountdown}s` : '获取验证码'}
-              </button>
-            </div>
-            {fpSent && (
-              <p className="fs12" style={{ color: 'var(--yellow-deep)' }}>
-                【本地模拟】短信服务未接入,验证码直接显示:{fpSent}(10 分钟内有效)。真实短信需接入服务商并在服务端发送。
-              </p>
-            )}
-            <Field label="设置新密码(至少 4 位)">
-              <input className="input" type="password" value={fpPw} onChange={(e) => setFpPw(e.target.value)} />
-            </Field>
-            <button
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={() => {
-                if (!/^1\d{10}$/.test(fpPhone)) {
-                  toast('请输入正确的手机号', { kind: 'error' })
-                  return
-                }
-                if (!checkCode(fpPhone, fpCode)) {
-                  toast('验证码不正确或已过期', { kind: 'error' })
-                  return
-                }
-                if (fpPw.length < 4) {
-                  toast('新密码至少 4 位', { kind: 'error' })
-                  return
-                }
-                const u = findByPhone(fpPhone)
-                if (!u) {
-                  toast('该手机号未绑定任何账号', { kind: 'error' })
-                  return
-                }
-                setPassword(u.id, fpPw)
-                toast(`密码已重置,请用账号「${u.name}」登录`, { kind: 'success' })
-                setTab('quick')
-                refresh()
-              }}
-            >
-              重置密码
-            </button>
-            <p className="fs12 muted mt8">
-              还没绑定手机号?当前版本请牢记密码;绑定入口在「个人角色 → 账号」。真实短信发送需接入短信服务商。
-            </p>
-          </div>
-        )}
+          )}
 
-        {tab === 'quick' && (
-          <div className="col" style={{ gap: 8 }}>
-            {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? (
-              <Field label="云端地址" hint="电脑本地版首次登录时填写 Vercel 网页地址，之后会自动记住">
-                <input className="input" value={cloudApiUrl} onChange={(e) => setCloudApiUrl(e.target.value)} placeholder="https://your-project.vercel.app" />
-              </Field>
-            ) : null}
-            <Field label="账号 / 邮箱">
-              <input className="input" value={loginName} maxLength={128} onChange={(e) => setLoginName(e.target.value)} placeholder="输入账号或邮箱" />
+          {tab !== 'forgot' && (
+            <Field label="账号">
+              <input className="input" value={account} maxLength={12} onChange={(event) => setAccount(event.target.value)} placeholder="输入账号" />
             </Field>
+          )}
+          <Field label="邮箱">
+            <input className="input" type="email" value={email} onChange={(event) => setEmailValue(event.target.value)} placeholder="输入绑定邮箱" />
+          </Field>
+          {tab !== 'forgot' && (
             <Field label="密码">
-              <input
-                className="input"
-                type="password"
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && submitLogin()}
-                placeholder="输入账号密码"
-              />
+              <input className="input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="输入密码" />
             </Field>
-            <button className="btn btn-primary" disabled={busy || !loginName.trim() || !pw} onClick={submitLogin}>
-              登录
-            </button>
-            {users.length === 0 && <p className="fs13 muted">首次使用请注册；已注册的云端账号可直接登录。</p>}
-            {users.map((u) => (
-              <div key={u.id} className="node-h" style={{ border: '1px solid var(--line)', borderRadius: 8 }}>
-                <Icon name="user" size={16} />
-                <b className="fs13 grow">{u.name}</b>
-                {u.guest && <span className="chip">无密码</span>}
-                {u.cloudRegistrationPending && <span className="chip chip-yellow">待同步</span>}
-                {u.guest ? (
-                  <button className="btn btn-sm" onClick={() => enter(u)}>进入</button>
-                ) : (
-                  <button className="btn btn-sm" onClick={() => { setLoginName(u.name); setPw('') }}>
-                    使用此账号
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              className="btn"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true)
-                try {
-                  const u = await createUser(`游客${String(Date.now()).slice(-4)}`)
-                  toast('已创建临时账号(数据保存在本机)', { kind: 'success' })
-                  enter(u)
-                } finally {
-                  setBusy(false)
-                }
-              }}
-            >
-              <Icon name="zap" size={14} /> 快速体验(免注册)
-            </button>
-            <button className="link-btn" onClick={() => setTab('forgot')}>
-              忘记密码?(用绑定手机号找回)
-            </button>
-          </div>
-        )}
+          )}
+          {tab === 'forgot' && (
+            <>
+              <Field label="新密码">
+                <input className="input" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="至少 4 位" />
+              </Field>
+              <Field label="确认新密码">
+                <input className="input" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="再次输入新密码" />
+              </Field>
+            </>
+          )}
+          <Field label="邮箱验证码">
+            {codeRow}
+          </Field>
 
-        {tab === 'register' && (
-          <div className="col">
-            <Field label="账号" hint="用于登录；注册后可在首次引导设置学习昵称">
-              <input className="input" value={account} maxLength={12} onChange={(e) => setAccount(e.target.value)} placeholder="设置登录账号(2-12 个字符)" />
-            </Field>
-            <Field label="邮箱（可选）" hint="绑定后可直接用邮箱登录">
-              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
-            </Field>
-            <Field label="密码" hint="至少 4 位；本机和云端都只保存加盐哈希，不保存明文">
-              <input className="input" type="password" value={regPw} onChange={(e) => setRegPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && register()} placeholder="至少 4 位" />
-            </Field>
-            <button className="btn btn-primary" style={{ marginTop: 4 }} disabled={busy} onClick={register}>
-              创建账号
-            </button>
-            <p className="fs12 muted mt8">账号创建后可在网页、手机和电脑端使用同一组账号密码登录。</p>
-          </div>
-        )}
+          <button className="btn btn-primary" disabled={busy} onClick={tab === 'login' ? submitLogin : tab === 'register' ? submitRegister : submitReset}>
+            {busy ? '处理中...' : tab === 'login' ? '登录' : tab === 'register' ? '创建账号' : '重置密码'}
+          </button>
 
-        {tab === 'scan' && (
-          <div className="col" style={{ gap: 10 }}>
-            <div className="explain-box">
-              微信 / QQ 扫码登录需要接入对应开放平台(企业资质 + 服务端生成二维码与回调),密钥不能放在网页里。当前版本未接入,先使用本机账号;接入后此页面会直接显示二维码。
+          {tab === 'login' && users.length > 0 && (
+            <div className="col mt8" style={{ gap: 6 }}>
+              <p className="fs13 muted">本机已保存账号（点击仅填入账号）</p>
+              {users.filter((user) => !user.guest).map((user) => (
+                <button key={user.id} className="btn" onClick={() => { setAccount(user.name); setEmailValue(user.email ?? '') }}>
+                  <Icon name="user" size={14} /> {user.name}
+                </button>
+              ))}
             </div>
-            <div className="row" style={{ gap: 8 }}>
-              <button className="btn grow" disabled title="未接入微信开放平台">
-                微信扫码登录(未接入)
-              </button>
-              <button className="btn grow" disabled title="未接入腾讯 QQ 互联">
-                QQ 扫码登录(未接入)
-              </button>
-            </div>
-            <p className="fs12 muted">接口已按可更换服务商预留(src/services/oauth.ts),接入时不改动学习功能。</p>
-          </div>
-        )}
+          )}
+
+          <p className="fs13 muted mt8">验证码 10 分钟内有效；退出账号后再次登录仍需重新验证邮箱。</p>
+        </div>
       </div>
     </div>
   )

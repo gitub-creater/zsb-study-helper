@@ -6,7 +6,7 @@
 //
 // 密码只保留在内存里(不写 localStorage、不进云快照);页面关闭即丢弃,
 // 剩下的补注册仍由登录页在用户下次输入同一密码时完成。
-import { getSession, setCloudRegistrationPending, setSession } from '../lib/auth'
+import { setCloudRegistrationPending } from '../lib/auth'
 import { registerCloud } from './cloud'
 
 interface PendingRegistration {
@@ -63,23 +63,12 @@ export async function flush(): Promise<void> {
   running = true
   try {
     for (const entry of [...queue.values()]) {
-      const result = await registerCloud(entry.id, entry.name, entry.password)
+      // 严格认证后不再后台补注册:没有邮箱验证码不能签发云端会话。
+      const result = { kind: 'error' as const, message: '注册需要邮箱验证码，请返回认证页面重新注册' }
 
-      if (result.kind === 'ok') {
-        queue.delete(entry.id)
-        setCloudRegistrationPending(entry.id, false)
-        // 补注册成功后立刻把云端会话写回当前登录态,学习数据随即开始同步。
-        const session = getSession()
-        if (session?.userId === entry.id && !session.cloudToken) {
-          setSession({ ...session, cloudToken: result.session.token, cloudApiUrl: result.session.apiUrl })
-        }
-        notify()
-        continue
-      }
-
-      // 账号被占用等确定性错误重试也不会变,留给用户处理,不再占用队列。
       if (result.kind === 'error') {
         queue.delete(entry.id)
+        setCloudRegistrationPending(entry.id, false)
         notify()
         continue
       }

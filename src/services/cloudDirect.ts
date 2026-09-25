@@ -54,18 +54,33 @@ export interface DirectAuthOk {
 
 export type DirectAuthResult = DirectAuthOk | DirectError
 
-export async function directRegister(id: string, name: string, password: string, email?: string): Promise<DirectAuthResult> {
-  if (!email?.trim()) {
-    // Keep registration compatible with databases that have not run the email migration yet.
-    return rpc<DirectAuthResult>('zsb_register', { p_id: id, p_name: name, p_password: password }, DIRECT_AUTH_TIMEOUT_MS)
-  }
-  return rpc<DirectAuthResult>('zsb_register', { p_id: id, p_name: name, p_password: password, p_email: email.trim().toLowerCase() }, DIRECT_AUTH_TIMEOUT_MS)
+export async function directLoginVerified(emailOrName: string, password: string, email: string, code: string): Promise<DirectAuthResult> {
+  return rpc<DirectAuthResult>('zsb_login_verified', {
+    p_name: emailOrName,
+    p_password: password,
+    p_email: email,
+    p_code: code,
+  }, DIRECT_AUTH_TIMEOUT_MS)
 }
 
-export async function directLogin(name: string, password: string): Promise<DirectAuthResult> {
-  return rpc<DirectAuthResult>('zsb_login', { p_name: name, p_password: password }, DIRECT_AUTH_TIMEOUT_MS)
+export async function directRegisterVerified(id: string, name: string, password: string, email: string, code: string): Promise<DirectAuthResult> {
+  return rpc<DirectAuthResult>('zsb_register_verified', {
+    p_id: id,
+    p_name: name,
+    p_password: password,
+    p_email: email,
+    p_code: code,
+  }, DIRECT_AUTH_TIMEOUT_MS)
 }
 
+export async function directResetPassword(email: string, code: string, newPassword: string): Promise<void> {
+  const result = await rpc<{ ok?: boolean } | DirectError>('zsb_reset_password_verified', {
+    p_email: email,
+    p_code: code,
+    p_new: newPassword,
+  })
+  if (isDirectError(result) || result.ok !== true) throw new Error(isDirectError(result) ? result.error : 'reset_failed')
+}
 export function directAuthFailed(value: DirectAuthResult): value is DirectError {
   return isDirectError(value)
 }

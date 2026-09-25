@@ -2,7 +2,7 @@ import { getSession, setSession } from '../lib/auth'
 import type { State } from '../types'
 import {
   DIRECT_API_URL, cloudDirectConfigured, directAdoptPassword, directAuthFailed, directChangePassword,
-  directFindUsers, directGetState, directLogin, directPutState, directRegister, isDirectApiUrl,
+  directFindUsers, directGetState, directLoginVerified, directRegisterVerified, directResetPassword, directPutState, isDirectApiUrl,
 } from './cloudDirect'
 
 export interface CloudSession {
@@ -13,7 +13,6 @@ export interface CloudSession {
 export interface CloudUser {
   id: string
   name: string
-  email?: string
 }
 
 export type CloudNetworkState = 'unknown' | 'online' | 'offline' | 'expired'
@@ -97,17 +96,6 @@ const CLOUD_AUTH_REQUEST_TIMEOUT_MS = 30000
 const CLOUD_TOTAL_TIMEOUT_MS = 45000
 const CLOUD_AUTH_TOTAL_TIMEOUT_MS = 75000
 const RETRY_DELAYS_MS = [400, 1200]
-
-/**
- * Supabase RPC 已经尝试过时，再把 Vercel 作为兼容旧账号的短回退。
- * vercel.app 在部分大陆网络会被直接拦截；沿用完整的 75 秒认证预算会让
- * 登录页面看起来永久卡住。实际可用的 Vercel 冷启动通常会在这个预算内返回。
- */
-const DIRECT_FALLBACK_AUTH_BUDGET: RequestBudget = {
-  requestTimeoutMs: 8000,
-  totalTimeoutMs: 15000,
-  retryDelaysMs: [400],
-}
 
 function isGithubPagesHost(): boolean {
   return typeof window !== 'undefined'
@@ -237,12 +225,6 @@ class CloudRequestError extends Error {
   }
 }
 
-interface RequestBudget {
-  requestTimeoutMs: number
-  totalTimeoutMs: number
-  retryDelaysMs: readonly number[]
-}
-
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -250,17 +232,15 @@ async function request<T>(
   validate?: (body: T) => boolean,
   /** 注册/登录用更宽的预算:超时会让云端写成功而本机认为失败。 */
   slow = false,
-  budget?: RequestBudget,
 ): Promise<{ data: T; apiUrl: string }> {
   const urls = getCloudApiUrls(preferredApiUrl)
   if (urls.length === 0) throw new CloudRequestError(0, 'not_configured', '未配置云端地址')
 
   let lastError: CloudRequestError | null = null
-  const perRequestTimeout = budget?.requestTimeoutMs ?? (slow ? CLOUD_AUTH_REQUEST_TIMEOUT_MS : CLOUD_REQUEST_TIMEOUT_MS)
-  const deadline = Date.now() + (budget?.totalTimeoutMs ?? (slow ? CLOUD_AUTH_TOTAL_TIMEOUT_MS : CLOUD_TOTAL_TIMEOUT_MS))
-  const retryDelays = budget?.retryDelaysMs ?? RETRY_DELAYS_MS
+  const perRequestTimeout = slow ? CLOUD_AUTH_REQUEST_TIMEOUT_MS : CLOUD_REQUEST_TIMEOUT_MS
+  const deadline = Date.now() + (slow ? CLOUD_AUTH_TOTAL_TIMEOUT_MS : CLOUD_TOTAL_TIMEOUT_MS)
   for (const apiUrl of urls) {
-    for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
       if (Date.now() >= deadline) break
 
       try {
@@ -295,8 +275,8 @@ async function request<T>(
           setCloudNetworkState(cloudError.status === 401 ? 'expired' : 'online', cloudError.apiUrl, cloudError.message)
           throw cloudError
         }
-        if (attempt >= retryDelays.length) break
-        await wait(retryDelays[attempt])
+        if (attempt >= RETRY_DELAYS_MS.length) break
+        await wait(RETRY_DELAYS_MS[attempt])
       }
     }
   }
@@ -366,7 +346,7 @@ function isUnavailable(error: CloudRequestError): boolean {
 }
 
 /** 直连 RPC 的业务错误码 → 统一登录结果。 */
-function directResultToLogin(result: Awaited<ReturnType<typeof directLogin>>): CloudLoginResult | null {
+function directResultToLogin(result: Awaited<ReturnType<typeof directLoginVerified>>): CloudLoginResult | null {
   if (!directAuthFailed(result)) {
     return { kind: 'ok', user: result.user, session: { token: result.token, apiUrl: DIRECT_API_URL } }
   }
@@ -376,87 +356,6 @@ function directResultToLogin(result: Awaited<ReturnType<typeof directLogin>>): C
   // legacy_account 表示该账号的密码摘要只有主通道能校验,交给调用方继续等主通道。
   if (result.code === 'legacy_account') return null
   return { kind: 'error', message: result.error }
-}
-
-export async function loginCloud(name: string, password: string): Promise<CloudLoginResult> {
-  // Supabase 直连优先:国内网络不再先等待被拦截的 Vercel 域名。
-  // 旧版 scrypt 账号会返回 legacy_account,再交给 Vercel 校验并异步升级。
-  let directAttempted = false
-  if (cloudDirectConfigured) {
-    directAttempted = true
-    try {
-      const mapped = directResultToLogin(await directLogin(name, password))
-      if (mapped) {
-        setCloudNetworkState('online', DIRECT_API_URL)
-        return mapped
-      }
-    } catch {
-      // 直连 RPC 不可用时再走主通道,兼容未执行 SQL 或旧环境。
-    }
-  }
-
-  try {
-    const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ name, password }),
-    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true, directAttempted ? DIRECT_FALLBACK_AUTH_BUDGET : undefined)
-    const ok = toLoginResult(data, apiUrl)
-    // 主通道可达时顺手把旧账号的密码摘要补写成数据库可校验的格式,
-    // 之后在没有代理的国内网络也能直接登录。失败不影响本次登录。
-    if (ok.kind === 'ok' && cloudDirectConfigured) void directAdoptPassword(ok.session.token, password)
-    return ok
-  } catch (error) {
-    if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
-    if (error.code === 'not_found') return { kind: 'not_found' }
-    if (error.code === 'bad_password') return { kind: 'bad_password' }
-    // 直连已经在前面尝试过,这里不再重复等待同一个 Supabase RPC。
-    if (isUnavailable(error)) return { kind: 'unavailable' }
-    return { kind: 'error', message: error.message }
-  }
-}
-
-export async function registerCloud(id: string, name: string, password: string, preferDirect = true, email?: string): Promise<CloudLoginResult> {
-  let directAttempted = false
-  if (preferDirect && cloudDirectConfigured) {
-    directAttempted = true
-    try {
-      const mapped = directResultToLogin(await directRegister(id, name, password, email))
-      if (mapped) {
-        setCloudNetworkState('online', DIRECT_API_URL)
-        return mapped
-      }
-    } catch {
-      // 直连不可用时再走主通道,兼容开启代理或旧环境。
-    }
-  }
-
-  try {
-    const { data, apiUrl } = await request<{ user: CloudUser; token: string }>('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ id, name, password, email }),
-    }, undefined, (body) => Boolean(body.user && typeof body.user.id === 'string' && typeof body.user.name === 'string' && typeof body.token === 'string' && body.token), true, directAttempted ? DIRECT_FALLBACK_AUTH_BUDGET : undefined)
-    const ok = toLoginResult(data, apiUrl)
-    if (ok.kind === 'ok' && cloudDirectConfigured) void directAdoptPassword(ok.session.token, password)
-    return ok
-  } catch (error) {
-    if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
-    if (error.code === 'name_taken') return { kind: 'error', message: '该账号已在云端注册，请直接登录' }
-    if (isUnavailable(error) && cloudDirectConfigured) {
-      // 国内网络连不上主通道时直接写库,注册因此不再依赖 vercel.app 是否可达。
-      // RPC 与主通道同样是"同 ID 同密码可安全复用",重试不会建出重复账号。
-      try {
-        const mapped = directResultToLogin(await directRegister(id, name, password, email))
-        if (mapped) {
-          setCloudNetworkState('online', DIRECT_API_URL)
-          return mapped
-        }
-      } catch {
-        // 直连也失败则按原来的不可达处理
-      }
-    }
-    if (isUnavailable(error)) return { kind: 'unavailable' }
-    return { kind: 'error', message: error.message }
-  }
 }
 
 export async function updateCloudPassword(
@@ -573,3 +472,166 @@ export async function uploadCloudState(session: CloudSession, state: State): Pro
     return false
   }
 }
+
+// ============ 严格邮箱二次认证 ============
+
+export type AuthCodePurpose = 'login' | 'register' | 'reset_password'
+
+export type SendCodeResult =
+  | { kind: 'ok'; expiresIn: number }
+  | { kind: 'rate_limited'; waitSeconds: number }
+  | { kind: 'error'; message: string }
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+function validEmail(email: string): boolean {
+  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$/i.test(email)
+}
+
+export async function sendVerificationCode(email: string, purpose: AuthCodePurpose = 'login'): Promise<SendCodeResult> {
+  const trimmedEmail = normalizeEmail(email)
+  if (!validEmail(trimmedEmail)) return { kind: 'error', message: '邮箱格式不正确' }
+  try {
+    const { data, apiUrl } = await request<{
+      success: boolean
+      expiresIn?: number
+      error?: string
+      waitSeconds?: number
+    }>('/api/auth/send-code', {
+      method: 'POST',
+      body: JSON.stringify({ email: trimmedEmail, purpose }),
+    }, undefined, undefined, true)
+    saveCloudApiUrl(apiUrl)
+    setCloudNetworkState('online', apiUrl)
+    if (!data.success) {
+      if (data.waitSeconds) return { kind: 'rate_limited', waitSeconds: data.waitSeconds }
+      return { kind: 'error', message: data.error || '发送失败' }
+    }
+    return { kind: 'ok', expiresIn: data.expiresIn || 600 }
+  } catch (error) {
+    const cloudError = error instanceof CloudRequestError ? error : null
+    if (cloudError && isUnavailable(cloudError)) {
+      setCloudNetworkState('offline', undefined, '云端服务暂时不可用')
+      return { kind: 'error', message: '网络连接失败，请检查网络后重试' }
+    }
+    return { kind: 'error', message: cloudError?.message || '发送验证码失败' }
+  }
+}
+
+async function strictAuthRequest<T>(path: string, body: Record<string, unknown>): Promise<{ data: T; apiUrl: string }> {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) }, undefined, undefined, true)
+}
+
+export async function loginCloud(name: string, password: string, email = '', code = '', preferDirect = true): Promise<CloudLoginResult> {
+  if (!name.trim() || !password || !validEmail(normalizeEmail(email)) || !/^\d{6}$/.test(code.trim())) {
+    return { kind: 'error', message: '请输入账号、密码、邮箱和 6 位验证码' }
+  }
+  const normalizedEmail = normalizeEmail(email)
+  if (preferDirect && cloudDirectConfigured) {
+    try {
+      const mapped = directResultToLogin(await directLoginVerified(name, password, normalizedEmail, code.trim()))
+      if (mapped) {
+        setCloudNetworkState('online', DIRECT_API_URL)
+        return mapped
+      }
+    } catch {
+      // 直连失败时回退主通道,仍携带完整认证信息。
+    }
+  }
+  try {
+    const { data, apiUrl } = await strictAuthRequest<{ user: CloudUser; token: string }>('/api/auth/login', { name, password, email: normalizedEmail, code: code.trim() })
+    return toLoginResult(data, apiUrl)
+  } catch (error) {
+    if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
+    if (cloudDirectConfigured && isUnavailable(error)) {
+      try {
+        const mapped = directResultToLogin(await directLoginVerified(name, password, normalizedEmail, code.trim()))
+        if (mapped) {
+          setCloudNetworkState('online', DIRECT_API_URL)
+          return mapped
+        }
+      } catch {
+        // 直连也不可用时保持不可达结果。
+      }
+    }
+    if (error.code === 'not_found') return { kind: 'not_found' }
+    if (error.code === 'bad_password') return { kind: 'bad_password' }
+    if (error.code === 'invalid_code') return { kind: 'error', message: '验证码错误或已过期，请重新获取' }
+    if (error.code === 'email_mismatch') return { kind: 'error', message: '邮箱与账号绑定信息不一致' }
+    if (error.code === 'email_taken') return { kind: 'error', message: '该邮箱已绑定其他账号' }
+    if (isUnavailable(error)) return { kind: 'unavailable' }
+    return { kind: 'error', message: error.message }
+  }
+}
+
+export async function registerCloud(id: string, name: string, password: string, email = '', code = '', preferDirect = true): Promise<CloudLoginResult> {
+  if (!validEmail(normalizeEmail(email)) || !/^\d{6}$/.test(code.trim())) return { kind: 'error', message: '注册必须填写邮箱并验证 6 位验证码' }
+  const normalizedEmail = normalizeEmail(email)
+  if (preferDirect && cloudDirectConfigured) {
+    try {
+      const mapped = directResultToLogin(await directRegisterVerified(id, name, password, normalizedEmail, code.trim()))
+      if (mapped) {
+        setCloudNetworkState('online', DIRECT_API_URL)
+        return mapped
+      }
+    } catch {
+      // 直连失败时回退主通道,仍携带验证码。
+    }
+  }
+  try {
+    const { data, apiUrl } = await strictAuthRequest<{ user: CloudUser; token: string }>('/api/auth/register', { id, name, password, email: normalizedEmail, code: code.trim() })
+    return toLoginResult(data, apiUrl)
+  } catch (error) {
+    if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
+    if (cloudDirectConfigured && isUnavailable(error)) {
+      try {
+        const mapped = directResultToLogin(await directRegisterVerified(id, name, password, normalizedEmail, code.trim()))
+        if (mapped) {
+          setCloudNetworkState('online', DIRECT_API_URL)
+          return mapped
+        }
+      } catch {
+        // 直连也不可用时保持不可达结果。
+      }
+    }
+    if (error.code === 'name_taken') return { kind: 'error', message: '该账号已存在' }
+    if (error.code === 'email_taken') return { kind: 'error', message: '该邮箱已被注册' }
+    if (error.code === 'invalid_code') return { kind: 'error', message: '验证码错误或已过期，请重新获取' }
+    if (isUnavailable(error)) return { kind: 'unavailable' }
+    return { kind: 'error', message: error.message }
+  }
+}
+
+export async function resetCloudPassword(email: string, code: string, newPassword: string, confirmPassword: string): Promise<{ kind: 'ok' } | { kind: 'error'; message: string }> {
+  const normalizedEmail = normalizeEmail(email)
+  if (!validEmail(normalizedEmail) || !/^\d{6}$/.test(code.trim()) || newPassword.length < 4 || newPassword !== confirmPassword) return { kind: 'error', message: '邮箱、验证码或新密码格式不正确' }
+  try {
+    if (cloudDirectConfigured) {
+      try {
+        await directResetPassword(normalizedEmail, code.trim(), newPassword)
+        setCloudNetworkState('online', DIRECT_API_URL)
+        return { kind: 'ok' }
+      } catch {
+        // 直连失败时回退主通道,仍携带完整验证码。
+      }
+    }
+    const { apiUrl } = await strictAuthRequest<{ ok: boolean }>('/api/auth/reset-password', { email: normalizedEmail, code: code.trim(), newPassword, confirmPassword })
+    saveCloudApiUrl(apiUrl)
+    setCloudNetworkState('online', apiUrl)
+    return { kind: 'ok' }
+  } catch (error) {
+    const cloudError = error instanceof CloudRequestError ? error : null
+    if (cloudError?.code === 'invalid_code') return { kind: 'error', message: '验证码错误或已过期，请重新获取' }
+    if (cloudError?.code === 'not_found') return { kind: 'error', message: '邮箱未绑定账号' }
+    if (cloudError && isUnavailable(cloudError)) return { kind: 'error', message: '网络连接失败，请稍后重试' }
+    return { kind: 'error', message: cloudError?.message || '重置密码失败' }
+  }
+}
+
+/** 兼容旧调用方但不再允许邮箱密码绕过验证码。 */
+export async function loginCloudWithEmail(): Promise<CloudLoginResult> {
+  return { kind: 'error', message: '邮箱密码登录已升级，请使用账号、密码和邮箱验证码' }
+}
+
