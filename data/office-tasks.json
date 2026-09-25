@@ -1,0 +1,11 @@
+{
+  "meta": {
+    "name": "已归档的旧版实操题库",
+    "version": 3,
+    "updatedAt": "2026-08-31",
+    "note": "旧版笔试型实操题已由可编辑材料题库 V3 替换。原始 V2 数据已备份到 office-tasks.v2.backup.json；如需回滚，请运行 node scripts/restore-office-tasks-v2.mjs。",
+    "replacedBy": "data/office-question-bank.v3.json",
+    "backup": "data/office-tasks.v2.backup.json"
+  },
+  "questions": []
+}

@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "name": "山东专升本示例题库",
+    "version": 1,
+    "note": "示例数据,全部为自编题目(official=false),可在应用内编辑或删除;也可通过本文件结构批量准备题目"
+  },
+  "subjects": [
+    { "id": "s1", "name": "大学英语", "color": "#3E9BFF", "targetScore": 80, "order": 0 },
+    { "id": "s2", "name": "高等数学", "color": "#8B72E8", "targetScore": 60, "order": 1 },
+    { "id": "s3", "name": "计算机基础", "color": "#2FB98B", "targetScore": 70, "order": 2 }
+  ],
+  "chapters": [
+    { "id": "c11", "subjectId": "s1", "name": "词汇与语法基础", "order": 0 },
+    { "id": "c12", "subjectId": "s1", "name": "阅读理解", "order": 1 },
+    { "id": "c21", "subjectId": "s2", "name": "函数与极限", "order": 0 },
+    { "id": "c22", "subjectId": "s2", "name": "一元微分学", "order": 1 },
+    { "id": "c23", "subjectId": "s2", "name": "一元积分学", "order": 2 },
+    { "id": "c31", "subjectId": "s3", "name": "计算机基础知识", "order": 0 },
+    { "id": "c32", "subjectId": "s3", "name": "操作系统与办公软件", "order": 1 },
+    { "id": "c33", "subjectId": "s3", "name": "计算机网络", "order": 2 }
+  ],
+  "kps": [
+    { "id": "k111", "subjectId": "s1", "chapterId": "c11", "name": "现在完成时", "order": 0 },
+    { "id": "k112", "subjectId": "s1", "chapterId": "c11", "name": "过去完成时", "order": 1 },
+    { "id": "k113", "subjectId": "s1", "chapterId": "c11", "name": "主谓一致", "order": 2 },
+    { "id": "k114", "subjectId": "s1", "chapterId": "c11", "name": "动名词", "order": 3 },
+    { "id": "k115", "subjectId": "s1", "chapterId": "c11", "name": "强调句型", "order": 4 },
+    { "id": "k116", "subjectId": "s1", "chapterId": "c11", "name": "比较级句型", "order": 5 },
+    { "id": "k117", "subjectId": "s1", "chapterId": "c11", "name": "虚拟语气", "order": 6 },
+    { "id": "k118", "subjectId": "s1", "chapterId": "c11", "name": "核心词汇", "order": 7 },
+    { "id": "k119", "subjectId": "s1", "chapterId": "c11", "name": "易混词辨析", "order": 8 },
+    { "id": "k121", "subjectId": "s1", "chapterId": "c12", "name": "阅读细节题", "order": 0 },
+    { "id": "k122", "subjectId": "s1", "chapterId": "c12", "name": "阅读推断题", "order": 1 },
+    { "id": "k211", "subjectId": "s2", "chapterId": "c21", "name": "函数定义域", "order": 0 },
+    { "id": "k212", "subjectId": "s2", "chapterId": "c21", "name": "反函数", "order": 1 },
+    { "id": "k213", "subjectId": "s2", "chapterId": "c21", "name": "重要极限(一)", "order": 2 },
+    { "id": "k214", "subjectId": "s2", "chapterId": "c21", "name": "重要极限(二)", "order": 3 },
+    { "id": "k221", "subjectId": "s2", "chapterId": "c22", "name": "导数计算", "order": 0 },
+    { "id": "k222", "subjectId": "s2", "chapterId": "c22", "name": "导数的几何意义", "order": 1 },
+    { "id": "k223", "subjectId": "s2", "chapterId": "c22", "name": "乘积求导法则", "order": 2 },
+    { "id": "k224", "subjectId": "s2", "chapterId": "c22", "name": "可导与连续的关系", "order": 3 },
+    { "id": "k231", "subjectId": "s2", "chapterId": "c23", "name": "基本积分公式", "order": 0 },
+    { "id": "k232", "subjectId": "s2", "chapterId": "c23", "name": "定积分计算", "order": 1 },
+    { "id": "k311", "subjectId": "s3", "chapterId": "c31", "name": "计算机组成", "order": 0 },
+    { "id": "k312", "subjectId": "s3", "chapterId": "c31", "name": "硬件分类", "order": 1 },
+    { "id": "k313", "subjectId": "s3", "chapterId": "c31", "name": "存储单位换算", "order": 2 },
+    { "id": "k314", "subjectId": "s3", "chapterId": "c31", "name": "进制转换", "order": 3 },
+    { "id": "k315", "subjectId": "s3", "chapterId": "c31", "name": "软件分类", "order": 4 },
+    { "id": "k321", "subjectId": "s3", "chapterId": "c32", "name": "操作系统基本操作", "order": 0 },
+    { "id": "k322", "subjectId": "s3", "chapterId": "c32", "name": "Office 常用操作", "order": 1 },
+    { "id": "k331", "subjectId": "s3", "chapterId": "c33", "name": "网络基础", "order": 0 }
+  ],
+  "questions": [
+    {
+      "id": "q001", "subjectId": "s1", "chapterId": "c11", "kpId": "k111", "type": "single",
+      "stem": "He ______ his hometown since 2020.",
+      "options": ["left", "has left", "has been away from", "was away from"],
+      "answer": "C",
+      "explanation": "第一步:since 2020 表示从过去某点延续到现在,句子要用现在完成时。第二步:leave 是非延续性动词,不能与表示一段时间的 since 连用,需要换成延续性表达 be away from。第三步:主语 He 是第三人称单数,助动词用 has。因此选 C:has been away from。A/B 都是瞬间动作,D 时态不对。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q002", "subjectId": "s1", "chapterId": "c11", "kpId": "k113", "type": "single",
+      "stem": "Neither the students nor the teacher ______ aware of the change.",
+      "options": ["is", "are", "were", "be"],
+      "answer": "A",
+      "explanation": "第一步:neither...nor... 连接主语时,谓语遵循就近原则,与靠近谓语的名词保持一致。第二步:靠近谓语的是 the teacher(单数)。第三步:陈述事实用一般现在时,所以用 is。易错点:看到 students 就选 are。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q003", "subjectId": "s1", "chapterId": "c11", "kpId": "k119", "type": "single",
+      "stem": "The new policy will have a profound ______ on education.",
+      "options": ["affect", "effect", "affection", "effective"],
+      "answer": "B",
+      "explanation": "第一步:空格前有冠词 a 和形容词 profound,说明要填名词。第二步:have an effect on 是固定搭配,意为对……有影响。第三步:affect 是动词,effective 是形容词,affection 意为喜爱。所以选 B。记忆技巧:affect=动作(v.),effect=结果(n.)。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q004", "subjectId": "s1", "chapterId": "c11", "kpId": "k114", "type": "single",
+      "stem": "She is looking forward to ______ from you soon.",
+      "options": ["hear", "hearing", "heard", "be heard"],
+      "answer": "B",
+      "explanation": "第一步:look forward to 中的 to 是介词,不是不定式符号。第二步:介词后面要接名词或动名词。第三步:hear from 意为收到来信,所以用 hearing。类似结构还有 be used to doing、devote...to doing 等。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q005", "subjectId": "s1", "chapterId": "c11", "kpId": "k115", "type": "single",
+      "stem": "It was not until midnight ______ he finished the report.",
+      "options": ["when", "that", "which", "since"],
+      "answer": "B",
+      "explanation": "第一步:It was not until... 是强调句型,强调时间状语 not until midnight。第二步:强调句的判断方法是去掉 It was...that 后句子仍然完整。第三步:强调句固定用 that 引导,即使被强调部分是时间也不用 when。所以选 B。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q006", "subjectId": "s1", "chapterId": "c11", "kpId": "k116", "type": "single",
+      "stem": "The harder you work, ______ progress you will make.",
+      "options": ["more", "the more", "the most", "much"],
+      "answer": "B",
+      "explanation": "第一步:the + 比较级..., the + 比较级... 表示越……就越……。第二步:前半句 The harder 已经给出条件,后半句要用 the more。第三步:progress 是不可数名词,用 more 修饰。所以选 B。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q007", "subjectId": "s1", "chapterId": "c12", "kpId": "k121", "type": "single",
+      "stem": "阅读短文,回答问题。\n\nLast year, Tom moved to a new city. At first he found it hard to make friends there. But after he joined a football club, he soon got along well with his teammates.\n\nHow did Tom finally make friends?",
+      "options": ["By working overtime", "By joining a football club", "By moving to another city", "By studying online"],
+      "answer": "B",
+      "explanation": "第一步:定位关键词 make friends,对应原文 At first he found it hard to make friends... But after he joined a football club。第二步:but 之后的转折句通常才是答案所在。第三步:after he joined a football club 与选项 B 同义替换。注意 A/D 属于无中生有。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q008", "subjectId": "s1", "chapterId": "c11", "kpId": "k112", "type": "single",
+      "stem": "By the end of last year, they ______ over 3,000 English words.",
+      "options": ["learned", "had learned", "have learned", "learn"],
+      "answer": "B",
+      "explanation": "第一步:by the end of + 过去时间(last year)是过去完成时的标志。第二步:过去完成时表示过去某个时间点之前已经完成的动作,结构为 had + 过去分词。第三步:选 had learned。易混点:如果句末是 by the end of next year,则用将来完成时 will have learned。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q009", "subjectId": "s1", "chapterId": "c11", "kpId": "k118", "type": "single",
+      "stem": "下列与 abandon 意思最接近的短语是:",
+      "options": ["give up", "keep on", "take up", "put off"],
+      "answer": "A",
+      "explanation": "abandon 意为放弃、抛弃,与 give up 同义。keep on 表示继续,take up 表示开始从事,put off 表示推迟。记忆技巧:a-band-on 可以联想成把乐队(band)留在原地不管了,即放弃。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q010", "subjectId": "s1", "chapterId": "c11", "kpId": "k117", "type": "single",
+      "stem": "I would rather you ______ tomorrow.",
+      "options": ["come", "came", "will come", "coming"],
+      "answer": "B",
+      "explanation": "第一步:would rather 后接从句时,从句要用虚拟语气。第二步:表示对将来的虚拟,从句动词用一般过去式。第三步:所以选 came,虽然动作发生在明天。这是虚拟语气的特殊用法,不要被 tomorrow 迷惑。",
+      "difficulty": 3, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q011", "subjectId": "s2", "chapterId": "c21", "kpId": "k213", "type": "single",
+      "stem": "计算极限:lim(x→0) sin(3x) / x = ?",
+      "options": ["1", "3", "0", "∞"],
+      "answer": "B",
+      "explanation": "第一步:重要极限 lim(t→0) sin(t)/t = 1。第二步:把 sin(3x)/x 改写为 3 × sin(3x)/(3x)。第三步:当 x→0 时,3x→0,所以 sin(3x)/(3x)→1。第四步:整体极限 = 3 × 1 = 3,选 B。易错点:直接把 sin(3x) 当成 3x 之外的数,忘记系数 3。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q012", "subjectId": "s2", "chapterId": "c22", "kpId": "k221", "type": "single",
+      "stem": "设 f(x) = x²,则 f′(2) = ?",
+      "options": ["2", "4", "2x", "8"],
+      "answer": "B",
+      "explanation": "第一步:求导得 f′(x) = 2x。第二步:代入 x = 2,得 f′(2) = 4。第三步:注意题目问的是具体数值,2x 只是导函数,不能选 C。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q013", "subjectId": "s2", "chapterId": "c23", "kpId": "k232", "type": "single",
+      "stem": "计算定积分:∫₀¹ 2x dx = ?",
+      "options": ["1", "2", "0", "发散"],
+      "answer": "A",
+      "explanation": "第一步:找原函数,∫2x dx = x² + C。第二步:用牛顿-莱布尼茨公式,∫₀¹ 2x dx = [x²] 从 0 到 1 = 1² − 0² = 1。第三步:几何意义是直线 y=2x 在 [0,1] 与 x 轴围成的三角形面积 = ½ × 1 × 2 = 1,两种方法互相印证。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q014", "subjectId": "s2", "chapterId": "c21", "kpId": "k211", "type": "single",
+      "stem": "函数 y = ln x 的定义域是:",
+      "options": ["x > 0", "x ≥ 0", "x ≠ 0", "全体实数"],
+      "answer": "A",
+      "explanation": "第一步:对数函数 ln x 要求真数大于 0。第二步:x = 0 时 ln x 无意义,x < 0 时也无意义。第三步:所以定义域是 (0, +∞),即 x > 0。易混点:√x 的定义域是 x ≥ 0,注意区分。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q015", "subjectId": "s2", "chapterId": "c22", "kpId": "k222", "type": "single",
+      "stem": "曲线 y = x³ 在点 x = 1 处的切线斜率是:",
+      "options": ["1", "2", "3", "6"],
+      "answer": "C",
+      "explanation": "第一步:切线斜率就是该点处的导数值。第二步:y′ = 3x²。第三步:代入 x = 1 得 y′(1) = 3。第四步:相应切线方程为 y − 1 = 3(x − 1),即 y = 3x − 2。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q016", "subjectId": "s2", "chapterId": "c21", "kpId": "k214", "type": "single",
+      "stem": "计算极限:lim(x→∞) (1 + 1/x)^x = ?",
+      "options": ["e", "1", "0", "∞"],
+      "answer": "A",
+      "explanation": "第一步:这是第二重要极限,标准形式 lim(1 + 1/x)^x = e(x→∞)。第二步:也可以写成 lim(1 + t)^(1/t) = e(t→0)。第三步:e ≈ 2.71828。记忆技巧:底数趋于 1、指数趋于无穷的 1^∞ 型,优先考虑凑出这个结构。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q017", "subjectId": "s2", "chapterId": "c21", "kpId": "k212", "type": "single",
+      "stem": "函数 y = 2x + 1 的反函数是:",
+      "options": ["y = (x − 1) / 2", "y = 2x − 1", "y = (x + 1) / 2", "y = 1 / (2x + 1)"],
+      "answer": "A",
+      "explanation": "第一步:由 y = 2x + 1 反解 x:2x = y − 1,得 x = (y − 1)/2。第二步:交换 x 与 y,得反函数 y = (x − 1)/2。第三步:检验:y = (x−1)/2 代入 2y + 1 = x,互为反函数成立。易错点:D 选项是倒数,不是反函数。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q018", "subjectId": "s2", "chapterId": "c22", "kpId": "k223", "type": "single",
+      "stem": "求导:(x · eˣ)′ = ?",
+      "options": ["eˣ", "x·eˣ", "eˣ(1 + x)", "(1 + x) / x"],
+      "answer": "C",
+      "explanation": "第一步:乘积法则 (uv)′ = u′v + uv′。第二步:设 u = x,u′ = 1;v = eˣ,v′ = eˣ。第三步:(x·eˣ)′ = 1·eˣ + x·eˣ = eˣ(1 + x)。第四步:提公因式 eˣ 后整理,选 C。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q019", "subjectId": "s2", "chapterId": "c23", "kpId": "k231", "type": "single",
+      "stem": "不定积分 ∫ eˣ dx = ?",
+      "options": ["eˣ + C", "eˣ", "x·eˣ + C", "e^(x+1)"],
+      "answer": "A",
+      "explanation": "第一步:eˣ 的导数是它自己,所以它的原函数还是 eˣ。第二步:不定积分必须加任意常数 C。第三步:选 A。易错点:B 少了常数 C,不算完整的不定积分。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q020", "subjectId": "s2", "chapterId": "c22", "kpId": "k224", "type": "judge",
+      "stem": "判断:如果函数在某点可导,那么它在该点一定连续。",
+      "options": ["正确", "错误"],
+      "answer": "A",
+      "explanation": "可导必连续:若 f 在 x₀ 处可导,则 lim Δy/Δx 存在,从而 Δy → 0,即连续。但反过来不成立,反例是 y = |x| 在 x = 0 处连续但不可导。记忆口诀:可导 ⇒ 连续,连续 ⇏ 可导。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q021", "subjectId": "s3", "chapterId": "c31", "kpId": "k311", "type": "single",
+      "stem": "CPU 主要由哪两部分组成?",
+      "options": ["运算器和控制器", "内存和外存", "输入设备和输出设备", "主板和电源"],
+      "answer": "A",
+      "explanation": "CPU(中央处理器)由运算器(负责算术和逻辑运算)和控制器(负责指挥协调各部件)组成。内存、外存属于存储器;输入输出设备与 CPU 一起构成计算机硬件系统的五大部件。易混点:内存不属于 CPU。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q022", "subjectId": "s3", "chapterId": "c31", "kpId": "k313", "type": "single",
+      "stem": "1GB 等于多少 MB?",
+      "options": ["1000", "1024", "512", "2048"],
+      "answer": "B",
+      "explanation": "存储单位换算关系:1KB = 1024B,1MB = 1024KB,1GB = 1024MB,1TB = 1024GB。计算机采用二进制,相邻单位之间是 2 的 10 次方 = 1024 倍,而不是 1000 倍。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q023", "subjectId": "s3", "chapterId": "c32", "kpId": "k321", "type": "single",
+      "stem": "在 Windows 中,复制的快捷键是:",
+      "options": ["Ctrl + C", "Ctrl + V", "Ctrl + X", "Ctrl + A"],
+      "answer": "A",
+      "explanation": "Ctrl+C 复制,Ctrl+V 粘贴,Ctrl+X 剪切,Ctrl+A 全选,Ctrl+Z 撤销。记忆技巧:C = Copy(复制),V 像粘贴时往下的动作,X 像剪刀表示剪切。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q024", "subjectId": "s3", "chapterId": "c31", "kpId": "k312", "type": "single",
+      "stem": "下列属于输入设备的是:",
+      "options": ["键盘", "显示器", "打印机", "音箱"],
+      "answer": "A",
+      "explanation": "输入设备把信息送入计算机,如键盘、鼠标、扫描仪;输出设备把结果呈现给人,如显示器、打印机、音箱。判断技巧:数据流向是从人流向机器的就是输入设备。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q025", "subjectId": "s3", "chapterId": "c33", "kpId": "k331", "type": "single",
+      "stem": "HTTP 协议的默认端口号是:",
+      "options": ["21", "80", "443", "8080"],
+      "answer": "B",
+      "explanation": "HTTP 默认 80 端口;HTTPS 默认 443;FTP 默认 21。8080 常用作备用 HTTP 端口。记忆技巧:HTTPS 的 S 表示安全(Secure),比 HTTP 的 80 多了一个更高级的 443。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q026", "subjectId": "s3", "chapterId": "c32", "kpId": "k322", "type": "single",
+      "stem": "在 Word 中,打开查找和替换对话框的快捷键是:",
+      "options": ["Ctrl + H", "Ctrl + F", "Ctrl + R", "Ctrl + G"],
+      "answer": "A",
+      "explanation": "Ctrl+F 只打开查找,Ctrl+H 打开查找和替换(R = Replace 的联想记忆)。Ctrl+G 是定位。易错点:题目问的是替换,不要选 Ctrl+F。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2024, "official": false
+    },
+    {
+      "id": "q027", "subjectId": "s3", "chapterId": "c31", "kpId": "k314", "type": "single",
+      "stem": "二进制数 1011 转换为十进制数是:",
+      "options": ["9", "10", "11", "13"],
+      "answer": "C",
+      "explanation": "按权展开:1011(B) = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = 11。技巧:从右往左权重依次是 1、2、4、8,只需把为 1 的位对应的权重相加。",
+      "difficulty": 2, "source": "示例题库(自编)", "year": 2025, "official": false
+    },
+    {
+      "id": "q028", "subjectId": "s3", "chapterId": "c31", "kpId": "k315", "type": "single",
+      "stem": "下列属于系统软件的是:",
+      "options": ["Windows 11", "微信", "WPS Office", "Photoshop"],
+      "answer": "A",
+      "explanation": "系统软件管理计算机硬件资源、为其他软件提供运行环境,典型代表是操作系统(Windows、Linux、macOS)。微信、WPS、Photoshop 都是为具体应用服务的应用软件。判断技巧:没有它电脑就开不了机的,是系统软件。",
+      "difficulty": 1, "source": "示例题库(自编)", "year": 2025, "official": false
+    }
+  ]
+}
