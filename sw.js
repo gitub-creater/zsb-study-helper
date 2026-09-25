@@ -35,17 +35,18 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Bundled assets have content hashes. Prefer network after every deployment so a stale service worker
-  // cannot serve an old index shell whose referenced hash files no longer exist on GitHub Pages.
   e.respondWith(
-    fetch(e.request)
-      .then((res) => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, clone));
-        }
-        return res;
-      })
-      .catch(() => caches.match(e.request))
+    caches.match(e.request).then((cached) => {
+      const fetched = fetch(e.request)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || fetched;
+    })
   );
 });
