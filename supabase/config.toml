@@ -1,0 +1,4 @@
+project_id = "zpcvtvecxlmuostagujr"
+
+[functions.send-code]
+verify_jwt = false

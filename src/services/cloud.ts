@@ -1,5 +1,6 @@
 import { getSession, setSession } from '../lib/auth'
 import type { State } from '../types'
+import { SUPABASE_KEY, SUPABASE_URL } from './supabaseClient'
 import {
   DIRECT_API_URL, cloudDirectConfigured, directAdoptPassword, directAuthFailed, directChangePassword,
   directFindUsers, directGetState, directLoginVerified, directRegisterVerified, directResetPassword, directPutState, isDirectApiUrl,
@@ -493,6 +494,32 @@ function validEmail(email: string): boolean {
 export async function sendVerificationCode(email: string, purpose: AuthCodePurpose = 'login'): Promise<SendCodeResult> {
   const trimmedEmail = normalizeEmail(email)
   if (!validEmail(trimmedEmail)) return { kind: 'error', message: '邮箱格式不正确' }
+
+  if (cloudDirectConfigured) {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ email: trimmedEmail, purpose }),
+        signal: AbortSignal.timeout(CLOUD_AUTH_REQUEST_TIMEOUT_MS),
+      })
+      const data = await response.json().catch(() => null) as { success?: boolean; expiresIn?: number; error?: string; waitSeconds?: number } | null
+      if (response.ok && data?.success) {
+        setCloudNetworkState('online', DIRECT_API_URL)
+        return { kind: 'ok', expiresIn: data.expiresIn || 600 }
+      }
+      if (response.status === 429 || data?.waitSeconds) {
+        return { kind: 'rate_limited', waitSeconds: data?.waitSeconds || 60 }
+      }
+      if (response.status >= 400 && response.status < 500) {
+        return { kind: 'error', message: data?.error || '验证码请求被拒绝' }
+      }
+      // Edge Function 服务端错误时才回退 Vercel，避免因业务错误重复发送。
+    } catch {
+      // 大陆网络优先直连 Supabase；不可达时再尝试 Vercel。
+    }
+  }
+
   try {
     const { data, apiUrl } = await request<{
       success: boolean
@@ -514,7 +541,7 @@ export async function sendVerificationCode(email: string, purpose: AuthCodePurpo
     const cloudError = error instanceof CloudRequestError ? error : null
     if (cloudError && isUnavailable(cloudError)) {
       setCloudNetworkState('offline', undefined, '云端服务暂时不可用')
-      return { kind: 'error', message: '网络连接失败，请检查网络后重试' }
+      return { kind: 'error', message: '验证码服务连接失败，请检查网络后重试' }
     }
     return { kind: 'error', message: cloudError?.message || '发送验证码失败' }
   }
