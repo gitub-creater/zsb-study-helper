@@ -53,7 +53,7 @@ export async function findCloudUsers(session: CloudSession, query: string): Prom
   const value = query.trim()
   if (!value) return []
   // 会话本身就是直连签发的,不必再撞一次被封的主通道。
-  if (isDirectApiUrl(session.apiUrl)) return directFindUsers(session.token, value)
+  if (isDirectApiUrl(session.apiUrl) && !isMainlandRelayClient()) return directFindUsers(session.token, value)
 
   const encoded = encodeURIComponent(value)
   try {
@@ -65,7 +65,7 @@ export async function findCloudUsers(session: CloudSession, query: string): Prom
     return data.users
   } catch (error) {
     // 好友搜索在国内最容易撞到 vercel.app 被封;两条通道共用 app_sessions,令牌可直接复用。
-    if (!cloudDirectConfigured || !(error instanceof CloudRequestError) || !isUnavailable(error)) throw error
+    if (isMainlandRelayClient() || !cloudDirectConfigured || !(error instanceof CloudRequestError) || !isUnavailable(error)) throw error
     const users = await directFindUsers(session.token, value)
     session.apiUrl = DIRECT_API_URL
     setCloudNetworkState('online', DIRECT_API_URL)
@@ -84,9 +84,11 @@ export { CloudRequestError }
 
 const API_URL_KEY = 'zsb_cloud_api_url_v1'
 const DEFAULT_CLOUD_API_URLS = [
+  'https://1496092367-jkwjpfq51u.ap-beijing.tencentscf.com',
   'https://shandong-zsb-study-helper.vercel.app',
   'https://zsb-study-helper.vercel.app',
 ]
+const MAINLAND_RELAY_API_URL = DEFAULT_CLOUD_API_URLS[0]
 const GITHUB_PAGES_HOST = 'gitub-creater.github.io'
 // 实测生产注册接口耗时 2.0-4.2 秒(Vercel Serverless 冷启动 + Supabase 跨区往返,
 // 一次注册要串行完成查重/哈希/写账号/建会话)。原来的 5 秒预算刚好卡在这个区间,
@@ -101,6 +103,12 @@ const RETRY_DELAYS_MS = [400, 1200]
 function isGithubPagesHost(): boolean {
   return typeof window !== 'undefined'
     && (window.location.hostname === GITHUB_PAGES_HOST || window.location.hostname.endsWith(`.${GITHUB_PAGES_HOST}`))
+}
+
+function isMainlandRelayClient(): boolean {
+  if (isGithubPagesHost()) return true
+  if (typeof window === 'undefined') return false
+  return window.location.protocol === 'file:' || isLocalOrLanHost(window.location.hostname)
 }
 
 function isLocalOrLanHost(hostname: string): boolean {
@@ -149,6 +157,7 @@ export function getCloudApiUrls(preferred?: string): string[] {
     : ''
   // 已成功的入口优先于旧会话里的地址，避免每次同步重新撞上故障域名。
   return [...new Set([
+    isMainlandRelayClient() ? MAINLAND_RELAY_API_URL : '',
     normalizeUrl(saved),
     normalizeUrl(preferred ?? ''),
     sameOrigin,
@@ -364,7 +373,7 @@ export async function updateCloudPassword(
   oldPassword: string,
   newPassword: string
 ): Promise<void> {
-  if (isDirectApiUrl(session.apiUrl)) {
+  if (isDirectApiUrl(session.apiUrl) && !isMainlandRelayClient()) {
     await directChangePassword(session.token, oldPassword, newPassword)
     return
   }
@@ -377,7 +386,7 @@ export async function updateCloudPassword(
     session.apiUrl = apiUrl
   } catch (error) {
     const cloudError = error instanceof CloudRequestError ? error : null
-    if (!(cloudDirectConfigured && cloudError && isUnavailable(cloudError))) throw error
+    if (isMainlandRelayClient() || !(cloudDirectConfigured && cloudError && isUnavailable(cloudError))) throw error
     await directChangePassword(session.token, oldPassword, newPassword)
     session.apiUrl = DIRECT_API_URL
     setCloudNetworkState('online', DIRECT_API_URL)
@@ -404,7 +413,7 @@ async function directDownload(session: CloudSession): Promise<CloudDownloadResul
 }
 
 export async function downloadCloudStateResult(session: CloudSession): Promise<CloudDownloadResult> {
-  if (isDirectApiUrl(session.apiUrl)) return directDownload(session)
+  if (isDirectApiUrl(session.apiUrl) && !isMainlandRelayClient()) return directDownload(session)
   try {
     const { data, apiUrl } = await request<{ state: State | null }>('/api/state', {
       headers: { Authorization: `Bearer ${session.token}` },
@@ -417,7 +426,7 @@ export async function downloadCloudStateResult(session: CloudSession): Promise<C
   } catch (error) {
     const cloudError = error instanceof CloudRequestError ? error : null
     // 会话令牌两条通道共用同一张 app_sessions 表，因此主通道被封时可以直接改走直连。
-    if (cloudError && cloudError.status !== 401 && isUnavailable(cloudError) && cloudDirectConfigured) {
+    if (!isMainlandRelayClient() && cloudError && cloudError.status !== 401 && isUnavailable(cloudError) && cloudDirectConfigured) {
       const viaDirect = await directDownload(session)
       if (viaDirect.kind !== 'error') return viaDirect
     }
@@ -436,7 +445,7 @@ export async function uploadCloudState(session: CloudSession, state: State): Pro
   // AI 密钥属于设备私密配置。学习数据可以云同步，但密钥绝不离开当前设备。
   const cloudState = removeAiApiKeyFromCloudState(state)!
 
-  if (isDirectApiUrl(session.apiUrl)) {
+  if (isDirectApiUrl(session.apiUrl) && !isMainlandRelayClient()) {
     try {
       await directPutState(session.token, cloudState)
       setCloudSyncState('synced')
@@ -458,7 +467,7 @@ export async function uploadCloudState(session: CloudSession, state: State): Pro
   } catch (error) {
     // 主通道被封锁时同一个会话令牌可以直接走 supabase.co(会话表是同一张)。
     const cloudError = error instanceof CloudRequestError ? error : null
-    if (cloudDirectConfigured && cloudError && isUnavailable(cloudError)) {
+    if (!isMainlandRelayClient() && cloudDirectConfigured && cloudError && isUnavailable(cloudError)) {
       try {
         await directPutState(session.token, cloudState)
         session.apiUrl = DIRECT_API_URL
@@ -495,7 +504,7 @@ export async function sendVerificationCode(email: string, purpose: AuthCodePurpo
   const trimmedEmail = normalizeEmail(email)
   if (!validEmail(trimmedEmail)) return { kind: 'error', message: '邮箱格式不正确' }
 
-  if (cloudDirectConfigured) {
+  if (cloudDirectConfigured && !isMainlandRelayClient()) {
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/send-code`, {
         method: 'POST',
@@ -556,7 +565,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
     return { kind: 'error', message: '请输入账号、密码、邮箱和 6 位验证码' }
   }
   const normalizedEmail = normalizeEmail(email)
-  if (preferDirect && cloudDirectConfigured) {
+  if (preferDirect && cloudDirectConfigured && !isMainlandRelayClient()) {
     try {
       const mapped = directResultToLogin(await directLoginVerified(name, password, normalizedEmail, code.trim()))
       if (mapped) {
@@ -572,7 +581,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
-    if (cloudDirectConfigured && isUnavailable(error)) {
+    if (cloudDirectConfigured && !isMainlandRelayClient() && isUnavailable(error)) {
       try {
         const mapped = directResultToLogin(await directLoginVerified(name, password, normalizedEmail, code.trim()))
         if (mapped) {
@@ -596,7 +605,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
 export async function registerCloud(id: string, name: string, password: string, email = '', code = '', preferDirect = true): Promise<CloudLoginResult> {
   if (!validEmail(normalizeEmail(email)) || !/^\d{6}$/.test(code.trim())) return { kind: 'error', message: '注册必须填写邮箱并验证 6 位验证码' }
   const normalizedEmail = normalizeEmail(email)
-  if (preferDirect && cloudDirectConfigured) {
+  if (preferDirect && cloudDirectConfigured && !isMainlandRelayClient()) {
     try {
       const mapped = directResultToLogin(await directRegisterVerified(id, name, password, normalizedEmail, code.trim()))
       if (mapped) {
@@ -612,7 +621,7 @@ export async function registerCloud(id: string, name: string, password: string, 
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
-    if (cloudDirectConfigured && isUnavailable(error)) {
+    if (cloudDirectConfigured && !isMainlandRelayClient() && isUnavailable(error)) {
       try {
         const mapped = directResultToLogin(await directRegisterVerified(id, name, password, normalizedEmail, code.trim()))
         if (mapped) {
@@ -635,7 +644,7 @@ export async function resetCloudPassword(email: string, code: string, newPasswor
   const normalizedEmail = normalizeEmail(email)
   if (!validEmail(normalizedEmail) || !/^\d{6}$/.test(code.trim()) || newPassword.length < 4 || newPassword !== confirmPassword) return { kind: 'error', message: '邮箱、验证码或新密码格式不正确' }
   try {
-    if (cloudDirectConfigured) {
+    if (cloudDirectConfigured && !isMainlandRelayClient()) {
       try {
         await directResetPassword(normalizedEmail, code.trim(), newPassword)
         setCloudNetworkState('online', DIRECT_API_URL)
