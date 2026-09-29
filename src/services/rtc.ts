@@ -29,6 +29,8 @@ export interface RtcAction {
     | 'set-mic' // host: { userId, on }
     | 'set-speak' // host: { userId, on }
     | 'set-edit' // host: { userId, on }
+    | 'kick' // host: { userId }
+    | 'rtc-signal' // { signal }: WebRTC offer/answer/ICE
     | 'raise-hand' // { userId, on }
     | 'share-frame' // 屏幕共享一帧贴白板: { userId, dataUrl }
     | 'end'
@@ -41,6 +43,15 @@ export interface RtcHandlers {
   onRoomState: (s: MeetingRoomState) => void
   onChat: (m: MeetingChatMsg) => void
   onBoardDelta: (pageId: string, items: BoardItem[], replace: boolean, eraseUpdates?: BoardEraseUpdate[]) => void
+  onSignal: (signal: RtcSignal) => void
+}
+
+export interface RtcSignal {
+  from: string
+  to: string
+  kind: 'offer' | 'answer' | 'ice'
+  sdp?: RTCSessionDescriptionInit
+  candidate?: RTCIceCandidateInit
 }
 
 export interface RtcDriver {
@@ -147,6 +158,11 @@ export class MeetingSession {
   private chatLog: MeetingChatMsg[] = []
   private chatListeners = new Set<(list: MeetingChatMsg[]) => void>()
   private persistTimer: number | undefined
+  private peers = new Map<string, RTCPeerConnection>()
+  private localAudioStream: MediaStream | null = null
+  private remoteAudioListeners = new Set<(stream: MediaStream, userId: string) => void>()
+  private joinedOnce = false
+  private kicked = false
 
   constructor(opts: { meeting: MeetingInfo; me: { id: string; name: string }; isHost: boolean; driver?: RtcDriver }) {
     this.me = opts.me
@@ -184,6 +200,10 @@ export class MeetingSession {
     this.handlers = {
       onRoomState: (s) => {
         if (this.isHost) return // 主机权威:忽略远端房间状态(同账号双开互不污染)
+        if (this.joinedOnce && !s.participants.some((p) => p.userId === this.me.id)) {
+          this.kicked = true
+          this.closePeers()
+        }
         this.room = s
         this.emit()
       },
@@ -206,12 +226,17 @@ export class MeetingSession {
         }
         this.emit()
       },
+      onSignal: (signal) => { void this.handleSignal(signal) },
     }
     this.driver!.connect(this.room.meeting.id, this.handlers)
     if (this.isHost) {
       setIntentHandler((a) => this.hostApply(a))
       this.broadcastRoom()
-    } else this.driver!.send({ kind: 'join', participant: this.meAsParticipant() })
+    } else {
+      this.joinedOnce = true
+      this.driver!.send({ kind: 'join', participant: this.meAsParticipant() })
+      void this.ensurePeer(this.room.meeting.hostId, true)
+    }
     this.schedulePersist()
   }
 
@@ -219,6 +244,7 @@ export class MeetingSession {
     if (!this.isHost && this.driver) this.driver.send({ kind: 'leave', userId: this.me.id })
     this.driver?.disconnect()
     this.driver = null
+    this.closePeers()
     if (this.isHost) setIntentHandler(null)
     if (this.eraseTimer !== undefined) {
       window.clearTimeout(this.eraseTimer)
@@ -227,6 +253,87 @@ export class MeetingSession {
     this.flushEraseQueue()
     if (this.persistTimer) window.clearTimeout(this.persistTimer)
     this.persist()
+  }
+
+  get isKicked(): boolean { return this.kicked }
+
+  setLocalAudioStream(stream: MediaStream | null): void {
+    this.localAudioStream = stream
+    for (const peer of this.peers.values()) {
+      const transceiver = peer.getTransceivers().find((item) => item.receiver.track.kind === 'audio')
+      const sender = peer.getSenders().find((item) => item.track?.kind === 'audio') ?? transceiver?.sender
+      const track = stream?.getAudioTracks()[0]
+      if (track && sender) {
+        const needsRenegotiation = transceiver?.direction === 'recvonly'
+        if (transceiver && needsRenegotiation) transceiver.direction = 'sendrecv'
+        void sender.replaceTrack(track)
+        if (needsRenegotiation) {
+          const userId = [...this.peers.entries()].find(([, candidate]) => candidate === peer)?.[0]
+          if (userId) void this.renegotiate(peer, userId)
+        }
+      }
+      else if (track) peer.addTrack(track, stream!)
+    }
+    if (stream && !this.isHost && this.room.meeting.hostId !== this.me.id) void this.ensurePeer(this.room.meeting.hostId, true)
+  }
+
+  subscribeRemoteAudio(cb: (stream: MediaStream, userId: string) => void): () => void {
+    this.remoteAudioListeners.add(cb)
+    return () => this.remoteAudioListeners.delete(cb)
+  }
+
+  private closePeers(): void {
+    for (const peer of this.peers.values()) peer.close()
+    this.peers.clear()
+  }
+
+  private async ensurePeer(userId: string, initiator: boolean): Promise<RTCPeerConnection | null> {
+    const existing = this.peers.get(userId)
+    if (existing) return existing
+    if (typeof globalThis.RTCPeerConnection === 'undefined') return null
+    const peer = new globalThis.RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] })
+    this.peers.set(userId, peer)
+    for (const track of this.localAudioStream?.getTracks() ?? []) peer.addTrack(track, this.localAudioStream!)
+    if (!this.localAudioStream) peer.addTransceiver('audio', { direction: this.isHost ? 'recvonly' : 'sendrecv' })
+    peer.onicecandidate = (event) => {
+      if (event.candidate) this.sendSignal({ from: this.me.id, to: userId, kind: 'ice', candidate: event.candidate.toJSON() })
+    }
+    peer.ontrack = (event) => {
+      const stream = event.streams[0] ?? new MediaStream([event.track])
+      this.remoteAudioListeners.forEach((listener) => listener(stream, userId))
+    }
+    if (initiator) {
+      const offer = await peer.createOffer()
+      await peer.setLocalDescription(offer)
+      this.sendSignal({ from: this.me.id, to: userId, kind: 'offer', sdp: offer })
+    }
+    return peer
+  }
+
+  private sendSignal(signal: RtcSignal): void {
+    this.driver?.send({ kind: 'rtc-signal', signal })
+  }
+
+  private async renegotiate(peer: RTCPeerConnection, userId: string): Promise<void> {
+    const offer = await peer.createOffer()
+    await peer.setLocalDescription(offer)
+    this.sendSignal({ from: this.me.id, to: userId, kind: 'offer', sdp: offer })
+  }
+
+  private async handleSignal(signal: RtcSignal): Promise<void> {
+    if (signal.to !== this.me.id || signal.from === this.me.id) return
+    const peer = await this.ensurePeer(signal.from, false)
+    if (!peer) return
+    if (signal.kind === 'offer' && signal.sdp) {
+      await peer.setRemoteDescription(signal.sdp)
+      const answer = await peer.createAnswer()
+      await peer.setLocalDescription(answer)
+      this.sendSignal({ from: this.me.id, to: signal.from, kind: 'answer', sdp: answer })
+    } else if (signal.kind === 'answer' && signal.sdp) {
+      await peer.setRemoteDescription(signal.sdp)
+    } else if (signal.kind === 'ice' && signal.candidate) {
+      await peer.addIceCandidate(signal.candidate)
+    }
   }
 
   private meAsParticipant(): MeetingParticipant {
@@ -294,7 +401,18 @@ export class MeetingSession {
         const p = parts.find((x) => x.userId === action.userId)
         parts = parts.filter((x) => x.userId !== action.userId)
         room.participants = parts
+        this.peers.get(action.userId as string)?.close()
+        this.peers.delete(action.userId as string)
         if (p) this.pushSystemChat(`${p.name} 离开了会议`)
+        break
+      }
+      case 'kick': {
+        const p = parts.find((x) => x.userId === action.userId)
+        parts = parts.filter((x) => x.userId !== action.userId)
+        room.participants = parts
+        this.peers.get(action.userId as string)?.close()
+        this.peers.delete(action.userId as string)
+        if (p) this.pushSystemChat(`${p.name} 已被主讲人移出会议`)
         break
       }
       case 'mic': {
@@ -338,6 +456,9 @@ export class MeetingSession {
       case 'chat':
         // 由 sendChat 直接处理
         break
+      case 'rtc-signal':
+        // WebRTC 信令由驱动直接定向转发,不会进入主机状态机
+        return
       case 'raise-hand': {
         const p = parts.find((x) => x.userId === action.userId)
         if (p) {
@@ -519,6 +640,10 @@ export class MeetingSession {
     if (this.isHost) this.hostApply({ kind: 'set-edit', userId, on })
   }
 
+  kickParticipant(userId: string): void {
+    if (this.isHost) this.hostApply({ kind: 'kick', userId })
+  }
+
   endMeeting(): void {
     if (this.isHost) this.hostApply({ kind: 'end' })
   }
@@ -678,7 +803,7 @@ export class MeetingSession {
 
 // ---------- BroadcastChannel 本机驱动 ----------
 
-type BcMessage = { t: 'intent'; action: RtcAction } | { t: 'room'; state: MeetingRoomState } | { t: 'chat'; msg: MeetingChatMsg } | { t: 'board'; pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
+type BcMessage = { t: 'intent'; action: RtcAction } | { t: 'room'; state: MeetingRoomState } | { t: 'chat'; msg: MeetingChatMsg } | { t: 'board'; pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] } | { t: 'signal'; signal: RtcSignal }
 
 export class BroadcastChannelDriver implements RtcDriver {
   private ch: BroadcastChannel | null = null
@@ -694,6 +819,7 @@ export class BroadcastChannelDriver implements RtcDriver {
       if (m.t === 'room') handlers.onRoomState(m.state)
       else if (m.t === 'chat') handlers.onChat(m.msg)
       else if (m.t === 'board') handlers.onBoardDelta(m.pageId, m.items ?? [], !!m.replace, m.eraseUpdates)
+      else if (m.t === 'signal') handlers.onSignal(m.signal)
       else if (m.t === 'intent') forwardIntent(m.action, handlers)
     }
   }
@@ -707,6 +833,8 @@ export class BroadcastChannelDriver implements RtcDriver {
     } else if (action.kind === 'board') {
       const a = action as unknown as { pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
       this.ch.postMessage({ t: 'board', pageId: a.pageId, items: a.items, replace: a.replace, eraseUpdates: a.eraseUpdates } satisfies BcMessage)
+    } else if (action.kind === 'rtc-signal') {
+      this.ch.postMessage({ t: 'signal', signal: action.signal as RtcSignal } satisfies BcMessage)
     } else {
       this.ch.postMessage({ t: 'intent', action } satisfies BcMessage)
     }
@@ -742,7 +870,7 @@ function forwardIntent(action: RtcAction, handlers: RtcHandlers): void {
 import { getSupabase } from './supabaseClient'
 
 export interface RtcWireMessage {
-  t: 'room' | 'chat' | 'board' | 'intent'
+  t: 'room' | 'chat' | 'board' | 'intent' | 'signal'
   client_id: string
   // 各类型的具体载荷:
   state?: MeetingRoomState
@@ -753,6 +881,7 @@ export interface RtcWireMessage {
   /** board 增量擦除:只传新增擦除点 */
   eraseUpdates?: BoardEraseUpdate[]
   action?: RtcAction
+  signal?: RtcSignal
 }
 
 export class SupabaseRealtimeDriver implements RtcDriver {
@@ -797,6 +926,7 @@ export class SupabaseRealtimeDriver implements RtcDriver {
     if (wire.t === 'room' && wire.state) h.onRoomState(wire.state)
     else if (wire.t === 'chat' && wire.msg) h.onChat(wire.msg)
     else if (wire.t === 'board' && wire.pageId) h.onBoardDelta(wire.pageId, wire.items ?? [], !!wire.replace, wire.eraseUpdates)
+    else if (wire.t === 'signal' && wire.signal) h.onSignal(wire.signal)
     else if (wire.t === 'intent' && wire.action) forwardIntent(wire.action, h)
   }
 
@@ -818,6 +948,8 @@ export class SupabaseRealtimeDriver implements RtcDriver {
     } else if (action.kind === 'board') {
       const a = action as unknown as { pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
       void this.publish({ t: 'board', client_id: this.clientId, pageId: a.pageId, items: a.items, replace: a.replace, eraseUpdates: a.eraseUpdates })
+    } else if (action.kind === 'rtc-signal') {
+      void this.publish({ t: 'signal', client_id: this.clientId, signal: action.signal as RtcSignal })
     } else {
       void this.publish({ t: 'intent', client_id: this.clientId, action })
     }
@@ -916,6 +1048,7 @@ export class WebSocketRealtimeDriver implements RtcDriver {
     if (wire.t === 'room' && wire.state) h.onRoomState(wire.state)
     else if (wire.t === 'chat' && wire.msg) h.onChat(wire.msg)
     else if (wire.t === 'board' && wire.pageId) h.onBoardDelta(wire.pageId, wire.items ?? [], !!wire.replace, wire.eraseUpdates)
+    else if (wire.t === 'signal' && wire.signal) h.onSignal(wire.signal)
     else if (wire.t === 'intent' && wire.action) forwardIntent(wire.action, h)
   }
 
@@ -929,6 +1062,8 @@ export class WebSocketRealtimeDriver implements RtcDriver {
     } else if (action.kind === 'board') {
       const a = action as unknown as { pageId: string; items?: BoardItem[]; replace?: boolean; eraseUpdates?: BoardEraseUpdate[] }
       ws.send(JSON.stringify({ t: 'relay', payload: { t: 'board', client_id: this.clientId, pageId: a.pageId, items: a.items, replace: a.replace, eraseUpdates: a.eraseUpdates } }))
+    } else if (action.kind === 'rtc-signal') {
+      ws.send(JSON.stringify({ t: 'relay', payload: { t: 'signal', client_id: this.clientId, signal: action.signal as RtcSignal } }))
     } else {
       ws.send(JSON.stringify({ t: 'relay', payload: { t: 'intent', client_id: this.clientId, action } }))
     }

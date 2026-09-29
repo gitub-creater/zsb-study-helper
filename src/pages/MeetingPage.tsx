@@ -376,6 +376,7 @@ function RoomInner({
   const [elapsed, setElapsed] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const audioRefs = useRef(new Map<string, HTMLAudioElement>())
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // 关联的社区问题(讲题联动)
@@ -394,9 +395,32 @@ function RoomInner({
     setRoom(s.snapshot)
     const un = s.subscribe(setRoom)
     const unChat = s.subscribeChat(setChat)
+    const unAudio = s.subscribeRemoteAudio((stream, userId) => {
+      let audio = audioRefs.current.get(userId)
+      if (!audio) {
+        audio = document.createElement('audio')
+        audio.autoplay = true
+        audio.setAttribute('playsinline', '')
+        audio.setAttribute('aria-label', '会议远端音频')
+        document.body.appendChild(audio)
+        audioRefs.current.set(userId, audio)
+      }
+      audio.srcObject = stream
+      audio.volume = 1
+      void audio.play().catch(() => {
+        toast('浏览器阻止了会议声音，请点击页面后重试', { kind: 'info' })
+      })
+    })
     return () => {
       un()
       unChat()
+      unAudio()
+      for (const audio of audioRefs.current.values()) {
+        audio.pause()
+        audio.srcObject = null
+        audio.remove()
+      }
+      audioRefs.current.clear()
       s.stop()
       sessionRef.current = null
     }
@@ -463,6 +487,7 @@ function RoomInner({
           return
         }
         stream = s
+        sessionRef.current?.setLocalAudioStream(s)
         ctx = new AudioContext()
         const src = ctx.createMediaStreamSource(s)
         const an = ctx.createAnalyser()
@@ -485,6 +510,7 @@ function RoomInner({
       stopped = true
       cancelAnimationFrame(raf)
       stream?.getTracks().forEach((t) => t.stop())
+      sessionRef.current?.setLocalAudioStream(null)
       void ctx?.close().catch(() => {})
     }
   }, [micOn, toast])
@@ -504,6 +530,14 @@ function RoomInner({
   }, [])
 
   if (!room) return null
+  if (!isHost && sessionRef.current?.isKicked) {
+    return (
+      <div className="page">
+        {confirmNode}
+        <EmptyState mood="think" title="你已被移出会议" desc="主讲人已结束你的参会权限" action={<a className="btn btn-primary" href="#/meeting">返回会议列表</a>} />
+      </div>
+    )
+  }
   const meP = room.participants.find((p) => p.userId === me.id)
   const canEditBoard = sessionRef.current?.canEditBoard(me.id) ?? isHost
   const activePage = room.pages.find((p) => p.id === room.activePageId) ?? room.pages[0]
@@ -818,6 +852,9 @@ function RoomInner({
                         onClick={() => sessionRef.current?.setParticipantEdit(p.userId, !(room.editorsAccess ?? []).includes(p.userId))}
                       >
                         {(room.editorsAccess ?? []).includes(p.userId) ? '收回编辑' : '允许编辑'}
+                      </button>
+                      <button className="btn btn-xs btn-danger-solid" onClick={() => sessionRef.current?.kickParticipant(p.userId)}>
+                        移出会议
                       </button>
                     </span>
                   )}
