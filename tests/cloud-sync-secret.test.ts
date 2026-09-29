@@ -51,6 +51,84 @@ describe('云端网络适配', () => {
     expect(fetchMock.mock.calls[1]?.[0]).toBe('https://primary.example.test/api/state')
   })
 
+  it('大陆中转因余额不足返回410时会直接切换到Vercel', async () => {
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    const calls: string[] = []
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const href = String(url)
+      calls.push(href)
+      if (href.startsWith('https://1496092367-jkwjpfq51u.ap-beijing.tencentscf.com/')) {
+        return new Response(JSON.stringify({
+          errorMessage: 'Function is Unavailable, AvailableStatus = InsufficientBalance.',
+          statusCode: 410,
+        }), { status: 410 })
+      }
+      return new Response(JSON.stringify({ code: 'bad_password', error: '密码不正确' }), { status: 401 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { loginCloud } = await import('../src/services/cloud')
+
+    const result = await loginCloud('虚构账号', 'fake-password', 'fake@example.test', '123456', false)
+
+    expect(result.kind).toBe('bad_password')
+    expect(calls).toEqual([
+      'https://1496092367-jkwjpfq51u.ap-beijing.tencentscf.com/api/auth/login',
+      'https://shandong-zsb-study-helper.vercel.app/api/auth/login',
+    ])
+    expect(JSON.parse(String((fetchMock.mock.calls[1]?.[1] as RequestInit).body))).toMatchObject({
+      name: '虚构账号',
+      password: 'fake-password',
+      email: 'fake@example.test',
+      code: '123456',
+    })
+  })
+
+  it('普通410业务错误不会切换云端入口', async () => {
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'verification_login_disabled',
+      error: '请使用账号、密码和邮箱验证码登录',
+    }), { status: 410 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { loginCloud } = await import('../src/services/cloud')
+
+    const result = await loginCloud('虚构账号', 'fake-password', 'fake@example.test', '123456', false)
+
+    expect(result).toMatchObject({ kind: 'error', message: '请使用账号、密码和邮箱验证码登录' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['bad_password', '密码不正确'],
+    ['invalid_code', '验证码错误或已过期，请重新获取'],
+  ])('登录返回%s时不会切换入口', async (code, message) => {
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code, error: '服务端业务错误' }), { status: 401 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { loginCloud } = await import('../src/services/cloud')
+
+    expect(await loginCloud('虚构账号', 'fake-password', 'fake@example.test', '123456', false)).toMatchObject({
+      kind: code === 'bad_password' ? 'bad_password' : 'error',
+      ...(code === 'invalid_code' ? { message } : {}),
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('验证码入口返回429时不会重复发送到其他域名', async () => {
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'rate_limited',
+      error: '发送过于频繁，请稍后再试',
+      waitSeconds: 38,
+    }), { status: 429 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { sendVerificationCode } = await import('../src/services/cloud')
+
+    expect(await sendVerificationCode('fake@example.test', 'login')).toMatchObject({ kind: 'error' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://1496092367-jkwjpfq51u.ap-beijing.tencentscf.com/api/auth/send-code')
+  })
+
   it('HTML 或缺字段响应不会被当成成功', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
     await expect(downloadCloudStateResult({ token: 'token', apiUrl: 'https://sync.example.test' })).resolves.toMatchObject({ kind: 'error' })

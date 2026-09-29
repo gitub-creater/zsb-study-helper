@@ -208,6 +208,12 @@ function normalizeUrl(value: string): string {
   return value.trim().replace(/\/+$/, '')
 }
 
+function isMainlandRelayUnavailable(status: number, apiUrl: string, body: { errorMessage?: string } | null): boolean {
+  return status === 410
+    && apiUrl === MAINLAND_RELAY_API_URL
+    && /^Function is Unavailable,\s*AvailableStatus\s*=\s*InsufficientBalance\.?$/i.test(body?.errorMessage?.trim() ?? '')
+}
+
 export function getCloudApiUrl(): string | null {
   return getCloudApiUrls()[0] ?? null
 }
@@ -257,13 +263,14 @@ async function request<T>(
         const remaining = Math.min(perRequestTimeout, deadline - Date.now())
         if (remaining <= 0) break
         const response = await fetchWithTimeout(`${apiUrl}${path}`, init, remaining)
-        const body = await response.json().catch(() => null) as ({ error?: string; code?: string } & T) | null
+        const body = await response.json().catch(() => null) as ({ error?: string; errorMessage?: string; code?: string } & T) | null
         if (!response.ok) {
+          const relayUnavailable = isMainlandRelayUnavailable(response.status, apiUrl, body)
           throw new CloudRequestError(
             response.status,
-            body?.code,
-            body?.error,
-            response.status >= 500 && response.status <= 599,
+            relayUnavailable ? 'relay_unavailable' : body?.code,
+            relayUnavailable ? '大陆云端中转暂不可用' : body?.error ?? body?.errorMessage,
+            relayUnavailable || (response.status >= 500 && response.status <= 599),
             apiUrl,
           )
         }
@@ -285,6 +292,7 @@ async function request<T>(
           setCloudNetworkState(cloudError.status === 401 ? 'expired' : 'online', cloudError.apiUrl, cloudError.message)
           throw cloudError
         }
+        if (cloudError.code === 'relay_unavailable') break
         if (attempt >= RETRY_DELAYS_MS.length) break
         await wait(RETRY_DELAYS_MS[attempt])
       }
@@ -352,6 +360,7 @@ function isUnavailable(error: CloudRequestError): boolean {
     || (error.status >= 500 && error.status <= 599)
     || error.code === 'not_configured'
     || error.code === 'service_unavailable'
+    || error.code === 'relay_unavailable'
     || error.code === 'invalid_response'
 }
 
