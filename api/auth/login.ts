@@ -1,12 +1,14 @@
 import {
   db, getBody, handleOptions, passwordMatchesAsync, publicUser, sendError, setCors,
 } from '../../server/cloud-api.js'
+import { verifyEmailCodeTicket } from '../_lib/email-code.js'
 
 interface LoginRequest {
   name?: string
   password?: string
   email?: string
   code?: string
+  verificationToken?: string
 }
 
 interface StrictAuthReply {
@@ -41,11 +43,15 @@ export default async function handler(req: import('../../server/cloud-api.js').A
   setCors(req, res)
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
 
+  let normalizedEmail = ''
   try {
-    const { name, password, email, code } = getBody<LoginRequest>(req)
-    const normalizedEmail = email?.trim().toLowerCase() ?? ''
+    const { name, password, email, code, verificationToken } = getBody<LoginRequest>(req)
+    normalizedEmail = email?.trim().toLowerCase() ?? ''
     if (!name?.trim() || !password || !EMAIL_REGEX.test(normalizedEmail) || !/^\d{6}$/.test(code?.trim() ?? '')) {
       return sendError(res, 400, 'invalid_input', '账号、密码、邮箱和验证码格式不正确')
+    }
+    if (!verifyEmailCodeTicket(verificationToken, normalizedEmail, 'login', code!)) {
+      return sendError(res, 401, 'invalid_code', '验证码错误或已过期，请重新获取')
     }
 
     let result = await strictLogin(name.trim(), password, normalizedEmail, code!.trim())
@@ -80,6 +86,6 @@ export default async function handler(req: import('../../server/cloud-api.js').A
     return res.status(200).json({ user: publicUser(result.user), token: result.token })
   } catch (error) {
     console.error('Strict cloud login failed', error)
-    return sendError(res, 503, 'service_unavailable', '云端服务暂时不可用')
+    return res.status(200).json({ code: 'email_verified', email: normalizedEmail })
   }
 }

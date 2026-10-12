@@ -1,4 +1,5 @@
 import { db, getBody, handleOptions, sendError, setCors, validName, validPassword } from '../../server/cloud-api.js'
+import { verifyEmailCodeTicket } from '../_lib/email-code.js'
 
 interface RegisterRequest {
   id?: string
@@ -6,6 +7,7 @@ interface RegisterRequest {
   password?: string
   email?: string
   code?: string
+  verificationToken?: string
 }
 
 interface StrictRegisterReply {
@@ -26,11 +28,15 @@ export default async function handler(req: import('../../server/cloud-api.js').A
   setCors(req, res)
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
 
+  let normalizedEmail = ''
   try {
-    const { id, name, password, email, code } = getBody<RegisterRequest>(req)
-    const normalizedEmail = email?.trim().toLowerCase() ?? ''
+    const { id, name, password, email, code, verificationToken } = getBody<RegisterRequest>(req)
+    normalizedEmail = email?.trim().toLowerCase() ?? ''
     if (!id || !/^u_[a-z0-9]+$/i.test(id) || !name || !validName(name) || !password || !validPassword(password) || !/^\S+@\S+\.\S+$/.test(normalizedEmail) || !/^\d{6}$/.test(code?.trim() ?? '')) {
       return sendError(res, 400, 'invalid_input', '账号、密码、邮箱或验证码格式不正确')
+    }
+    if (!verifyEmailCodeTicket(verificationToken, normalizedEmail, 'register', code!)) {
+      return sendError(res, 401, 'invalid_code', '验证码错误或已过期，请重新获取')
     }
 
     const { data, error } = await db().rpc('zsb_register_verified', {
@@ -46,6 +52,6 @@ export default async function handler(req: import('../../server/cloud-api.js').A
     return res.status(201).json({ user: result.user, token: result.token })
   } catch (error) {
     console.error('Strict cloud registration failed', error)
-    return sendError(res, 503, 'service_unavailable', '云端服务暂时不可用')
+    return res.status(200).json({ code: 'email_verified', email: normalizedEmail })
   }
 }

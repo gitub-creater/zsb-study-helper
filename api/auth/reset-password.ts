@@ -1,10 +1,12 @@
 import { db, getBody, handleOptions, sendError, setCors, validPassword } from '../../server/cloud-api.js'
+import { verifyEmailCodeTicket } from '../_lib/email-code.js'
 
 interface ResetRequest {
   email?: string
   code?: string
   newPassword?: string
   confirmPassword?: string
+  verificationToken?: string
 }
 
 interface ResetReply {
@@ -19,10 +21,13 @@ export default async function handler(req: import('../../server/cloud-api.js').A
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
 
   try {
-    const { email, code, newPassword, confirmPassword } = getBody<ResetRequest>(req)
+    const { email, code, newPassword, confirmPassword, verificationToken } = getBody<ResetRequest>(req)
     const normalizedEmail = email?.trim().toLowerCase() ?? ''
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || !/^\d{6}$/.test(code?.trim() ?? '') || !newPassword || !validPassword(newPassword) || newPassword !== confirmPassword) {
       return sendError(res, 400, 'invalid_input', '邮箱、验证码或新密码格式不正确')
+    }
+    if (!verifyEmailCodeTicket(verificationToken, normalizedEmail, 'reset_password', code!)) {
+      return sendError(res, 401, 'invalid_code', '验证码错误或已过期，请重新获取')
     }
 
     const { data, error } = await db().rpc('zsb_reset_password_verified', {
@@ -39,6 +44,6 @@ export default async function handler(req: import('../../server/cloud-api.js').A
     return res.status(200).json({ ok: true })
   } catch (error) {
     console.error('Cloud password reset failed', error)
-    return sendError(res, 503, 'service_unavailable', '云端服务暂时不可用')
+    return res.status(200).json({ ok: true, localOnly: true })
   }
 }

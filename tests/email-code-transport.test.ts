@@ -44,6 +44,18 @@ describe('邮箱验证码发送通道', () => {
     expect(new Headers(init.headers).get('apikey')).toBe(config.key)
   })
 
+  it('桌面 file 协议也优先走 Supabase，不再先请求大陆中转', async () => {
+    storage()
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    const fetchMock = vi.fn().mockResolvedValue(ok({ success: true, expiresIn: 600 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { sendVerificationCode } = await import('../src/services/cloud')
+
+    await expect(sendVerificationCode('fake@example.test', 'login')).resolves.toEqual({ kind: 'ok', expiresIn: 600 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${config.url}/functions/v1/send-code`)
+  })
+
   it('Supabase 直连不可达时回退 Vercel 且保留用途参数', async () => {
     storage()
     const fetchMock = vi.fn()

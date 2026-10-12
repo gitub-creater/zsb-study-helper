@@ -1,9 +1,9 @@
 // API Route: /api/auth/send-code
 // 发送用途隔离的邮箱验证码
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { db } from '../_lib/cloud-api.js'
+import { issueEmailCodeTicket, type EmailCodePurpose } from '../_lib/email-code.js'
 
-type CodePurpose = 'login' | 'register' | 'reset_password'
+type CodePurpose = EmailCodePurpose
 
 interface SendCodeRequest {
   email?: string
@@ -13,6 +13,7 @@ interface SendCodeRequest {
 interface SendCodeResponse {
   success: boolean
   expiresIn?: number
+  verificationToken?: string
   error?: string
   waitSeconds?: number
 }
@@ -23,11 +24,14 @@ const PURPOSE_LABEL: Record<CodePurpose, string> = {
   register: '注册',
   reset_password: '重置密码',
 }
+const recentSends = new Map<string, number>()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const allowedOrigins = (process.env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean)
   const origin = req.headers.origin ?? ''
-  if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+  // Electron file:// requests commonly omit Origin; keep them valid while
+  // still enforcing the allow-list for browser origins.
+  if (origin && allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
     return res.status(403).json({ error: 'Forbidden' })
   }
   res.setHeader('Access-Control-Allow-Origin', origin || '*')
@@ -49,25 +53,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ success: false, error: '验证码用途不正确' } satisfies SendCodeResponse)
     }
 
-    const code = String(Math.floor(100000 + Math.random() * 900000))
-    const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
-      || req.headers['x-real-ip'] as string
-      || 'unknown'
-    const { data, error } = await db().rpc('send_verification_code', {
-      p_email: email,
-      p_code: code,
-      p_purpose: purpose,
-      p_ip: ip,
-    })
-    if (error) {
-      console.error('[send-code] Supabase error:', error)
-      return res.status(503).json({ success: false, error: '服务暂时不可用，请稍后重试' } satisfies SendCodeResponse)
+    const rateKey = `${purpose}:${email}`
+    const lastSentAt = recentSends.get(rateKey) ?? 0
+    const waitSeconds = Math.ceil((lastSentAt + 60_000 - Date.now()) / 1000)
+    if (waitSeconds > 0) {
+      return res.status(429).json({ success: false, error: '请稍后再试', waitSeconds } satisfies SendCodeResponse)
     }
-    if (!data?.success) return res.status(429).json(data as SendCodeResponse)
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const verificationToken = issueEmailCodeTicket(email, purpose, code)
 
     const sent = await sendEmail(email, code, PURPOSE_LABEL[purpose])
     if (!sent) return res.status(502).json({ success: false, error: '邮件发送失败，请稍后重试' } satisfies SendCodeResponse)
-    return res.status(200).json({ success: true, expiresIn: data.expiresIn || 600 } satisfies SendCodeResponse)
+    recentSends.set(rateKey, Date.now())
+    return res.status(200).json({ success: true, expiresIn: 600, verificationToken } satisfies SendCodeResponse)
   } catch (error) {
     console.error('[send-code] Unexpected error:', error)
     return res.status(500).json({ success: false, error: '服务器错误' } satisfies SendCodeResponse)

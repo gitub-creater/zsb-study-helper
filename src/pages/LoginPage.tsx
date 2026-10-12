@@ -20,6 +20,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
   const [password, setPassword] = useState('')
   const [email, setEmailValue] = useState('')
   const [code, setCode] = useState('')
+  const [verificationToken, setVerificationToken] = useState('')
   const [countdown, setCountdown] = useState(0)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,6 +39,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
 
   const resetCode = () => {
     setCode('')
+    setVerificationToken('')
     setCountdown(0)
   }
 
@@ -61,6 +63,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       const purpose = tab === 'register' ? 'register' : tab === 'forgot' ? 'reset_password' : 'login'
       const result = await sendVerificationCode(normalized, purpose)
       if (result.kind === 'ok') {
+        setVerificationToken(result.verificationToken ?? '')
         setCountdown(60)
         const iv = window.setInterval(() => setCountdown((value) => (value <= 1 ? (window.clearInterval(iv), 0) : value - 1)), 1000)
         toast('验证码已发送，请查收邮箱', { kind: 'success', duration: 5000 })
@@ -82,7 +85,17 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     setBusy(true)
     try {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
-      const result = await loginCloud(account, password, email, code)
+      const result = await loginCloud(account, password, email, code, true, verificationToken)
+      if (result.kind === 'email_verified') {
+        const local = users.find((user) => user.name.trim().toLocaleLowerCase('zh-CN') === account.trim().toLocaleLowerCase('zh-CN'))
+        if (!local || local.email?.toLowerCase() !== email.trim().toLowerCase() || !(await verifyPassword(local.id, password))) {
+          toast('邮箱已验证，但本机没有匹配的账号或密码不正确', { kind: 'error' })
+          return
+        }
+        enter(local, { token: '', apiUrl: '' })
+        toast('已通过邮箱验证进入本机账号，云端同步暂不可用', { kind: 'success' })
+        return
+      }
       if (result.kind !== 'ok') {
         toast(result.kind === 'bad_password' ? '密码不正确' : result.kind === 'not_found' ? '账号不存在' : result.kind === 'unavailable' ? '云端暂时不可用，请稍后重试' : result.message, { kind: 'error' })
         return
@@ -123,7 +136,15 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     try {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
       const id = `u_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
-      const result = await registerCloud(id, account, password, email, code, true)
+      const result = await registerCloud(id, account, password, email, code, true, verificationToken)
+      if (result.kind === 'email_verified') {
+        const local = await createUser(account, password, id, email)
+        setCloudRegistrationPending(local.id, true)
+        refresh()
+        toast('邮箱已验证，账号已保存在本机；云端服务恢复后可同步', { kind: 'success' })
+        enter(local, { token: '', apiUrl: '' })
+        return
+      }
       if (result.kind !== 'ok') {
         const message = result.kind === 'unavailable'
           ? '云端暂时不可用，请稍后重试'
@@ -154,7 +175,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     }
     setBusy(true)
     try {
-      const result = await resetCloudPassword(email, code, newPassword, confirmPassword)
+      const result = await resetCloudPassword(email, code, newPassword, confirmPassword, verificationToken)
       if (result.kind !== 'ok') {
         toast(result.message, { kind: 'error' })
         return

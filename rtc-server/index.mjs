@@ -11,6 +11,8 @@ import http from 'node:http'
 import { WebSocketServer } from 'ws'
 
 const PORT = Number(process.env.PORT || 8787)
+const API_UPSTREAM = (process.env.CLOUD_API_UPSTREAM || 'https://zsb-study-helper.vercel.app').replace(/\/$/, '')
+const MAX_PROXY_BODY_BYTES = 1024 * 1024
 
 const server = http.createServer((req, res) => {
   if (req.url === '/healthz') {
@@ -18,9 +20,58 @@ const server = http.createServer((req, res) => {
     res.end('{"ok":true}')
     return
   }
+  if (req.url?.startsWith('/api/')) {
+    void proxyApiRequest(req, res)
+    return
+  }
   res.writeHead(426, { 'content-type': 'text/plain' })
   res.end('websocket endpoint: use ws(s):// upgrade')
 })
+
+async function proxyApiRequest(req, res) {
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : ''
+  res.setHeader('access-control-allow-origin', origin || '*')
+  res.setHeader('access-control-allow-methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+  res.setHeader('access-control-allow-headers', 'Content-Type, Authorization')
+  res.setHeader('cache-control', 'no-store')
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204)
+    res.end()
+    return
+  }
+
+  const chunks = []
+  let size = 0
+  for await (const chunk of req) {
+    size += chunk.length
+    if (size > MAX_PROXY_BODY_BYTES) {
+      res.writeHead(413, { 'content-type': 'application/json' })
+      res.end('{"error":"request_too_large"}')
+      return
+    }
+    chunks.push(chunk)
+  }
+
+  const headers = {}
+  if (typeof req.headers['content-type'] === 'string') headers['content-type'] = req.headers['content-type']
+  if (typeof req.headers.authorization === 'string') headers.authorization = req.headers.authorization
+  try {
+    const upstream = await fetch(`${API_UPSTREAM}${req.url}`, {
+      method: req.method,
+      headers,
+      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : Buffer.concat(chunks),
+      signal: AbortSignal.timeout(30_000),
+    })
+    const body = Buffer.from(await upstream.arrayBuffer())
+    const contentType = upstream.headers.get('content-type') || 'application/json'
+    res.writeHead(upstream.status, { 'content-type': contentType })
+    res.end(body)
+  } catch (error) {
+    console.error('[api-proxy] upstream request failed:', error instanceof Error ? error.message : error)
+    res.writeHead(502, { 'content-type': 'application/json' })
+    res.end('{"error":"upstream_unavailable"}')
+  }
+}
 
 // eslint-disable-next-line no-new
 const wss = new WebSocketServer({ server })
