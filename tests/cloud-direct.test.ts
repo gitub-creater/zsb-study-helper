@@ -99,6 +99,58 @@ describe('国内直连通道', () => {
     expect(calls).toEqual([`${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`])
   })
 
+  it('桌面端发送验证码后用同一 Supabase 通道校验，不会误报立即过期', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {
+      const href = typeof url === 'string' ? url : url.toString()
+      calls.push(href)
+      if (href === `${SUPABASE_URL}/functions/v1/send-code`) {
+        return new Response(JSON.stringify({ success: true, expiresIn: 600 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      if (href === `${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`) {
+        return new Response(JSON.stringify({ user: { id: 'u_desktop1', name: '桌面用户' }, token: 'tok_desktop1' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      throw new Error(`未预期的请求: ${href}`)
+    })
+    const { sendVerificationCode, loginCloud } = await import('../src/services/cloud')
+
+    expect((await sendVerificationCode('desktop@example.com', 'login')).kind).toBe('ok')
+    const result = await loginCloud('桌面用户', 'pw1234', 'desktop@example.com', '123456')
+    expect(result.kind).toBe('ok')
+    expect(calls).toEqual([
+      `${SUPABASE_URL}/functions/v1/send-code`,
+      `${SUPABASE_URL}/rest/v1/rpc/zsb_login_verified`,
+    ])
+  })
+
+  it('带 Vercel 票据时固定走票据通道，不会被 Supabase 的同码校验抢先消费', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('window', { location: { protocol: 'file:', hostname: '' } })
+    vi.stubGlobal('fetch', async (url: string | URL) => {
+      const href = typeof url === 'string' ? url : url.toString()
+      calls.push(href)
+      if (href.endsWith('/api/auth/login')) {
+        return new Response(JSON.stringify({ user: { id: 'u_relay1', name: '中转用户' }, token: 'tok_relay1' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      throw new Error(`不应请求 Supabase: ${href}`)
+    })
+    const { loginCloud } = await import('../src/services/cloud')
+
+    const result = await loginCloud('中转用户', 'pw1234', 'relay@example.com', '123456', true, 'signed-relay-ticket')
+    expect(result.kind).toBe('ok')
+    expect(calls).toEqual(['https://zsb-rtc-server.onrender.com/api/auth/login'])
+  })
+
   it('旧 scrypt 账号直连返回 legacy_account 后回退 Vercel', async () => {
     const calls: string[] = []
     vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {

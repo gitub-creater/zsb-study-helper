@@ -594,7 +594,10 @@ export async function loginCloud(name: string, password: string, email = '', cod
     return { kind: 'error', message: '请输入账号、密码、邮箱和 6 位验证码' }
   }
   const normalizedEmail = normalizeEmail(email)
-  if (preferDirect && cloudDirectConfigured && !isMainlandRelayClient()) {
+  // 验证码发送在桌面端可能已经走了 Supabase Edge Function。此通道的
+  // 验证码保存在 Supabase 表中，而不是生成 Vercel 签名票据，因此桌面端
+  // 也必须优先用同一套 RPC 校验，避免把有效验证码送到另一套票据校验器。
+  if (preferDirect && cloudDirectConfigured && !verificationToken) {
     try {
       const mapped = directResultToLogin(await directLoginVerified(name, password, normalizedEmail, code.trim()))
       if (mapped) {
@@ -610,7 +613,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
-    if (cloudDirectConfigured && !isMainlandRelayClient() && isUnavailable(error)) {
+    if (cloudDirectConfigured && !verificationToken && isUnavailable(error)) {
       try {
         const mapped = directResultToLogin(await directLoginVerified(name, password, normalizedEmail, code.trim()))
         if (mapped) {
@@ -634,7 +637,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
 export async function registerCloud(id: string, name: string, password: string, email = '', code = '', preferDirect = true, verificationToken = ''): Promise<CloudLoginResult> {
   if (!validEmail(normalizeEmail(email)) || !/^\d{6}$/.test(code.trim())) return { kind: 'error', message: '注册必须填写邮箱并验证 6 位验证码' }
   const normalizedEmail = normalizeEmail(email)
-  if (preferDirect && cloudDirectConfigured && !isMainlandRelayClient()) {
+  if (preferDirect && cloudDirectConfigured && !verificationToken) {
     try {
       const mapped = directResultToLogin(await directRegisterVerified(id, name, password, normalizedEmail, code.trim()))
       if (mapped) {
@@ -650,7 +653,7 @@ export async function registerCloud(id: string, name: string, password: string, 
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
-    if (cloudDirectConfigured && !isMainlandRelayClient() && isUnavailable(error)) {
+    if (cloudDirectConfigured && !verificationToken && isUnavailable(error)) {
       try {
         const mapped = directResultToLogin(await directRegisterVerified(id, name, password, normalizedEmail, code.trim()))
         if (mapped) {
@@ -673,7 +676,7 @@ export async function resetCloudPassword(email: string, code: string, newPasswor
   const normalizedEmail = normalizeEmail(email)
   if (!validEmail(normalizedEmail) || !/^\d{6}$/.test(code.trim()) || newPassword.length < 4 || newPassword !== confirmPassword) return { kind: 'error', message: '邮箱、验证码或新密码格式不正确' }
   try {
-    if (cloudDirectConfigured && !isMainlandRelayClient()) {
+    if (cloudDirectConfigured && !verificationToken) {
       try {
         await directResetPassword(normalizedEmail, code.trim(), newPassword)
         setCloudNetworkState('online', DIRECT_API_URL)
