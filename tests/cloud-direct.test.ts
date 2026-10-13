@@ -151,6 +151,23 @@ describe('国内直连通道', () => {
     expect(calls).toEqual(['https://zsb-rtc-server.onrender.com/api/auth/login'])
   })
 
+  it('票据由备用入口签发时，认证请求固定回到同一个入口', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string | URL) => {
+      const href = typeof url === 'string' ? url : url.toString()
+      calls.push(href)
+      return new Response(JSON.stringify({ code: 'email_verified', email: 'backup@example.com' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    const { loginCloud } = await import('../src/services/cloud')
+
+    const result = await loginCloud('备用用户', 'pw1234', 'backup@example.com', '123456', true, 'signed-backup-ticket', 'https://backup.example.test')
+    expect(result.kind).toBe('email_verified')
+    expect(calls).toEqual(['https://backup.example.test/api/auth/login'])
+  })
+
   it('旧 scrypt 账号直连返回 legacy_account 后回退 Vercel', async () => {
     const calls: string[] = []
     vi.stubGlobal('fetch', async (url: string | URL, init?: RequestInit) => {

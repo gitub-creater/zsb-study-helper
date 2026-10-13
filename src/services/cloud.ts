@@ -159,9 +159,9 @@ export function getCloudApiUrls(preferred?: string): string[] {
     : ''
   // 已成功的入口优先于旧会话里的地址，避免每次同步重新撞上故障域名。
   return [...new Set([
+    normalizeUrl(preferred ?? ''),
     isMainlandRelayClient() ? MAINLAND_RELAY_API_URL : '',
     normalizeUrl(saved),
-    normalizeUrl(preferred ?? ''),
     sameOrigin,
     ...configuredApiUrls(),
     ...DEFAULT_CLOUD_API_URLS,
@@ -264,8 +264,11 @@ async function request<T>(
   validate?: (body: T) => boolean,
   /** 注册/登录用更宽的预算:超时会让云端写成功而本机认为失败。 */
   slow = false,
+  onlyPreferred = false,
 ): Promise<{ data: T; apiUrl: string }> {
-  const urls = getCloudApiUrls(preferredApiUrl)
+  const urls = onlyPreferred && preferredApiUrl
+    ? [normalizeUrl(preferredApiUrl)].filter((value) => isHttpUrl(value))
+    : getCloudApiUrls(preferredApiUrl)
   if (urls.length === 0) throw new CloudRequestError(0, 'not_configured', '未配置云端地址')
 
   let lastError: CloudRequestError | null = null
@@ -514,7 +517,7 @@ export async function uploadCloudState(session: CloudSession, state: State): Pro
 export type AuthCodePurpose = 'login' | 'register' | 'reset_password'
 
 export type SendCodeResult =
-  | { kind: 'ok'; expiresIn: number; verificationToken?: string }
+  | { kind: 'ok'; expiresIn: number; verificationToken?: string; apiUrl?: string }
   | { kind: 'rate_limited'; waitSeconds: number }
   | { kind: 'error'; message: string }
 
@@ -574,7 +577,7 @@ export async function sendVerificationCode(email: string, purpose: AuthCodePurpo
       if (data.waitSeconds) return { kind: 'rate_limited', waitSeconds: data.waitSeconds }
       return { kind: 'error', message: data.error || '发送失败' }
     }
-    return { kind: 'ok', expiresIn: data.expiresIn || 600, verificationToken: data.verificationToken }
+    return { kind: 'ok', expiresIn: data.expiresIn || 600, verificationToken: data.verificationToken, apiUrl }
   } catch (error) {
     const cloudError = error instanceof CloudRequestError ? error : null
     if (cloudError && isUnavailable(cloudError)) {
@@ -585,11 +588,11 @@ export async function sendVerificationCode(email: string, purpose: AuthCodePurpo
   }
 }
 
-async function strictAuthRequest<T>(path: string, body: Record<string, unknown>): Promise<{ data: T; apiUrl: string }> {
-  return request<T>(path, { method: 'POST', body: JSON.stringify(body) }, undefined, undefined, true)
+async function strictAuthRequest<T>(path: string, body: Record<string, unknown>, preferredApiUrl?: string): Promise<{ data: T; apiUrl: string }> {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) }, preferredApiUrl, undefined, true, Boolean(preferredApiUrl))
 }
 
-export async function loginCloud(name: string, password: string, email = '', code = '', preferDirect = true, verificationToken = ''): Promise<CloudLoginResult> {
+export async function loginCloud(name: string, password: string, email = '', code = '', preferDirect = true, verificationToken = '', verificationApiUrl = ''): Promise<CloudLoginResult> {
   if (!name.trim() || !password || !validEmail(normalizeEmail(email)) || !/^\d{6}$/.test(code.trim())) {
     return { kind: 'error', message: '请输入账号、密码、邮箱和 6 位验证码' }
   }
@@ -609,7 +612,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
     }
   }
   try {
-    const { data, apiUrl } = await strictAuthRequest<{ user: CloudUser; token: string; code?: string; email?: string }>('/api/auth/login', { name, password, email: normalizedEmail, code: code.trim(), verificationToken })
+    const { data, apiUrl } = await strictAuthRequest<{ user: CloudUser; token: string; code?: string; email?: string }>('/api/auth/login', { name, password, email: normalizedEmail, code: code.trim(), verificationToken }, verificationApiUrl || undefined)
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
@@ -634,7 +637,7 @@ export async function loginCloud(name: string, password: string, email = '', cod
   }
 }
 
-export async function registerCloud(id: string, name: string, password: string, email = '', code = '', preferDirect = true, verificationToken = ''): Promise<CloudLoginResult> {
+export async function registerCloud(id: string, name: string, password: string, email = '', code = '', preferDirect = true, verificationToken = '', verificationApiUrl = ''): Promise<CloudLoginResult> {
   if (!validEmail(normalizeEmail(email)) || !/^\d{6}$/.test(code.trim())) return { kind: 'error', message: '注册必须填写邮箱并验证 6 位验证码' }
   const normalizedEmail = normalizeEmail(email)
   if (preferDirect && cloudDirectConfigured && !verificationToken) {
@@ -649,7 +652,7 @@ export async function registerCloud(id: string, name: string, password: string, 
     }
   }
   try {
-    const { data, apiUrl } = await strictAuthRequest<{ user: CloudUser; token: string; code?: string; email?: string }>('/api/auth/register', { id, name, password, email: normalizedEmail, code: code.trim(), verificationToken })
+    const { data, apiUrl } = await strictAuthRequest<{ user: CloudUser; token: string; code?: string; email?: string }>('/api/auth/register', { id, name, password, email: normalizedEmail, code: code.trim(), verificationToken }, verificationApiUrl || undefined)
     return toLoginResult(data, apiUrl)
   } catch (error) {
     if (!(error instanceof CloudRequestError)) return { kind: 'unavailable' }
@@ -672,7 +675,7 @@ export async function registerCloud(id: string, name: string, password: string, 
   }
 }
 
-export async function resetCloudPassword(email: string, code: string, newPassword: string, confirmPassword: string, verificationToken = ''): Promise<{ kind: 'ok' } | { kind: 'error'; message: string }> {
+export async function resetCloudPassword(email: string, code: string, newPassword: string, confirmPassword: string, verificationToken = '', verificationApiUrl = ''): Promise<{ kind: 'ok' } | { kind: 'error'; message: string }> {
   const normalizedEmail = normalizeEmail(email)
   if (!validEmail(normalizedEmail) || !/^\d{6}$/.test(code.trim()) || newPassword.length < 4 || newPassword !== confirmPassword) return { kind: 'error', message: '邮箱、验证码或新密码格式不正确' }
   try {
@@ -685,7 +688,7 @@ export async function resetCloudPassword(email: string, code: string, newPasswor
         // 直连失败时回退主通道,仍携带完整验证码。
       }
     }
-    const { apiUrl } = await strictAuthRequest<{ ok: boolean }>('/api/auth/reset-password', { email: normalizedEmail, code: code.trim(), newPassword, confirmPassword, verificationToken })
+    const { apiUrl } = await strictAuthRequest<{ ok: boolean }>('/api/auth/reset-password', { email: normalizedEmail, code: code.trim(), newPassword, confirmPassword, verificationToken }, verificationApiUrl || undefined)
     saveCloudApiUrl(apiUrl)
     setCloudNetworkState('online', apiUrl)
     return { kind: 'ok' }

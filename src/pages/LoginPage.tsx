@@ -21,6 +21,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
   const [email, setEmailValue] = useState('')
   const [code, setCode] = useState('')
   const [verificationToken, setVerificationToken] = useState('')
+  const [verificationApiUrl, setVerificationApiUrl] = useState('')
   const [countdown, setCountdown] = useState(0)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -40,6 +41,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
   const resetCode = () => {
     setCode('')
     setVerificationToken('')
+    setVerificationApiUrl('')
     setCountdown(0)
   }
 
@@ -64,6 +66,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
       const result = await sendVerificationCode(normalized, purpose)
       if (result.kind === 'ok') {
         setVerificationToken(result.verificationToken ?? '')
+        setVerificationApiUrl(result.apiUrl ?? '')
         setCountdown(60)
         const iv = window.setInterval(() => setCountdown((value) => (value <= 1 ? (window.clearInterval(iv), 0) : value - 1)), 1000)
         toast('验证码已发送，请查收邮箱', { kind: 'success', duration: 5000 })
@@ -85,7 +88,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     setBusy(true)
     try {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
-      const result = await loginCloud(account, password, email, code, true, verificationToken)
+      const result = await loginCloud(account, password, email, code, true, verificationToken, verificationApiUrl)
       if (result.kind === 'email_verified') {
         const local = users.find((user) => user.name.trim().toLocaleLowerCase('zh-CN') === account.trim().toLocaleLowerCase('zh-CN'))
         if (!local || local.email?.toLowerCase() !== email.trim().toLowerCase() || !(await verifyPassword(local.id, password))) {
@@ -136,7 +139,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     try {
       if (cloudApiUrl.trim()) saveCloudApiUrl(cloudApiUrl)
       const id = `u_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
-      const result = await registerCloud(id, account, password, email, code, true, verificationToken)
+      const result = await registerCloud(id, account, password, email, code, true, verificationToken, verificationApiUrl)
       if (result.kind === 'email_verified') {
         const local = await createUser(account, password, id, email)
         setCloudRegistrationPending(local.id, true)
@@ -175,7 +178,7 @@ export function LoginGate({ onSession }: { onSession: () => void }) {
     }
     setBusy(true)
     try {
-      const result = await resetCloudPassword(email, code, newPassword, confirmPassword, verificationToken)
+      const result = await resetCloudPassword(email, code, newPassword, confirmPassword, verificationToken, verificationApiUrl)
       if (result.kind !== 'ok') {
         toast(result.message, { kind: 'error' })
         return
